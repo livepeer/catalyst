@@ -17,7 +17,7 @@ RUN pip3 install supervisor
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt install -y postgresql-all
 RUN echo "listen_addresses='*'" >> /var/lib/postgresql/10/main/postgresql.conf
-RUN echo "host all  all    0.0.0.0/0  md5" >> /var/lib/postgresql/10/main/pg_hba.conf
+RUN echo "host all  all    0.0.0.0/0  trust" >> /var/lib/postgresql/10/main/pg_hba.conf
 
 COPY --from=api /app /api
 
