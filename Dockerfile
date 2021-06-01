@@ -1,4 +1,5 @@
 FROM livepeerci/api:master as api
+FROM livepeerci/www:master as www
 
 # We want to inherit from a CUDA container for driver-support... so let's just use go-livepeer,
 # which already has a CUDA environment.
@@ -30,6 +31,9 @@ COPY --from=api /app /api
 COPY supervisord.conf /usr/local/supervisord.conf
 COPY traefik.toml /traefik.toml
 COPY traefik-routes.toml /traefik-routes.toml
+
+RUN npm install -g serve
+COPY --from=www /www /www
 
 ENTRYPOINT []
 CMD supervisord -c /usr/local/supervisord.conf

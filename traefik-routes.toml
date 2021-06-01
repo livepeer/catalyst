@@ -4,6 +4,13 @@
       entryPoints = ["web"]
       service = "service-api"
       rule = "PathPrefix(`/api`)"
+      priority = 10
+
+    [http.routers.www]
+      entryPoints = ["web"]
+      service = "service-www"
+      rule = "PathPrefix(`/`)"
+      priority = 5
 
   # Add the service
   [http.services]
@@ -11,3 +18,8 @@
       [http.services.service-api.loadBalancer]
         [[http.services.service-api.loadBalancer.servers]]
           url = "http://localhost:3004/"
+
+    [http.services.service-www]
+      [http.services.service-www.loadBalancer]
+        [[http.services.service-www.loadBalancer.servers]]
+          url = "http://localhost:5000/"
