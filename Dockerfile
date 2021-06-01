@@ -19,6 +19,9 @@ RUN apt install -y postgresql-all
 RUN echo "listen_addresses='*'" >> /var/lib/postgresql/10/main/postgresql.conf
 RUN echo "host all  all    0.0.0.0/0  trust" >> /var/lib/postgresql/10/main/pg_hba.conf
 
+RUN curl -Lo /usr/bin/traefik https://github.com/traefik/traefik/releases/download/v1.7.30/traefik_linux-amd64 \
+  && chmod 755 /usr/bin/traefik
+
 COPY --from=api /app /api
 
 COPY supervisord.conf /usr/local/supervisord.conf
