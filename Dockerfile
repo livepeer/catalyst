@@ -23,5 +23,9 @@ COPY --from=api /app /api
 
 COPY supervisord.conf /usr/local/supervisord.conf
 
+ARG MIST_URL
+RUN curl -o - --silent $MIST_URL | tar -C /usr/bin/ -xvz
+COPY mistserver.conf /etc/mistserver.conf
+
 ENTRYPOINT []
 CMD supervisord -c /usr/local/supervisord.conf
