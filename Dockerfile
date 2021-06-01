@@ -19,16 +19,17 @@ RUN apt install -y postgresql-all
 RUN echo "listen_addresses='*'" >> /var/lib/postgresql/10/main/postgresql.conf
 RUN echo "host all  all    0.0.0.0/0  trust" >> /var/lib/postgresql/10/main/pg_hba.conf
 
-RUN curl -Lo /usr/bin/traefik https://github.com/traefik/traefik/releases/download/v1.7.30/traefik_linux-amd64 \
-  && chmod 755 /usr/bin/traefik
-
-COPY --from=api /app /api
-
-COPY supervisord.conf /usr/local/supervisord.conf
+RUN curl --silent -L -o - https://github.com/traefik/traefik/releases/download/v2.4.8/traefik_v2.4.8_linux_amd64.tar.gz | tar -C /usr/bin/ -xvz
 
 ARG MIST_URL
 RUN curl -o - --silent $MIST_URL | tar -C /usr/bin/ -xvz
 COPY mistserver.conf /etc/mistserver.conf
+
+COPY --from=api /app /api
+
+COPY supervisord.conf /usr/local/supervisord.conf
+COPY traefik.toml /traefik.toml
+COPY traefik-routes.toml /traefik-routes.toml
 
 ENTRYPOINT []
 CMD supervisord -c /usr/local/supervisord.conf

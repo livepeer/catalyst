@@ -1,0 +1,16 @@
+accessLog = true
+
+[entryPoints]
+  [entryPoints.traefik]
+    address = ":9000"
+  [entryPoints.web]
+    address = ":80"
+
+[api]
+  dashboard = true
+  insecure = true
+
+[providers]
+  [providers.file]
+    filename = "/traefik-routes.toml"
+  

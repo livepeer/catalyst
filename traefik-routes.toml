@@ -1,0 +1,13 @@
+[http]
+  [http.routers]
+    [http.routers.api]
+      entryPoints = ["web"]
+      service = "service-api"
+      rule = "PathPrefix(`/api`)"
+
+  # Add the service
+  [http.services]
+    [http.services.service-api]
+      [http.services.service-api.loadBalancer]
+        [[http.services.service-api.loadBalancer.servers]]
+          url = "http://localhost:3004/"
