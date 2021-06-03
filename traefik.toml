@@ -1,4 +1,5 @@
-accessLog = true
+# Very noisy but sometimes useful.
+# accessLog = true
 
 [entryPoints]
   [entryPoints.traefik]
