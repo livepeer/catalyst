@@ -1,5 +1,6 @@
 FROM livepeerci/api:master as api
 FROM livepeerci/www:master as www
+FROM livepeer/streamtester:mist-api-connector as mist-api-connector
 
 # We want to inherit from a CUDA container for driver-support... so let's just use go-livepeer,
 # which already has a CUDA environment.
