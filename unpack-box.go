@@ -3,26 +3,34 @@ package main
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"golang.org/x/crypto/pbkdf2"
 )
 
 func main() {
-	url := "http://localhost:8080/api/user"
+	url := "http://10.173.0.1:8080/api/user"
 	fmt.Println("URL:>", url)
 
-	dk := pbkdf2.Key([]byte("password"), []byte(`69195A9476F08546`), 4096, 10000, sha256.New)
-	fmt.Println(dk)
+	salt, _ := hex.DecodeString("69195A9476F08546")
+	dk := pbkdf2.Key([]byte("password"), salt, 10000, 32, sha256.New)
+	hash := strings.ToUpper(hex.EncodeToString(dk))
+	var body = map[string]string{
+		"email":    "admin@livepeer.dev",
+		"password": hash,
+	}
+	b, _ := json.Marshal(body)
+	fmt.Println(string(b))
 
-	var jsonStr = []byte(`{"email":"support@livepeer.com", "password": "password"}`)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
-	req.Header.Set("X-Custom-Header", "myvalue")
-	req.Header.Set("Content-Type", "application/json")
+	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(b))
 
 	client := &http.Client{}
+	req.Header.Add("Content-Type", `application/json`)
 	resp, err := client.Do(req)
 	if err != nil {
 		panic(err)
@@ -31,6 +39,6 @@ func main() {
 
 	fmt.Println("response Status:", resp.Status)
 	fmt.Println("response Headers:", resp.Header)
-	body, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("response Body:", string(body))
+	res, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println("response Body:", string(res))
 }
