@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"golang.org/x/crypto/pbkdf2"
@@ -51,6 +53,13 @@ type APITokenResp struct {
 	ID string `json:id`
 }
 
+const mistConfTpl string = `
+api-token %s
+send-audio always
+api-server http://localhost
+mist-creds livepeer:password
+`
+
 func main() {
 	url := "http://127.0.0.1:80/api/user"
 	fmt.Println("URL:>", url)
@@ -91,4 +100,20 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(token.ID)
+
+	f, err := os.OpenFile("/root/mist-api-connector.conf", os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer f.Close()
+
+	str := fmt.Sprintf(mistConfTpl, token.ID)
+	_, err2 := f.WriteString(str)
+
+	if err2 != nil {
+		log.Fatal(err2)
+	}
+
+	fmt.Println("done")
 }

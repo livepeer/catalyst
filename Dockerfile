@@ -16,23 +16,32 @@ FROM livepeer/go-livepeer:master
 
 RUN apt update
 
+ENV DEBIAN_FRONTEND noninteractive
 RUN apt install -y \
   python3-pip \
-  curl
+  curl \
+  musl \
+  postgresql-all
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 RUN apt install -y nodejs
 
 RUN pip3 install supervisor
 
-ENV DEBIAN_FRONTEND noninteractive
-RUN apt install -y postgresql-all
 RUN echo "listen_addresses='*'" >> /var/lib/postgresql/10/main/postgresql.conf
 RUN echo "host all  all    0.0.0.0/0  trust" >> /var/lib/postgresql/10/main/pg_hba.conf
 
 RUN curl --silent -L -o - https://github.com/traefik/traefik/releases/download/v2.4.8/traefik_v2.4.8_linux_amd64.tar.gz | tar -C /usr/bin/ -xvz
 
+RUN npm install -g serve
 ARG MIST_URL
 RUN curl -o - --silent $MIST_URL | tar -C /usr/bin/ -xvz
+
+COPY --from=mist-api-connector /root/mist-api-connector /usr/bin/mist-api-connector
+
+WORKDIR /data
+
+# Below this line, code copying and conf only
+
 COPY mistserver.conf /etc/mistserver.conf
 
 COPY --from=api /app /api
@@ -41,7 +50,6 @@ COPY supervisord.conf /usr/local/supervisord.conf
 COPY traefik.toml /traefik.toml
 COPY traefik-routes.toml /traefik-routes.toml
 
-RUN npm install -g serve
 COPY --from=www /www /www
 COPY --from=unpack /app/unpack-box /usr/bin/unpack-box
 
