@@ -14,14 +14,17 @@ RUN go build unpack-box.go
 # which already has a CUDA environment.
 FROM livepeer/go-livepeer:master
 
-RUN apt update
-
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt install -y \
+RUN apt update && apt install -y \
   python3-pip \
   curl \
   musl \
-  postgresql-all
+  postgresql-all \
+  rabbitmq-server
+RUN rabbitmq-plugins enable rabbitmq_management
+ENV RABBITMQ_LOGS "-"
+ENV RABBITMQ_DATA_DIR=/data/rabbitmq
+ENV LP_AMQP_URL amqp://localhost:5672/
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 RUN apt install -y nodejs
 
