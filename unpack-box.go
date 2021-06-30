@@ -61,45 +61,66 @@ mist-creds livepeer:password
 `
 
 func main() {
-	url := "http://127.0.0.1:80/api/user"
-	fmt.Println("URL:>", url)
+	var apiToken string
+	if _, err := os.Stat("/data/api-token"); !os.IsNotExist(err) {
+		b, err := ioutil.ReadFile("/data/api-token") // just pass the file name
+		if err != nil {
+			panic(err)
+		}
+		apiToken = string(b) // convert content to a 'string'
+	} else {
+		url := "http://127.0.0.1:80/api/user"
+		fmt.Println("URL:>", url)
 
-	salt, err := hex.DecodeString("69195A9476F08546")
-	if err != nil {
-		panic(err)
+		salt, err := hex.DecodeString("69195A9476F08546")
+		if err != nil {
+			panic(err)
+		}
+		dk := pbkdf2.Key([]byte("password"), salt, 10000, 32, sha256.New)
+		hash := strings.ToUpper(hex.EncodeToString(dk))
+		var body = map[string]string{
+			"email":    "admin@livepeer.dev",
+			"password": hash,
+		}
+		_, err = post("http://127.0.0.1:80/api/user", "", body)
+		if err != nil {
+			panic(err)
+		}
+		jwtBytes, err := post("http://127.0.0.1:80/api/user/token", "", body)
+		if err != nil {
+			panic(err)
+		}
+		var jwt JWTResp
+		err = json.Unmarshal(jwtBytes, &jwt)
+		if err != nil {
+			panic(err)
+		}
+		var apiTokenBody = map[string]string{
+			"name": "System Token - DO NOT DELETE",
+		}
+		tokenBytes, err := post("http://127.0.0.1:80/api/api-token", fmt.Sprintf("JWT %s", jwt.Token), apiTokenBody)
+		if err != nil {
+			panic(err)
+		}
+		var token APITokenResp
+		err = json.Unmarshal(tokenBytes, &token)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(token.ID)
+		apiToken = token.ID
+		f, err := os.OpenFile("/data/api-token", os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+
+		_, err = f.WriteString(apiToken)
+
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
-	dk := pbkdf2.Key([]byte("password"), salt, 10000, 32, sha256.New)
-	hash := strings.ToUpper(hex.EncodeToString(dk))
-	var body = map[string]string{
-		"email":    "admin@livepeer.dev",
-		"password": hash,
-	}
-	_, err = post("http://127.0.0.1:80/api/user", "", body)
-	if err != nil {
-		panic(err)
-	}
-	jwtBytes, err := post("http://127.0.0.1:80/api/user/token", "", body)
-	if err != nil {
-		panic(err)
-	}
-	var jwt JWTResp
-	err = json.Unmarshal(jwtBytes, &jwt)
-	if err != nil {
-		panic(err)
-	}
-	var apiTokenBody = map[string]string{
-		"name": "System Token - DO NOT DELETE",
-	}
-	tokenBytes, err := post("http://127.0.0.1:80/api/api-token", fmt.Sprintf("JWT %s", jwt.Token), apiTokenBody)
-	if err != nil {
-		panic(err)
-	}
-	var token APITokenResp
-	err = json.Unmarshal(tokenBytes, &token)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(token.ID)
 
 	f, err := os.OpenFile("/root/mist-api-connector.conf", os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -108,7 +129,7 @@ func main() {
 
 	defer f.Close()
 
-	str := fmt.Sprintf(mistConfTpl, token.ID)
+	str := fmt.Sprintf(mistConfTpl, apiToken)
 	_, err2 := f.WriteString(str)
 
 	if err2 != nil {

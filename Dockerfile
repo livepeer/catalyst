@@ -30,9 +30,6 @@ RUN apt install -y nodejs
 
 RUN pip3 install supervisor
 
-RUN echo "listen_addresses='*'" >> /var/lib/postgresql/10/main/postgresql.conf
-RUN echo "host all  all    0.0.0.0/0  trust" >> /var/lib/postgresql/10/main/pg_hba.conf
-
 RUN curl --silent -L -o - https://github.com/traefik/traefik/releases/download/v2.4.8/traefik_v2.4.8_linux_amd64.tar.gz | tar -C /usr/bin/ -xvz
 
 RUN npm install -g serve
@@ -44,6 +41,11 @@ COPY --from=mist-api-connector /root/mist-api-connector /usr/bin/mist-api-connec
 WORKDIR /data
 
 # Below this line, code copying and conf only
+
+RUN echo "listen_addresses='*'" >> /var/lib/postgresql/10/main/postgresql.conf
+RUN echo "data_directory = '/data/postgres'" >> /var/lib/postgresql/10/main/postgresql.conf
+RUN echo "host all  all    0.0.0.0/0  trust" >> /var/lib/postgresql/10/main/pg_hba.conf
+RUN apt install -y sudo rsync
 
 COPY mistserver.conf /etc/mistserver.conf
 
