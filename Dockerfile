@@ -20,7 +20,9 @@ RUN apt update && apt install -y \
   curl \
   musl \
   postgresql-all \
-  rabbitmq-server
+  rabbitmq-server \
+  sudo \
+  rsync
 RUN rabbitmq-plugins enable rabbitmq_management
 ENV RABBITMQ_LOGS "-"
 ENV RABBITMQ_DATA_DIR=/data/rabbitmq
@@ -45,7 +47,6 @@ WORKDIR /data
 RUN echo "listen_addresses='*'" >> /var/lib/postgresql/10/main/postgresql.conf
 RUN echo "data_directory = '/data/postgres'" >> /var/lib/postgresql/10/main/postgresql.conf
 RUN echo "host all  all    0.0.0.0/0  trust" >> /var/lib/postgresql/10/main/pg_hba.conf
-RUN apt install -y sudo rsync
 
 COPY mistserver.conf /etc/mistserver.conf
 

@@ -10,7 +10,7 @@
       entryPoints = ["web"]
       service = "service-mist"
       rule = "PathPrefix(`/hls`)"
-      priority = 5
+      priority = 6
 
     [http.routers.www]
       entryPoints = ["web"]
