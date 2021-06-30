@@ -58,6 +58,7 @@ api-token %s
 send-audio always
 api-server http://localhost
 mist-creds livepeer:password
+base-stream-name video
 `
 
 func main() {
