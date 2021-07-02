@@ -50,7 +50,8 @@ type JWTResp struct {
 }
 
 type APITokenResp struct {
-	ID string `json:id`
+	ID     string `json:id`
+	UserID string `json:userId`
 }
 
 const mistConfTpl string = `
@@ -117,7 +118,17 @@ func main() {
 		defer f.Close()
 
 		_, err = f.WriteString(apiToken)
+		if err != nil {
+			log.Fatal(err)
+		}
 
+		f, err = os.OpenFile("/data/user-id", os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+
+		_, err = f.WriteString(token.UserID)
 		if err != nil {
 			log.Fatal(err)
 		}
