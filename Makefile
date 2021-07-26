@@ -13,7 +13,7 @@ clean:
 dev: build run
 
 pull:
-	docker build --pull -t livepeer/in-a-box .
+	docker build --pull -t livepeer/in-a-box --build-arg MIST_URL=${MIST_URL} .
 
 shell:
 	docker exec -it box /bin/bash

@@ -34,7 +34,6 @@ RUN pip3 install supervisor
 
 RUN curl --silent -L -o - https://github.com/traefik/traefik/releases/download/v2.4.8/traefik_v2.4.8_linux_amd64.tar.gz | tar -C /usr/bin/ -xvz
 
-RUN npm install -g serve
 ARG MIST_URL
 RUN curl -o - --silent $MIST_URL | tar -C /usr/bin/ -xvz
 
@@ -56,7 +55,7 @@ COPY supervisord.conf /usr/local/supervisord.conf
 COPY traefik.toml /traefik.toml
 COPY traefik-routes.toml /traefik-routes.toml
 
-COPY --from=www /www /www
+COPY --from=www /app /www
 COPY --from=unpack /app/unpack-box /usr/bin/unpack-box
 
 ENTRYPOINT []

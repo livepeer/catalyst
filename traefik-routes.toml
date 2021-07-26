@@ -33,4 +33,4 @@
     [http.services.service-www]
       [http.services.service-www.loadBalancer]
         [[http.services.service-www.loadBalancer.servers]]
-          url = "http://localhost:5000/"
+          url = "http://localhost:3012/"
