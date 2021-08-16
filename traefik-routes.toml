@@ -6,12 +6,6 @@
       rule = "PathPrefix(`/api`)"
       priority = 10
 
-    [http.routers.mist]
-      entryPoints = ["web"]
-      service = "service-mist"
-      rule = "PathPrefix(`/hls`)"
-      priority = 6
-
     [http.routers.www]
       entryPoints = ["web"]
       service = "service-www"
@@ -24,11 +18,6 @@
       [http.services.service-api.loadBalancer]
         [[http.services.service-api.loadBalancer.servers]]
           url = "http://localhost:3004/"
-
-    [http.services.service-mist]
-      [http.services.service-mist.loadBalancer]
-        [[http.services.service-mist.loadBalancer.servers]]
-          url = "http://localhost:8081/"
 
     [http.services.service-www]
       [http.services.service-www.loadBalancer]

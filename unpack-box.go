@@ -60,6 +60,9 @@ send-audio always
 api-server http://localhost
 mist-creds livepeer:password
 base-stream-name video
+consul-mist-url http://localhost:8081
+etcd-endpoints 127.0.0.1:2379
+playback-domain localhost
 `
 
 func main() {

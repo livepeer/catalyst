@@ -14,4 +14,5 @@
 [providers]
   [providers.file]
     filename = "/traefik-routes.toml"
-  
+  [providers.etcd]
+    endpoints = ["127.0.0.1:2379"]

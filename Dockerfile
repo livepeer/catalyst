@@ -37,6 +37,12 @@ RUN curl --silent -L -o - https://github.com/traefik/traefik/releases/download/v
 ARG MIST_URL
 RUN curl -o - --silent $MIST_URL | tar -C /usr/bin/ -xvz
 
+ENV ETCD_VER v3.5.0
+RUN curl -L https://github.com/etcd-io/etcd/releases/download/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz \
+  && tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /usr/bin --strip-components=1 \
+  && rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz \
+  && etcd --version
+
 COPY --from=mist-api-connector /root/mist-api-connector /usr/bin/mist-api-connector
 
 WORKDIR /data
@@ -47,15 +53,15 @@ RUN echo "listen_addresses='*'" >> /var/lib/postgresql/10/main/postgresql.conf
 RUN echo "data_directory = '/data/postgres'" >> /var/lib/postgresql/10/main/postgresql.conf
 RUN echo "host all  all    0.0.0.0/0  trust" >> /var/lib/postgresql/10/main/pg_hba.conf
 
-COPY mistserver.conf /etc/mistserver.conf
-
+COPY --from=www /app /www
 COPY --from=api /app /api
+
+COPY mistserver.conf /etc/mistserver.conf
 
 COPY supervisord.conf /usr/local/supervisord.conf
 COPY traefik.toml /traefik.toml
 COPY traefik-routes.toml /traefik-routes.toml
 
-COPY --from=www /app /www
 COPY --from=unpack /app/unpack-box /usr/bin/unpack-box
 
 ENTRYPOINT []
