@@ -6,6 +6,12 @@
       rule = "PathPrefix(`/api`)"
       priority = 10
 
+    [http.routers.data]
+      entryPoints = ["web"]
+      service = "service-data"
+      rule = "PathPrefix(`/data`)"
+      priority = 10
+
     [http.routers.www]
       entryPoints = ["web"]
       service = "service-www"
@@ -18,6 +24,11 @@
       [http.services.service-api.loadBalancer]
         [[http.services.service-api.loadBalancer.servers]]
           url = "http://localhost:3004/"
+
+    [http.services.service-data]
+      [http.services.service-data.loadBalancer]
+        [[http.services.service-data.loadBalancer.servers]]
+          url = "http://localhost:8082/"
 
     [http.services.service-www]
       [http.services.service-www.loadBalancer]
