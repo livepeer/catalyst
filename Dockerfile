@@ -56,6 +56,9 @@ ENV RABBITMQ_LOGS "-"
 COPY ./install_rabbitmq.sh ./install_rabbitmq.sh
 RUN ./install_rabbitmq.sh
 
+# frontend - keep up high, it's big!
+COPY --from=www /app /www
+
 # mist-api-connector
 COPY --from=mist-api-connector /root/mist-api-connector /usr/bin/mist-api-connector
 
@@ -70,7 +73,6 @@ RUN echo "listen_addresses='*'" >> /var/lib/postgresql/10/main/postgresql.conf
 RUN echo "data_directory = '/data/postgres'" >> /var/lib/postgresql/10/main/postgresql.conf
 RUN echo "host all  all    0.0.0.0/0  trust" >> /var/lib/postgresql/10/main/pg_hba.conf
 
-COPY --from=www /app /www
 COPY --from=api /app /api
 
 COPY mistserver.conf /etc/mistserver.conf
