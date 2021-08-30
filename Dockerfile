@@ -23,9 +23,18 @@ RUN apt update && apt install -y \
   python3-pip \
   curl \
   musl \
-  postgresql-all \
   sudo \
-  rsync
+  rsync \
+  lsb-core
+
+# Postgres
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+  && curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+  && apt update \
+  && apt install -y postgresql-13 \
+  && echo "listen_addresses='*'" >> /var/lib/postgresql/13/main/postgresql.conf \
+  && echo "data_directory = '/data/postgres'" >> /var/lib/postgresql/13/main/postgresql.conf \
+  && echo "host all  all    0.0.0.0/0  trust" >> /var/lib/postgresql/13/main/pg_hba.conf
 
 # Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
@@ -68,10 +77,6 @@ COPY --from=analyzer /app/analyzer /usr/bin/analyzer
 WORKDIR /data
 
 # Below this line, code copying and conf only
-
-RUN echo "listen_addresses='*'" >> /var/lib/postgresql/10/main/postgresql.conf
-RUN echo "data_directory = '/data/postgres'" >> /var/lib/postgresql/10/main/postgresql.conf
-RUN echo "host all  all    0.0.0.0/0  trust" >> /var/lib/postgresql/10/main/pg_hba.conf
 
 COPY --from=api /app /api
 
