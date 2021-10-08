@@ -1,6 +1,6 @@
 FROM livepeerci/api:master as api
 FROM livepeerci/www:master as www
-FROM livepeer/streamtester:mist-api-connector as mist-api-connector
+FROM livepeer/mist-api-connector:latest as mist-api-connector
 FROM livepeer/data:latest as analyzer
 
 FROM golang as unpack
@@ -25,7 +25,8 @@ RUN apt update && apt install -y \
   musl \
   sudo \
   rsync \
-  lsb-core
+  lsb-core \
+  ca-certificates
 
 # Postgres
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
