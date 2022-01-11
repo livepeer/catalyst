@@ -2,8 +2,8 @@
 all: build
 
 .PHONY: build
-build:
-	PKG_CONFIG_PATH=./lib/pkgconfig go build -o ./build/ ./cmd/livepeer/livepeer.go
+analyzer:
+	PKG_CONFIG_PATH=./lib/pkgconfig go build -o ./bin/ ./cmd/MistOutLivepeerAnalyzer/MistOutLivepeerAnalyzer.go
 
 .PHONY: ffmpeg
 ffmpeg:
