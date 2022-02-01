@@ -9,7 +9,7 @@ ffmpeg:
 
 .PHONY: build
 build:
-	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/ main.go
+	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/downloader main.go
 
 .PHONY: mist
 mist:

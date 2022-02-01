@@ -161,6 +161,9 @@ func ValidateFlags(flags CliFlags) error {
 }
 
 func ExtractZipArchive(archiveFile, extractPath, archivePath string) {
+	if len(archivePath) > 0 && !strings.HasSuffix(archivePath, ".exe") {
+		archivePath += ".exe"
+	}
 	zipReader, err := zip.OpenReader(archiveFile)
 	CheckError(err)
 	for _, file := range zipReader.File {
