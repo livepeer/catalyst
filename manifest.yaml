@@ -1,0 +1,18 @@
+version:  1.0
+release: latest
+
+box:
+  - name: analyzer
+    src: https://github.com/livepeer/livepeer-data
+
+  - name: api
+    src: https://github.com/livepeer/livepeer-com
+    binary: livepeer-api
+
+  - name: livepeer
+    src: https://github.com/livepeer/go-livepeer
+    release: v0.5.26
+
+  - name: www
+    src: https://github.com/livepeer/livepeer-com
+    binary: livepeer-www
