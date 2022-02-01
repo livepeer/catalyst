@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/golang/glog"
 	"github.com/peterbourgon/ff/v3"
 	"gopkg.in/yaml.v2"
 )
@@ -32,6 +33,7 @@ type CliFlags struct {
 	Platform     string
 	Architecture string
 	ManifestFile string
+	Verbosity    string
 }
 
 type Service struct {
@@ -86,12 +88,17 @@ func CheckError(err error) {
 }
 
 func DownloadFile(path, url string) error {
-	if info, err := os.Stat(path); err == nil && info.Size() > 0 {
-		return nil
-	}
+	glog.V(5).Infof("Downloading %s", url)
+	// if info, err := os.Stat(path); err == nil && info.Size() > 0 {
+	// 	return nil
+	// }
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
+	}
+	glog.V(9).Infof("Response statusCode=%d", resp.StatusCode)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("HTTP %d while downloading %s", resp.StatusCode, url)
 	}
 	defer resp.Body.Close()
 	out, err := os.Create(path)
@@ -108,7 +115,8 @@ func DownloadService(flags CliFlags, manifest BoxManifest, service Service, wg *
 	archiveExt := PlatformExt(flags.Platform)
 	archiveUrl, archiveName := GenerateArchiveUrl(flags.Platform, manifest.Release, flags.Architecture, archiveExt, service)
 	downloadPath := filepath.Join(flags.DownloadPath, archiveName)
-	DownloadFile(downloadPath, archiveUrl)
+	err := DownloadFile(downloadPath, archiveUrl)
+	CheckError(err)
 	if archiveExt == "zip" {
 		ExtractZipArchive(downloadPath, flags.DownloadPath, service.ArchivePath)
 	} else {
@@ -217,8 +225,11 @@ func ExtractTarGzipArchive(archiveFile, extractPath, archivePath string) {
 
 func Run(buildFlags BuildFlags) {
 	cliFlags := CliFlags{}
+	flag.Set("logtostderr", "true")
+	vFlag := flag.Lookup("v")
 	fs := flag.NewFlagSet("box-livepeer", flag.ExitOnError)
 
+	fs.StringVar(&cliFlags.Verbosity, "v", "", "Log verbosity.  {4|5|6}")
 	fs.StringVar(&cliFlags.Platform, "platform", runtime.GOOS, "One of linux/windows/darwin")
 	fs.StringVar(&cliFlags.Architecture, "architecture", runtime.GOARCH, "System architecture (amd64/arm64)")
 	fs.StringVar(&cliFlags.DownloadPath, "path", fmt.Sprintf(".%sbin", string(os.PathSeparator)), "Path to store binaries")
@@ -231,6 +242,8 @@ func Run(buildFlags BuildFlags) {
 		ff.WithEnvVarPrefix("LP"),
 		ff.WithEnvVarSplit(","),
 	)
+	flag.CommandLine.Parse(nil)
+	vFlag.Value.Set(cliFlags.Verbosity)
 
 	err := ValidateFlags(cliFlags)
 	CheckError(err)
