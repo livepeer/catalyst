@@ -4,15 +4,24 @@ release: latest
 box:
   - name: analyzer
     src: https://github.com/livepeer/livepeer-data
+    skip: true
 
   - name: api
     src: https://github.com/livepeer/livepeer-com
-    binary: livepeer-api
+    skip: true
+
+  - name: mapic
+    src: https://github.com/livepeer/stream-tester
+    binary: livepeer-mist-api-connector
+    skip: true
 
   - name: livepeer
     src: https://github.com/livepeer/go-livepeer
     release: v0.5.26
+    binary: livepeer
+    archivePath: livepeer
 
   - name: www
     src: https://github.com/livepeer/livepeer-com
     binary: livepeer-www
+    skip: true
