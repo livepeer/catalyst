@@ -51,7 +51,7 @@ func main() {
 				scanner := bufio.NewScanner(pipe)
 				for scanner.Scan() {
 					text := scanner.Text()
-					fmt.Fprintf(os.Stderr, "%s|INFO|%d|||%s\n", procname, mypid, text)
+					fmt.Fprintf(os.Stderr, "INFO|%s|%d|||%s\n", procname, mypid, text)
 				}
 			}(pipe)
 		}
