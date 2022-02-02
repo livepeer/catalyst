@@ -62,3 +62,7 @@ mac-dev:
 	set -x \
 	&& rm -rf /Volumes/RAMDisk/mist \
 	&& TMP=/Volumes/RAMDisk ./bin/MistController -c mist.conf -g 4
+
+.PHONY: livepeer-log
+livepeer-log:
+	go build -o ./bin/livepeer-log ./cmd/livepeer-log/livepeer-log.go
