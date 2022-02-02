@@ -34,8 +34,8 @@ go-livepeer:
 	&& cd ../go-livepeer \
 	&& PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig make livepeer livepeer_cli \
 	&& cd - \
-	&& cp ../go-livepeer/livepeer ./bin/livepeer \
-	&& cp ../go-livepeer/livepeer_cli ./bin/livepeer-cli
+	&& mv ../go-livepeer/livepeer ./bin/livepeer \
+	&& mv ../go-livepeer/livepeer_cli ./bin/livepeer-cli
 
 .PHONY: livepeer-www
 livepeer-www:
