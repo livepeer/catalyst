@@ -83,7 +83,7 @@ func PlatformExt(platform string) string {
 
 func CheckError(err error) {
 	if err != nil {
-		panic(err)
+		glog.Fatal(err)
 	}
 }
 
@@ -255,6 +255,21 @@ func Run(buildFlags BuildFlags) {
 		}
 		waitGroup.Add(1)
 		DownloadService(cliFlags, manifest, element, &waitGroup)
+	}
+	files, err := ioutil.ReadDir(cliFlags.DownloadPath)
+	if err != nil {
+		glog.Fatal(err)
+	}
+
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), ".zip") || strings.HasSuffix(file.Name(), ".tar.gz") {
+			fullpath := filepath.Join(cliFlags.DownloadPath, file.Name())
+			glog.V(5).Infof("Cleaning up %s", fullpath)
+			err = os.Remove(fullpath)
+			if err != nil {
+				glog.Fatal(err)
+			}
+		}
 	}
 	waitGroup.Wait()
 }
