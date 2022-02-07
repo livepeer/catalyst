@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
+	"github.com/livepeer/livepeer-in-a-box/internal/constants"
 	"github.com/peterbourgon/ff/v3"
 	"gopkg.in/yaml.v2"
 )
@@ -27,13 +28,13 @@ type BuildFlags struct {
 }
 
 type CliFlags struct {
-	Version      string
-	DownloadOnly bool
-	DownloadPath string
-	Platform     string
-	Architecture string
-	ManifestFile string
-	Verbosity    string
+	SkipDownloaded bool
+	Cleanup        bool
+	DownloadPath   string
+	Platform       string
+	Architecture   string
+	ManifestFile   string
+	Verbosity      string
 }
 
 type Service struct {
@@ -52,6 +53,7 @@ type BoxManifest struct {
 }
 
 func IsSupportedPlatformArch(platform, arch string) bool {
+	glog.Infof("Checking if we support platform: %q and arch: %q", platform, arch)
 	switch platform {
 	case "linux",
 		"darwin":
@@ -73,6 +75,7 @@ func IsManifestFileExists(path string) bool {
 }
 
 func PlatformExt(platform string) string {
+	glog.Infof("Fetching archive extension for %q systems.", platform)
 	platformExtMap := map[string]string{
 		"linux":   "tar.gz",
 		"darwin":  "tar.gz",
@@ -87,11 +90,12 @@ func CheckError(err error) {
 	}
 }
 
-func DownloadFile(path, url string) error {
+func DownloadFile(path, url string, skipDownloaded bool) error {
 	glog.V(5).Infof("Downloading %s", url)
-	// if info, err := os.Stat(path); err == nil && info.Size() > 0 {
-	// 	return nil
-	// }
+	if info, err := os.Stat(path); err == nil && info.Size() > 0 && skipDownloaded {
+		glog.Infof("Found already downloaded archive. Skipping!")
+		return nil
+	}
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -114,12 +118,16 @@ func DownloadService(flags CliFlags, manifest BoxManifest, service Service, wg *
 	defer wg.Done()
 	archiveExt := PlatformExt(flags.Platform)
 	archiveUrl, archiveName := GenerateArchiveUrl(flags.Platform, manifest.Release, flags.Architecture, archiveExt, service)
+	glog.Infof("Will download %s to %q", archiveName, flags.DownloadPath)
 	downloadPath := filepath.Join(flags.DownloadPath, archiveName)
-	err := DownloadFile(downloadPath, archiveUrl)
+	err := DownloadFile(downloadPath, archiveUrl, flags.SkipDownloaded)
 	CheckError(err)
+	glog.Infof("Downloaded %s. Getting ready for extraction!", downloadPath)
 	if archiveExt == "zip" {
+		glog.Info("Extracting zip archive!")
 		ExtractZipArchive(downloadPath, flags.DownloadPath, service.ArchivePath)
 	} else {
+		glog.Info("Extracting tarball archive!")
 		ExtractTarGzipArchive(downloadPath, flags.DownloadPath, service.ArchivePath)
 	}
 }
@@ -133,15 +141,16 @@ func GenerateArchiveUrl(platform, release, architecture, extension string, servi
 		packageName = serviceElement.Binary
 	}
 	archiveName := fmt.Sprintf("%s-%s-%s.%s", packageName, platform, architecture, extension)
-	urlFormat := "%s/releases/download/%s/%s"
-	if release == "latest" {
-		urlFormat = "%s/releases/%s/download/%s"
+	urlFormat := constants.TAGGED_DOWNLOAD_URL_FORMAT
+	if release == constants.LATEST_TAG_RELEASE_NAME {
+		urlFormat = constants.LATEST_DOWNLOAD_URL_FORMAT
 	}
 	return fmt.Sprintf(urlFormat, serviceElement.Src, release, archiveName), archiveName
 }
 
 func ParseYamlManifest(manifestPath string) BoxManifest {
 	var manifestConfig BoxManifest
+	glog.Infof("Reading mnifest file at %q", manifestPath)
 	file, _ := ioutil.ReadFile(manifestPath)
 	err := yaml.Unmarshal(file, &manifestConfig)
 	CheckError(err)
@@ -153,11 +162,11 @@ func ParseYamlManifest(manifestPath string) BoxManifest {
 
 func ValidateFlags(flags CliFlags) error {
 	if !IsSupportedPlatformArch(flags.Platform, flags.Architecture) {
-		return errors.New(fmt.Sprintf(
+		return fmt.Errorf(
 			"Invalid combination of platform+architecture detected: %s+%s",
 			flags.Platform,
 			flags.Architecture,
-		))
+		)
 	}
 	if !IsManifestFileExists(flags.ManifestFile) {
 		return errors.New("Invalid path to manifest file!")
@@ -182,11 +191,12 @@ func ExtractZipArchive(archiveFile, extractPath, archivePath string) {
 			} else {
 				path = filepath.Join(extractPath, file.Name)
 			}
+			glog.Infof("Extracting to %q", path)
 			outfile, err := os.Create(path)
 			CheckError(err)
 			reader, _ := file.Open()
 			if _, err := io.Copy(outfile, reader); err != nil {
-				fmt.Println("Failed to create file")
+				glog.Error("Failed to create file")
 			}
 			outfile.Chmod(fs.FileMode(file.Mode()))
 			outfile.Close()
@@ -212,10 +222,11 @@ func ExtractTarGzipArchive(archiveFile, extractPath, archivePath string) {
 			} else {
 				path = filepath.Join(extractPath, header.Name)
 			}
+			glog.Infof("Extracting to %q", path)
 			outfile, err := os.Create(path)
 			CheckError(err)
 			if _, err := io.Copy(outfile, tarReader); err != nil {
-				fmt.Println("Failed to create file")
+				glog.Errorf("Failed to create file: %q", path)
 			}
 			outfile.Chmod(fs.FileMode(header.Mode))
 			outfile.Close()
@@ -227,13 +238,15 @@ func Run(buildFlags BuildFlags) {
 	cliFlags := CliFlags{}
 	flag.Set("logtostderr", "true")
 	vFlag := flag.Lookup("v")
-	fs := flag.NewFlagSet("box-livepeer", flag.ExitOnError)
+	fs := flag.NewFlagSet(constants.APP_NAME, flag.ExitOnError)
 
 	fs.StringVar(&cliFlags.Verbosity, "v", "", "Log verbosity.  {4|5|6}")
 	fs.StringVar(&cliFlags.Platform, "platform", runtime.GOOS, "One of linux/windows/darwin")
 	fs.StringVar(&cliFlags.Architecture, "architecture", runtime.GOARCH, "System architecture (amd64/arm64)")
 	fs.StringVar(&cliFlags.DownloadPath, "path", fmt.Sprintf(".%sbin", string(os.PathSeparator)), "Path to store binaries")
 	fs.StringVar(&cliFlags.ManifestFile, "manifest", "manifest.yaml", "Path to manifest yaml file")
+	fs.BoolVar(&cliFlags.SkipDownloaded, "skip-downloaded", false, "Skip already downloaded archive (if found)")
+	fs.BoolVar(&cliFlags.Cleanup, "cleanup", true, "Cleanup downloaded archives after extraction")
 
 	ff.Parse(
 		fs, os.Args[1:],
@@ -256,11 +269,17 @@ func Run(buildFlags BuildFlags) {
 		waitGroup.Add(1)
 		DownloadService(cliFlags, manifest, element, &waitGroup)
 	}
+	waitGroup.Wait()
+
+	if !cliFlags.Cleanup {
+		glog.Info("Not cleaning up after extraction")
+		return
+	}
+
 	files, err := ioutil.ReadDir(cliFlags.DownloadPath)
 	if err != nil {
 		glog.Fatal(err)
 	}
-
 	for _, file := range files {
 		if strings.HasSuffix(file.Name(), ".zip") || strings.HasSuffix(file.Name(), ".tar.gz") {
 			fullpath := filepath.Join(cliFlags.DownloadPath, file.Name())
@@ -271,5 +290,4 @@ func Run(buildFlags BuildFlags) {
 			}
 		}
 	}
-	waitGroup.Wait()
 }

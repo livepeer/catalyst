@@ -1,6 +1,6 @@
 package main
 
-import "github.com/livepeer/livepeer-in-a-box/downloader"
+import "github.com/livepeer/livepeer-in-a-box/cmd/downloader"
 
 var Version = "undefined"
 

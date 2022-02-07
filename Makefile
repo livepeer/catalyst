@@ -55,7 +55,7 @@ livepeer-api:
 
 .PHONY: download
 download:
-	go run main.go -v=5
+	go run main.go -v=5 $(ARGS)
 
 .PHONY: mac-dev
 mac-dev:
