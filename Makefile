@@ -7,7 +7,7 @@ $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
 
 .PHONY: all
-all: ffmpeg go-livepeer mistserver
+all: download mistserver livepeer-log
 
 .PHONY: ffmpeg
 ffmpeg:
@@ -56,7 +56,7 @@ mistserver:
 	export C_INCLUDE_PATH=~$(buildpath)/compiled/include \
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
-	&& cmake ../../../DMS -DPERPETUAL=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}  \
+	&& cmake ../../../DMS -DPERPETUAL=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DMIST_DEPENDENCY_DIR=$(buildpath)/compiled \
 	&& make -j${PROC_COUNT} \
 	&& make -j${PROC_COUNT} MistProcLivepeer \
 	&& make install
@@ -94,7 +94,7 @@ download:
 mac-dev:
 	set -x \
 	&& rm -rf /Volumes/RAMDisk/mist \
-	&& TMP=/Volumes/RAMDisk ./bin/MistController -c mist.conf -g 4
+	&& TMP=/Volumes/RAMDisk ./bin/MistController -c ~/mistserver.dev.conf -g 4
 
 .PHONY: livepeer-log
 livepeer-log:
