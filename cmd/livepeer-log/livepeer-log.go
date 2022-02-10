@@ -6,6 +6,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -20,6 +21,11 @@ func main() {
 	procname := path.Base(os.Args[1])
 	// panic(fmt.Sprintf("===== %s\n", strings.Join(os.Args, " ")))
 	rest := os.Args[2:]
+	// If we're being called for our OWN -j, respond accordingly
+	if len(rest) == 0 && procname == "-j" {
+		printJsonInfo()
+		os.Exit(0)
+	}
 	dashJ := false
 	for _, seg := range rest {
 		if seg == "-j" {
@@ -78,4 +84,32 @@ func main() {
 		newerr := fmt.Sprintf("%s - invocation %s", progerr.Error(), strings.Join(os.Args, " "))
 		panic(newerr)
 	}
+}
+
+type JSONInfo struct {
+	Name     string `json:"name"`
+	Friendly string `json:"friendly"`
+	Desc     string `json:"desc"`
+	Optional struct {
+		Port struct {
+			Option  string `json:"option"`
+			Default int    `json:"default"`
+			Help    string `json:"help"`
+		} `json:"port"`
+	} `json:"optional"`
+	Version string `json:"version"`
+}
+
+func printJsonInfo() {
+	jsonInfo := JSONInfo{
+		Name:     "Livepeer Logger",
+		Friendly: "Logger for livepeer-* applications",
+		Desc:     "Logger for other livepeer-whatever applications. No need to add directly.",
+		Version:  "0.0.1",
+	}
+	blob, err := json.Marshal(jsonInfo)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(blob))
 }
