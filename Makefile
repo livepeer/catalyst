@@ -99,3 +99,7 @@ mac-dev:
 .PHONY: livepeer-log
 livepeer-log:
 	go build -o ./bin/livepeer-log ./cmd/livepeer-log/livepeer-log.go
+
+.PHONY: clean
+clean:
+	git clean -ffdx
