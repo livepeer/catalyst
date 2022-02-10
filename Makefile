@@ -94,7 +94,7 @@ download:
 mac-dev:
 	set -x \
 	&& rm -rf /Volumes/RAMDisk/mist \
-	&& TMP=/Volumes/RAMDisk ./bin/MistController -c ~/mistserver.dev.conf -g 4
+	&& TMP=/Volumes/RAMDisk ./bin/MistController -c $(HOME)/mistserver.dev.conf -g 10
 
 .PHONY: livepeer-log
 livepeer-log:
