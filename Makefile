@@ -70,6 +70,14 @@ go-livepeer:
 	&& mv ../go-livepeer/livepeer ./bin/livepeer \
 	&& mv ../go-livepeer/livepeer_cli ./bin/livepeer-cli
 
+.PHONY: livepeer-task-runner
+livepeer-task-runner:
+	set -x \
+	&& cd ../task-runner \
+	&& PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig make \
+	&& cd - \
+	&& mv ../task-runner/build/task-runner ./bin/livepeer-task-runner
+
 .PHONY: livepeer-www
 livepeer-www:
 	set -x \
