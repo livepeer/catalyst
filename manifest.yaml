@@ -1,4 +1,4 @@
-version:  1.0
+version: 1.0
 release: latest
 
 box:
@@ -13,8 +13,8 @@ box:
     binary: livepeer-mist-api-connector
 
   - name: livepeer
-    src: https://github.com/iameli/go-livepeer
-    release: v0.5.26-box
+    src: https://github.com/livepeer/go-livepeer
+    # release: v0.5.26-box
     binary: livepeer
     archivePath: livepeer
 
