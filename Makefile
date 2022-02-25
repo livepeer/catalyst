@@ -7,7 +7,7 @@ $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
 
 .PHONY: all
-all: download mistserver livepeer-log
+all: download mistserver livepeer-log ffmpeg livepeer-task-runner
 
 .PHONY: ffmpeg
 ffmpeg:
@@ -110,7 +110,7 @@ download:
 mac-dev:
 	set -x \
 	&& rm -rf /Volumes/RAMDisk/mist \
-	&& TMP=/Volumes/RAMDisk ./bin/MistController -c $(HOME)/mistserver.dev.conf -g 10
+	&& TMP=/Volumes/RAMDisk ./bin/MistController -c $(HOME)/mistserver.dev.conf
 
 .PHONY: livepeer-log
 livepeer-log:

@@ -23,7 +23,12 @@ func main() {
 	rest := os.Args[2:]
 	// If we're being called for our OWN -j, respond accordingly
 	if len(rest) == 0 && procname == "-j" {
-		printJsonInfo()
+		printJsonInfo(JSONInfo{
+			Name:     "Livepeer Logger",
+			Friendly: "Logger for livepeer-* applications",
+			Desc:     "Logger for other livepeer-whatever applications. No need to add directly.",
+			Version:  "0.0.1",
+		})
 		os.Exit(0)
 	}
 	dashJ := false
@@ -31,6 +36,15 @@ func main() {
 		if seg == "-j" {
 			dashJ = true
 		}
+	}
+	if procname == "livepeer-victoria-metrics" && dashJ {
+		printJsonInfo(JSONInfo{
+			Name:     "Livepeer Victoria Metrics",
+			Friendly: "Livepeer-in-a-Box packaged Victoria Metrics",
+			Desc:     "Livepeer-in-a-Box packaged Victoria Metrics. Comes with some built-in scrape configs for dev.",
+			Version:  "0.0.1",
+		})
+		os.Exit(0)
 	}
 	mypid := os.Getpid()
 	cmd := exec.Command(os.Args[1], rest...)
@@ -105,13 +119,7 @@ type JSONInfo struct {
 	Version string `json:"version"`
 }
 
-func printJsonInfo() {
-	jsonInfo := JSONInfo{
-		Name:     "Livepeer Logger",
-		Friendly: "Logger for livepeer-* applications",
-		Desc:     "Logger for other livepeer-whatever applications. No need to add directly.",
-		Version:  "0.0.1",
-	}
+func printJsonInfo(jsonInfo JSONInfo) {
 	blob, err := json.Marshal(jsonInfo)
 	if err != nil {
 		panic(err)
