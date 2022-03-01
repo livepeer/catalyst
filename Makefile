@@ -2,9 +2,9 @@ PROC_COUNT+="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 GO_LDFLAG_VERSION := -X 'main.Version=$(shell git describe --all --dirty)'
 
-buildpath=$(realpath ./build)
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
+buildpath=$(realpath ./build)
 
 .PHONY: all
 all: download mistserver livepeer-log ffmpeg livepeer-task-runner
@@ -117,10 +117,13 @@ livepeer-log:
 
 .PHONY: clean
 clean:
-	git clean -ffdx
+	git clean -ffdx && mkdir -p bin build
 
 .PHONY: docker-compose
 docker-compose:
-	mkdir -p .docker/rabbitmq/data \
-	&& mkdir -p .docker/postgres/data \
+	mkdir -p .docker/rabbitmq/data .docker/postgres/data \
 	&& docker-compose up -d
+
+.PHONY: full-reset
+full-reset: clean all
+	echo "done"

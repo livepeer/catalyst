@@ -184,7 +184,9 @@ func ValidateFlags(flags CliFlags) error {
 		return errors.New("Invalid path to manifest file!")
 	}
 	if info, err := os.Stat(flags.DownloadPath); !(err == nil && info.IsDir()) {
-		return errors.New("Invalid path provided for downloaded binaries! Check if it exists?")
+		if err := os.MkdirAll(flags.DownloadPath, os.ModePerm); err != nil {
+			glog.Fatal(err)
+		}
 	}
 	return nil
 }
