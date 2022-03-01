@@ -73,6 +73,10 @@ func main() {
 		for {
 			sig := <-sigChan
 			if err := cmd.Process.Signal(sig); err != nil {
+				// Appears to be a mac-only issue where this fires before cmd.Run() returns
+				if err.Error() == "os: process already finished" {
+					break
+				}
 				panic(err)
 			}
 		}
@@ -84,6 +88,7 @@ func main() {
 		newerr := fmt.Sprintf("%s - invocation %s", progerr.Error(), strings.Join(os.Args, " "))
 		panic(newerr)
 	}
+	os.Exit(0)
 }
 
 type JSONInfo struct {
