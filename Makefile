@@ -56,7 +56,7 @@ mistserver:
 	export C_INCLUDE_PATH=~$(buildpath)/compiled/include \
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
-	&& cmake ../../../DMS -DPERPETUAL=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DMIST_DEPENDENCY_DIR=$(buildpath)/compiled \
+	&& cmake ../../../mistserver -DPERPETUAL=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled \
 	&& make -j${PROC_COUNT} \
 	&& make -j${PROC_COUNT} MistProcLivepeer \
 	&& make install
