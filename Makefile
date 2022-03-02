@@ -4,6 +4,7 @@ GO_LDFLAG_VERSION := -X 'main.Version=$(shell git describe --all --dirty)'
 
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
+$(shell mkdir -p $(HOME)/.config/livepeer-in-a-box)
 buildpath=$(realpath ./build)
 
 .PHONY: all
@@ -109,7 +110,12 @@ download:
 mac-dev:
 	set -x \
 	&& rm -rf /Volumes/RAMDisk/mist \
-	&& TMP=/Volumes/RAMDisk ./bin/MistController -c $(HOME)/mistserver.dev.conf
+	&& TMP=/Volumes/RAMDisk make dev
+
+.PHONY: dev
+dev:
+	stat $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf || cp ./config/mistserver.dev.conf $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf \
+	&& ./bin/MistController -c $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf
 
 .PHONY: livepeer-log
 livepeer-log:
@@ -124,6 +130,10 @@ docker-compose:
 	mkdir -p .docker/rabbitmq/data .docker/postgres/data \
 	&& docker-compose up -d
 
+.PHONY: docker-compose-rm
+docker-compose-rm:
+	docker-compose rm -f
+
 .PHONY: full-reset
-full-reset: clean all
+full-reset: docker-compose-rm clean docker-compose all
 	echo "done"

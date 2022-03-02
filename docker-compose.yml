@@ -10,7 +10,8 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - "./.docker/postgres/data:/var/lib/postgresql/data"
+      - ./.docker/postgres/data:/var/lib/postgresql/data
+      - ./config/box.sql:/docker-entrypoint-initdb.d/create_tables.sql
 
   rabbitmq:
     image: rabbitmq:3.9.13-management
