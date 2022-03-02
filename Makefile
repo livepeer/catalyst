@@ -2,12 +2,13 @@ PROC_COUNT+="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 GO_LDFLAG_VERSION := -X 'main.Version=$(shell git describe --all --dirty)'
 
-buildpath=$(realpath ./build)
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
+$(shell mkdir -p $(HOME)/.config/livepeer-in-a-box)
+buildpath=$(realpath ./build)
 
 .PHONY: all
-all: download mistserver livepeer-log
+all: download mistserver livepeer-log ffmpeg livepeer-task-runner
 
 .PHONY: ffmpeg
 ffmpeg:
@@ -56,9 +57,8 @@ mistserver:
 	export C_INCLUDE_PATH=~$(buildpath)/compiled/include \
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
-	&& cmake ../../../DMS -DPERPETUAL=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DMIST_DEPENDENCY_DIR=$(buildpath)/compiled \
+	&& cmake ../../../mistserver -DPERPETUAL=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 	&& make -j${PROC_COUNT} \
-	&& make -j${PROC_COUNT} MistProcLivepeer \
 	&& make install
 
 .PHONY: go-livepeer
@@ -106,11 +106,20 @@ livepeer-mist-api-connector:
 download:
 	go run main.go -v=5 $(ARGS)
 
-.PHONY: mac-dev
-mac-dev:
-	set -x \
-	&& rm -rf /Volumes/RAMDisk/mist \
-	&& TMP=/Volumes/RAMDisk ./bin/MistController -c $(HOME)/mistserver.dev.conf -g 10
+.PHONY: dev
+dev:
+	if [ $$(uname) == "Darwin" ]; then \
+		if [ ! -d "/Volumes/RAMDisk/" ]; then \
+			disk=$$(hdiutil attach -nomount ram://4194304) \
+			&& sleep 3 \
+			&& diskutil erasevolume HFS+ "RAMDisk" $$disk \
+			&& echo "Created /Volumes/RAMDisk from $$disk"; \
+		fi \
+		&& rm -rf /Volumes/RAMDisk/mist \
+		&& export TMP=/Volumes/RAMDisk; \
+	fi \
+	&& stat $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf || cp ./config/mistserver.dev.conf $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf \
+	&& ./bin/MistController -c $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf
 
 .PHONY: livepeer-log
 livepeer-log:
@@ -118,4 +127,18 @@ livepeer-log:
 
 .PHONY: clean
 clean:
-	git clean -ffdx
+	git clean -ffdx && mkdir -p bin build
+
+.PHONY: docker-compose
+docker-compose:
+	mkdir -p .docker/rabbitmq/data .docker/postgres/data \
+	&& docker-compose up -d
+
+.PHONY: docker-compose-rm
+docker-compose-rm:
+	docker-compose stop; docker-compose rm -f
+
+.PHONY: full-reset
+full-reset: docker-compose-rm clean all
+	mv $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf $(HOME)/.config/livepeer-in-a-box/mistserver-$$(date +%s).dev.conf || echo '' \
+	&& echo "done"

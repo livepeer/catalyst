@@ -21,3 +21,14 @@ box:
   - name: www
     src: https://github.com/livepeer/livepeer-com
     binary: livepeer-www
+
+  - name: victoria-metrics
+    src: https://github.com/VictoriaMetrics/VictoriaMetrics
+    release: v1.73.1
+    archivePath: victoria-metrics-prod
+    outputPath: livepeer-victoria-metrics
+    srcFilenames:
+      linux-amd64: victoria-metrics-amd64-v1.73.1.tar.gz
+      linux-arm64: victoria-metrics-arm64-v1.73.1.tar.gz
+      darwin-amd64: victoria-metrics-darwin-amd64-v1.73.1.tar.gz
+      darwin-arm64: victoria-metrics-darwin-arm64-v1.73.1.tar.gz

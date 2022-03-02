@@ -38,12 +38,14 @@ type CliFlags struct {
 }
 
 type Service struct {
-	Name        string `yaml:"name"`
-	Src         string `yaml:"src"`
-	Binary      string `yaml:"binary,omitempty"`
-	Release     string `yaml:"release,omitempty"`
-	ArchivePath string `yaml:"archivePath,omitempty"`
-	Skip        bool   `yaml:"skip"`
+	Name         string            `yaml:"name"`
+	Src          string            `yaml:"src"`
+	SrcFilenames map[string]string `yaml:"srcFilenames"`
+	Binary       string            `yaml:"binary,omitempty"`
+	Release      string            `yaml:"release,omitempty"`
+	ArchivePath  string            `yaml:"archivePath,omitempty"`
+	OutputPath   string            `yaml:"outputPath,omitempty"`
+	Skip         bool              `yaml:"skip"`
 }
 
 type BoxManifest struct {
@@ -125,10 +127,10 @@ func DownloadService(flags CliFlags, manifest BoxManifest, service Service, wg *
 	glog.Infof("Downloaded %s. Getting ready for extraction!", downloadPath)
 	if archiveExt == "zip" {
 		glog.Info("Extracting zip archive!")
-		ExtractZipArchive(downloadPath, flags.DownloadPath, service.ArchivePath)
+		ExtractZipArchive(downloadPath, flags.DownloadPath, service)
 	} else {
 		glog.Info("Extracting tarball archive!")
-		ExtractTarGzipArchive(downloadPath, flags.DownloadPath, service.ArchivePath)
+		ExtractTarGzipArchive(downloadPath, flags.DownloadPath, service)
 	}
 }
 
@@ -136,11 +138,21 @@ func GenerateArchiveUrl(platform, release, architecture, extension string, servi
 	if len(serviceElement.Release) > 0 {
 		release = serviceElement.Release
 	}
-	packageName := fmt.Sprintf("livepeer-%s", serviceElement.Name)
-	if len(serviceElement.Binary) > 0 {
-		packageName = serviceElement.Binary
+	var archiveName string
+	if serviceElement.SrcFilenames != nil {
+		platArch := fmt.Sprintf("%s-%s", platform, architecture)
+		name, ok := serviceElement.SrcFilenames[platArch]
+		if !ok {
+			panic(fmt.Errorf("%s build not found in srcFilenames for %s", serviceElement.Name, platArch))
+		}
+		archiveName = name
+	} else {
+		packageName := fmt.Sprintf("livepeer-%s", serviceElement.Name)
+		if len(serviceElement.Binary) > 0 {
+			packageName = serviceElement.Binary
+		}
+		archiveName = fmt.Sprintf("%s-%s-%s.%s", packageName, platform, architecture, extension)
 	}
-	archiveName := fmt.Sprintf("%s-%s-%s.%s", packageName, platform, architecture, extension)
 	urlFormat := constants.TAGGED_DOWNLOAD_URL_FORMAT
 	if release == constants.LATEST_TAG_RELEASE_NAME {
 		urlFormat = constants.LATEST_DOWNLOAD_URL_FORMAT
@@ -172,22 +184,26 @@ func ValidateFlags(flags CliFlags) error {
 		return errors.New("Invalid path to manifest file!")
 	}
 	if info, err := os.Stat(flags.DownloadPath); !(err == nil && info.IsDir()) {
-		return errors.New("Invalid path provided for downloaded binaries! Check if it exists?")
+		if err := os.MkdirAll(flags.DownloadPath, os.ModePerm); err != nil {
+			glog.Fatal(err)
+		}
 	}
 	return nil
 }
 
-func ExtractZipArchive(archiveFile, extractPath, archivePath string) {
-	if len(archivePath) > 0 && !strings.HasSuffix(archivePath, ".exe") {
-		archivePath += ".exe"
+func ExtractZipArchive(archiveFile, extractPath string, service Service) {
+	if len(service.ArchivePath) > 0 && !strings.HasSuffix(service.ArchivePath, ".exe") {
+		service.ArchivePath += ".exe"
 	}
 	zipReader, err := zip.OpenReader(archiveFile)
 	CheckError(err)
 	for _, file := range zipReader.File {
-		if strings.HasSuffix(file.Name, archivePath) {
+		if strings.HasSuffix(file.Name, service.ArchivePath) {
 			var path string
-			if len(archivePath) > 0 {
-				path = filepath.Join(extractPath, archivePath)
+			if len(service.OutputPath) > 0 {
+				path = filepath.Join(extractPath, service.OutputPath)
+			} else if len(service.ArchivePath) > 0 {
+				path = filepath.Join(extractPath, service.ArchivePath)
 			} else {
 				path = filepath.Join(extractPath, file.Name)
 			}
@@ -204,7 +220,7 @@ func ExtractZipArchive(archiveFile, extractPath, archivePath string) {
 	}
 }
 
-func ExtractTarGzipArchive(archiveFile, extractPath, archivePath string) {
+func ExtractTarGzipArchive(archiveFile, extractPath string, service Service) {
 	file, _ := os.Open(archiveFile)
 	archive, err := gzip.NewReader(file)
 	CheckError(err)
@@ -215,10 +231,12 @@ func ExtractTarGzipArchive(archiveFile, extractPath, archivePath string) {
 			break
 		}
 		CheckError(err)
-		if strings.HasSuffix(header.Name, archivePath) {
+		if strings.HasSuffix(header.Name, service.ArchivePath) {
 			var path string
-			if len(archivePath) > 0 {
-				path = filepath.Join(extractPath, archivePath)
+			if len(service.OutputPath) > 0 {
+				path = filepath.Join(extractPath, service.OutputPath)
+			} else if len(service.ArchivePath) > 0 {
+				path = filepath.Join(extractPath, service.ArchivePath)
 			} else {
 				path = filepath.Join(extractPath, header.Name)
 			}
