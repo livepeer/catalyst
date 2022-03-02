@@ -106,15 +106,19 @@ livepeer-mist-api-connector:
 download:
 	go run main.go -v=5 $(ARGS)
 
-.PHONY: mac-dev
-mac-dev:
-	set -x \
-	&& rm -rf /Volumes/RAMDisk/mist \
-	&& TMP=/Volumes/RAMDisk make dev
-
 .PHONY: dev
 dev:
-	stat $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf || cp ./config/mistserver.dev.conf $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf \
+	if [ $$(uname) == "Darwin" ]; then \
+		if [ ! -d "/Volumes/RAMDisk/" ]; then \
+			disk=$$(hdiutil attach -nomount ram://4194304) \
+			&& sleep 3 \
+			&& diskutil erasevolume HFS+ "RAMDisk" $$disk \
+			&& echo "Created /Volumes/RAMDisk from $$disk"; \
+		fi \
+		&& rm -rf /Volumes/RAMDisk/mist \
+		&& export TMP=/Volumes/RAMDisk; \
+	fi \
+	&& stat $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf || cp ./config/mistserver.dev.conf $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf \
 	&& ./bin/MistController -c $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf
 
 .PHONY: livepeer-log
@@ -135,5 +139,5 @@ docker-compose-rm:
 	docker-compose rm -f
 
 .PHONY: full-reset
-full-reset: docker-compose-rm clean docker-compose all
+full-reset: docker-compose-rm clean all
 	echo "done"
