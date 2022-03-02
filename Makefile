@@ -136,8 +136,9 @@ docker-compose:
 
 .PHONY: docker-compose-rm
 docker-compose-rm:
-	docker-compose rm -f
+	docker-compose stop; docker-compose rm -f
 
 .PHONY: full-reset
 full-reset: docker-compose-rm clean all
-	echo "done"
+	mv $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf $(HOME)/.config/livepeer-in-a-box/mistserver-$$(date +%s).dev.conf || echo '' \
+	&& echo "done"
