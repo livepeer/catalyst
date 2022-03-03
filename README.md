@@ -16,4 +16,7 @@ make # downloads or builds services as appropriate
 make dev
 ```
 
-You should then have a web interface running at [http://localhost:3004] and a Mist interface at [http://localhost:4242].
+You should then have a web interface running at [http://localhost:3004](http://localhost:3004) and a Mist interface at [http://localhost:4242](http://localhost:4242).
+
+Livepeer credentials: User `admin@livepeer.local`, password `livepeer`.
+Mist credentials: User `test`, password `test`
