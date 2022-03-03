@@ -13,7 +13,7 @@ import (
 	"github.com/peterbourgon/ff/v3"
 )
 
-func ValidateFlags(flags types.CliFlags) error {
+func validateFlags(flags types.CliFlags) error {
 	if !utils.IsSupportedPlatformArch(flags.Platform, flags.Architecture) {
 		return fmt.Errorf(
 			"Invalid combination of platform+architecture detected: %s+%s",
@@ -30,11 +30,12 @@ func ValidateFlags(flags types.CliFlags) error {
 	return nil
 }
 
+// GetCliFlags
 func GetCliFlags(buildFlags types.BuildFlags) types.CliFlags {
 	cliFlags := types.CliFlags{}
 	flag.Set("logtostderr", "true")
 	vFlag := flag.Lookup("v")
-	fs := flag.NewFlagSet(constants.APP_NAME, flag.ExitOnError)
+	fs := flag.NewFlagSet(constants.AppName, flag.ExitOnError)
 
 	fs.StringVar(&cliFlags.Verbosity, "v", "", "Log verbosity.  {4|5|6}")
 	fs.StringVar(&cliFlags.Platform, "platform", runtime.GOOS, "One of linux/windows/darwin")
@@ -54,7 +55,7 @@ func GetCliFlags(buildFlags types.BuildFlags) types.CliFlags {
 	flag.CommandLine.Parse(nil)
 	vFlag.Value.Set(cliFlags.Verbosity)
 
-	err := ValidateFlags(cliFlags)
+	err := validateFlags(cliFlags)
 	utils.CheckError(err)
 	return cliFlags
 }

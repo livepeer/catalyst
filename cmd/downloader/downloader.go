@@ -4,84 +4,65 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"io/fs"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 
 	"github.com/golang/glog"
 	"github.com/livepeer/livepeer-in-a-box/internal/cli"
 	"github.com/livepeer/livepeer-in-a-box/internal/constants"
+	"github.com/livepeer/livepeer-in-a-box/internal/github"
 	"github.com/livepeer/livepeer-in-a-box/internal/types"
 	"github.com/livepeer/livepeer-in-a-box/internal/utils"
-	"github.com/peterbourgon/ff/v3"
+	"github.com/livepeer/livepeer-in-a-box/internal/verification"
 	"gopkg.in/yaml.v2"
 )
 
-func DownloadFile(path, url string, skipDownloaded bool) error {
-	glog.V(5).Infof("Downloading %s", url)
-	if info, err := os.Stat(path); err == nil && info.Size() > 0 && skipDownloaded {
-		glog.Infof("Found already downloaded archive. Skipping!")
-		return nil
-	}
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	glog.V(9).Infof("Response statusCode=%d", resp.StatusCode)
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("HTTP %d while downloading %s", resp.StatusCode, url)
-	}
-	defer resp.Body.Close()
-	out, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	_, err = io.Copy(out, resp.Body)
-	return err
-}
-
 func DownloadService(flags types.CliFlags, manifest types.BoxManifest, service types.Service, wg *sync.WaitGroup) {
 	defer wg.Done()
-	archiveExt := PlatformExt(flags.Platform)
-	archiveUrl, archiveName := GenerateArchiveUrl(flags.Platform, manifest.Release, flags.Architecture, archiveExt, service)
-	glog.Infof("Will download %s to %q", archiveName, flags.DownloadPath)
-	downloadPath := filepath.Join(flags.DownloadPath, archiveName)
-	err := DownloadFile(downloadPath, archiveUrl, flags.SkipDownloaded)
-	CheckError(err)
-	glog.Infof("Downloaded %s. Getting ready for extraction!", downloadPath)
-	if archiveExt == "zip" {
+	projectInfo := github.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
+	b, _ := json.Marshal(projectInfo)
+	fmt.Println(string(b))
+	glog.Infof("Will download to %q", flags.DownloadPath)
+
+	// Download archive
+	archivePath := filepath.Join(flags.DownloadPath, projectInfo.ArchiveFileName)
+	err := utils.DownloadFile(archivePath, projectInfo.ArchiveURL, flags.SkipDownloaded)
+	utils.CheckError(err)
+
+	// Download signature
+	if !service.SkipGPG {
+		signaturePath := filepath.Join(flags.DownloadPath, projectInfo.SignatureFileName)
+		err = utils.DownloadFile(signaturePath, projectInfo.SignatureURL, flags.SkipDownloaded)
+		utils.CheckError(err)
+		err = verification.VerifyGPGSignature(archivePath, signaturePath)
+		utils.CheckError(err)
+	}
+
+	// Download checksum
+	if !service.SkipChecksum {
+		checksumPath := filepath.Join(flags.DownloadPath, projectInfo.ChecksumFileName)
+		err = utils.DownloadFile(checksumPath, projectInfo.ChecksumURL, flags.SkipDownloaded)
+		utils.CheckError(err)
+		err = verification.VerifySHA256Digest(flags.DownloadPath, projectInfo.ChecksumFileName)
+		utils.CheckError(err)
+	}
+
+	glog.Infof("Downloaded %s. Getting ready for extraction!", projectInfo.ArchiveFileName)
+	if projectInfo.Platform == "windows" {
 		glog.Info("Extracting zip archive!")
-		ExtractZipArchive(downloadPath, flags.DownloadPath, service.ArchivePath)
+		ExtractZipArchive(archivePath, flags.DownloadPath, service.ArchivePath)
 	} else {
 		glog.Info("Extracting tarball archive!")
-		ExtractTarGzipArchive(downloadPath, flags.DownloadPath, service.ArchivePath)
+		ExtractTarGzipArchive(archivePath, flags.DownloadPath, service.ArchivePath)
 	}
-}
-
-func GenerateArchiveUrl(platform, release, architecture, extension string, serviceElement types.Service) (string, string) {
-	if len(serviceElement.Release) > 0 {
-		release = serviceElement.Release
-	}
-	packageName := fmt.Sprintf("livepeer-%s", serviceElement.Name)
-	if len(serviceElement.Binary) > 0 {
-		packageName = serviceElement.Binary
-	}
-	archiveName := fmt.Sprintf("%s-%s-%s.%s", packageName, platform, architecture, extension)
-	urlFormat := constants.TAGGED_DOWNLOAD_URL_FORMAT
-	if release == constants.LATEST_TAG_RELEASE_NAME {
-		urlFormat = constants.LATEST_DOWNLOAD_URL_FORMAT
-	}
-	return fmt.Sprintf(urlFormat, serviceElement.Src, release, archiveName), archiveName
 }
 
 func ParseYamlManifest(manifestPath string) types.BoxManifest {
@@ -176,7 +157,7 @@ func Run(buildFlags types.BuildFlags) {
 		glog.Fatal(err)
 	}
 	for _, file := range files {
-		if strings.HasSuffix(file.Name(), constants.ZIP_FILE_EXTENSION) || strings.HasSuffix(file.Name(), constants.TAR_FILE_EXTENSION) {
+		if strings.HasSuffix(file.Name(), constants.ZipFileExtension) || strings.HasSuffix(file.Name(), constants.TarFileExtension) {
 			fullpath := filepath.Join(cliFlags.DownloadPath, file.Name())
 			glog.V(5).Infof("Cleaning up %s", fullpath)
 			err = os.Remove(fullpath)

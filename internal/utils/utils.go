@@ -36,9 +36,9 @@ func IsFileExists(path string) bool {
 func PlatformExt(platform string) string {
 	glog.Infof("Fetching archive extension for %q systems.", platform)
 	platformExtMap := map[string]string{
-		"linux":   constants.TAR_FILE_EXTENSION,
-		"darwin":  constants.TAR_FILE_EXTENSION,
-		"windows": constants.ZIP_FILE_EXTENSION,
+		"linux":   constants.TarFileExtension,
+		"darwin":  constants.TarFileExtension,
+		"windows": constants.ZipFileExtension,
 	}
 	return platformExtMap[platform]
 }

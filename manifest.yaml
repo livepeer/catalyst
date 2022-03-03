@@ -17,6 +17,8 @@ box:
     # release: v0.5.26-box
     binary: livepeer
     archivePath: livepeer
+    skipGpg: true
+    skipChecksum: true
 
   - name: www
     project: livepeer/livepeer-com

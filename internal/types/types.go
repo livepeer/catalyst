@@ -2,7 +2,7 @@ package types
 
 type TagInformation struct {
 	Name       string `json:"name"`
-	Id         uint   `json:"id"`
+	ID         uint   `json:"id"`
 	PreRelease bool   `json:"prerelease"`
 	TagName    string `json:"tag_name"`
 	Draft      bool   `json:"draft"`
@@ -40,13 +40,15 @@ type BoxManifest struct {
 }
 
 type ArtifactInfo struct {
-	Name         string
-	Binary       string
-	Version      string
-	Platform     string
-	Architecture string
-	ArchiveURL   string
-	ChecksumURL  string
-	SignatureURL string
-	Tag          TagInformation
+	Name              string `json:"name"`
+	Binary            string `json:"binary"`
+	Version           string `json:"version"`
+	Platform          string
+	Architecture      string
+	ArchiveURL        string
+	ArchiveFileName   string
+	ChecksumURL       string
+	ChecksumFileName  string
+	SignatureURL      string
+	SignatureFileName string
 }

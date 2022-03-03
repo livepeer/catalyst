@@ -1,6 +1,11 @@
 package github
 
-import "testing"
+import (
+	"runtime"
+	"testing"
+
+	"github.com/livepeer/livepeer-in-a-box/internal/types"
+)
 
 func TestTagInformation(t *testing.T) {
 	projects := []string{
@@ -12,5 +17,17 @@ func TestTagInformation(t *testing.T) {
 	}
 	for _, project := range projects {
 		GetLatestRelease(project)
+	}
+}
+
+func TestArtifactInfo(t *testing.T) {
+	serviceInfo := types.Service{
+		Name:    "api",
+		Project: "livepeer/livepeer-com",
+	}
+	info := GetArtifactInfo(runtime.GOOS, runtime.GOARCH, "latest", serviceInfo)
+	if info.Binary != "livepeer-api" {
+		t.Error("The binary name generated for service doesn't match")
+		t.Fail()
 	}
 }

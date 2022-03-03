@@ -1,17 +1,17 @@
 package constants
 
 const (
-	APP_NAME                   = "box-livepeer"
-	LATEST_TAG_RELEASE_NAME    = "latest"
-	SIGNATURE_FILE_EXTENSION   = "sig"
-	CHECKSUM_FILE_SUFFIX       = "_checksums.txt"
-	TAGGED_DOWNLOAD_URL_FORMAT = "https://github.com/%s/releases/download/%s/%s"
-	PGP_KEY_FINGERPRINT        = "A2F9039A8603C44C21414432A2224D4537874DB2"
-	ZIP_FILE_EXTENSION         = "zip"
-	TAR_FILE_EXTENSION         = "tar.gz"
+	AppName                 = "box-livepeer"
+	LatestTagReleaseName    = "latest"
+	SignatureFileExtension  = "sig"
+	ChecksumFileSuffix      = "checksums.txt"
+	TaggedDownloadURLFormat = "https://github.com/%s/releases/download/%s/%s"
+	PGPKeyFingerprint       = "A2F9039A8603C44C21414432A2224D4537874DB2"
+	ZipFileExtension        = "zip"
+	TarFileExtension        = "tar.gz"
 )
 
-const PGP_PUBLIC_KEY = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+const PGPPublicKey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: A2F9 039A 8603 C44C 2141  4432 A222 4D45 3787 4DB2
 Comment: Livepeer CI Robot <support@livepeer.org>
 
