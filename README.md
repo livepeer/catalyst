@@ -5,7 +5,7 @@
 You'll presently need the following repos cloned into the same directory as livepeer-in-a-box:
 
 -   [go-livepeer](https://github.com/livepeer/go-livepeer) (any branch, only there for `install_ffmpeg.sh`)
--   [mistserver](https://github.com/livepeer/go-livepeer) (`livepeer-in-a-box` branch)
+-   [mistserver](https://github.com/DDVTECH/mistserver) (`livepeer-in-a-box` branch)
 -   [task-runner](https://github.com/livepeer/task-runner) (whichever branch you want to use)
 
 From there:
