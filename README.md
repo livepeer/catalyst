@@ -15,3 +15,5 @@ make docker-compose # boots up Postgres and RabbitMQ dependencies
 make # downloads or builds services as appropriate
 make dev
 ```
+
+You should then have a web interface running at [http://localhost:3004] and a Mist interface at [http://localhost:4242].
