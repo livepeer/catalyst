@@ -6,7 +6,6 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -28,9 +27,11 @@ import (
 func DownloadService(flags types.CliFlags, manifest types.BoxManifest, service types.Service, wg *sync.WaitGroup) {
 	defer wg.Done()
 	projectInfo := github.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
-	b, _ := json.Marshal(projectInfo)
-	fmt.Println(string(b))
 	glog.Infof("Will download to %q", flags.DownloadPath)
+
+	b, _ := json.Marshal(projectInfo)
+	glog.Info(string(b))
+	os.Exit(0)
 
 	// Download archive
 	archivePath := filepath.Join(flags.DownloadPath, projectInfo.ArchiveFileName)
@@ -58,10 +59,10 @@ func DownloadService(flags types.CliFlags, manifest types.BoxManifest, service t
 	glog.Infof("Downloaded %s. Getting ready for extraction!", projectInfo.ArchiveFileName)
 	if projectInfo.Platform == "windows" {
 		glog.Info("Extracting zip archive!")
-		ExtractZipArchive(archivePath, flags.DownloadPath, service.ArchivePath)
+		ExtractZipArchive(archivePath, flags.DownloadPath, service)
 	} else {
 		glog.Info("Extracting tarball archive!")
-		ExtractTarGzipArchive(archivePath, flags.DownloadPath, service.ArchivePath)
+		ExtractTarGzipArchive(archivePath, flags.DownloadPath, service)
 	}
 }
 
@@ -77,17 +78,19 @@ func ParseYamlManifest(manifestPath string) types.BoxManifest {
 	return manifestConfig
 }
 
-func ExtractZipArchive(archiveFile, extractPath, archivePath string) {
-	if len(archivePath) > 0 && !strings.HasSuffix(archivePath, ".exe") {
-		archivePath += ".exe"
+func ExtractZipArchive(archiveFile, extractPath string, service types.Service) {
+	if len(service.ArchivePath) > 0 && !strings.HasSuffix(service.ArchivePath, ".exe") {
+		service.ArchivePath += ".exe"
 	}
 	zipReader, err := zip.OpenReader(archiveFile)
 	utils.CheckError(err)
 	for _, file := range zipReader.File {
-		if strings.HasSuffix(file.Name, archivePath) {
+		if strings.HasSuffix(file.Name, service.ArchivePath) {
 			var path string
-			if len(archivePath) > 0 {
-				path = filepath.Join(extractPath, archivePath)
+			if len(service.OutputPath) > 0 {
+				path = filepath.Join(extractPath, service.OutputPath+".exe")
+			} else if len(service.ArchivePath) > 0 {
+				path = filepath.Join(extractPath, service.ArchivePath)
 			} else {
 				path = filepath.Join(extractPath, file.Name)
 			}
@@ -104,7 +107,7 @@ func ExtractZipArchive(archiveFile, extractPath, archivePath string) {
 	}
 }
 
-func ExtractTarGzipArchive(archiveFile, extractPath, archivePath string) {
+func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Service) {
 	file, _ := os.Open(archiveFile)
 	archive, err := gzip.NewReader(file)
 	utils.CheckError(err)
@@ -115,10 +118,12 @@ func ExtractTarGzipArchive(archiveFile, extractPath, archivePath string) {
 			break
 		}
 		utils.CheckError(err)
-		if strings.HasSuffix(header.Name, archivePath) {
+		if strings.HasSuffix(header.Name, service.ArchivePath) {
 			var path string
-			if len(archivePath) > 0 {
-				path = filepath.Join(extractPath, archivePath)
+			if len(service.OutputPath) > 0 {
+				path = filepath.Join(extractPath, service.OutputPath)
+			} else if len(service.ArchivePath) > 0 {
+				path = filepath.Join(extractPath, service.ArchivePath)
 			} else {
 				path = filepath.Join(extractPath, header.Name)
 			}

@@ -60,23 +60,38 @@ func GetArtifactInfo(platform, architecture, release string, service types.Servi
 	if len(service.Release) > 0 {
 		release = service.Release
 	}
+	var info = &types.ArtifactInfo{
+		Name:         service.Name,
+		Platform:     platform,
+		Architecture: architecture,
+		Version:      GetArtifactVersion(release, service.Project),
+	}
 	extension := utils.PlatformExt(platform)
 	packageName := fmt.Sprintf("livepeer-%s", service.Name)
 	if len(service.Binary) > 0 {
 		packageName = service.Binary
 	}
-	var info = &types.ArtifactInfo{
-		Name:         service.Name,
-		Platform:     platform,
-		Architecture: architecture,
-		Binary:       packageName,
-		Version:      GetArtifactVersion(release, service.Project),
+	info.ArchiveFileName = fmt.Sprintf("%s-%s-%s.%s", packageName, info.Platform, info.Architecture, extension)
+	if service.SrcFilenames != nil {
+		packageName = service.Name
+		platArch := fmt.Sprintf("%s-%s", platform, architecture)
+		name, ok := service.SrcFilenames[platArch]
+		if !ok {
+			panic(fmt.Errorf("%s build not found in srcFilenames for %s", service.Name, platArch))
+		}
+		info.ArchiveFileName = name
 	}
-	info.ArchiveFileName = fmt.Sprintf("%s-%s-%s.%s", info.Binary, info.Platform, info.Architecture, extension)
-	info.SignatureFileName = fmt.Sprintf("%s.%s", info.ArchiveFileName, constants.SignatureFileExtension)
-	info.ChecksumFileName = fmt.Sprintf("%s_%s", info.Version, constants.ChecksumFileSuffix)
+	info.Binary = packageName
 	info.ArchiveURL = GenerateArtifactURL(service.Project, info.Version, info.ArchiveFileName)
-	info.SignatureURL = GenerateArtifactURL(service.Project, info.Version, info.SignatureFileName)
-	info.ChecksumURL = GenerateArtifactURL(service.Project, info.Version, info.ChecksumFileName)
+
+	if !service.SkipChecksum {
+		info.ChecksumFileName = fmt.Sprintf("%s_%s", info.Version, constants.ChecksumFileSuffix)
+		info.ChecksumURL = GenerateArtifactURL(service.Project, info.Version, info.ChecksumFileName)
+	}
+
+	if !service.SkipGPG {
+		info.SignatureFileName = fmt.Sprintf("%s.%s", info.ArchiveFileName, constants.SignatureFileExtension)
+		info.SignatureURL = GenerateArtifactURL(service.Project, info.Version, info.SignatureFileName)
+	}
 	return info
 }

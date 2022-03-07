@@ -23,14 +23,16 @@ type CliFlags struct {
 }
 
 type Service struct {
-	Name         string `yaml:"name"`
-	Project      string `yaml:"project"`
-	Binary       string `yaml:"binary,omitempty"`
-	Release      string `yaml:"release,omitempty"`
-	ArchivePath  string `yaml:"archivePath,omitempty"`
-	Skip         bool   `yaml:"skip"`
-	SkipGPG      bool   `yaml:"skipGpg"`
-	SkipChecksum bool   `yaml:"skipChecksum"`
+	Name         string            `yaml:"name"`
+	Project      string            `yaml:"project"`
+	Binary       string            `yaml:"binary,omitempty"`
+	Release      string            `yaml:"release,omitempty"`
+	ArchivePath  string            `yaml:"archivePath,omitempty"`
+	Skip         bool              `yaml:"skip"`
+	SkipGPG      bool              `yaml:"skipGpg"`
+	SkipChecksum bool              `yaml:"skipChecksum"`
+	SrcFilenames map[string]string `yaml:"srcFilenames"`
+	OutputPath   string            `yaml:"outputPath,omitempty"`
 }
 
 type BoxManifest struct {
