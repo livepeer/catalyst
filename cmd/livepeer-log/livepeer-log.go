@@ -23,7 +23,7 @@ func main() {
 	rest := os.Args[2:]
 	// If we're being called for our OWN -j, respond accordingly
 	if len(rest) == 0 && procname == "-j" {
-		printJsonInfo(JSONInfo{
+		printJsonInfo(MistJSONInfo{
 			Name:     "Livepeer Logger",
 			Friendly: "Logger for livepeer-* applications",
 			Desc:     "Logger for other livepeer-whatever applications. No need to add directly.",
@@ -38,11 +38,20 @@ func main() {
 		}
 	}
 	if procname == "livepeer-victoria-metrics" && dashJ {
-		printJsonInfo(JSONInfo{
+		printJsonInfo(MistJSONInfo{
 			Name:     "Livepeer Victoria Metrics",
 			Friendly: "Livepeer-in-a-Box packaged Victoria Metrics",
 			Desc:     "Livepeer-in-a-Box packaged Victoria Metrics. Comes with some built-in scrape configs for dev.",
 			Version:  "0.0.1",
+			Required: map[string]MistJSONOption{
+				"promscrape.config": {
+					Name:    "promscrape.config",
+					Type:    "str",
+					Option:  "-promscrape.config",
+					Help:    "Location of promscape.config file",
+					Default: "./config/scrape_config.yaml",
+				},
+			},
 		})
 		os.Exit(0)
 	}
@@ -105,21 +114,23 @@ func main() {
 	os.Exit(0)
 }
 
-type JSONInfo struct {
-	Name     string `json:"name"`
-	Friendly string `json:"friendly"`
-	Desc     string `json:"desc"`
-	Optional struct {
-		Port struct {
-			Option  string `json:"option"`
-			Default int    `json:"default"`
-			Help    string `json:"help"`
-		} `json:"port"`
-	} `json:"optional"`
-	Version string `json:"version"`
+type MistJSONOption struct {
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Option  string `json:"option"`
+	Default string `json:"default"`
+	Help    string `json:"help"`
+}
+type MistJSONInfo struct {
+	Name     string                    `json:"name"`
+	Friendly string                    `json:"friendly"`
+	Desc     string                    `json:"desc"`
+	Optional map[string]MistJSONOption `json:"optional"`
+	Required map[string]MistJSONOption `json:"required"`
+	Version  string                    `json:"version"`
 }
 
-func printJsonInfo(jsonInfo JSONInfo) {
+func printJsonInfo(jsonInfo MistJSONInfo) {
 	blob, err := json.Marshal(jsonInfo)
 	if err != nil {
 		panic(err)
