@@ -22,6 +22,10 @@ box:
     src: https://github.com/livepeer/livepeer-com
     binary: livepeer-www
 
+  - name: livepeer-transcode
+    src: https://github.com/livepeer/transcode-cli
+    binary: livepeer-transcode
+
   - name: victoria-metrics
     src: https://github.com/VictoriaMetrics/VictoriaMetrics
     release: v1.73.1
