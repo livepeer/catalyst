@@ -24,6 +24,11 @@ box:
     project: livepeer/livepeer-com
     binary: livepeer-www
 
+  - name: task-runner
+    project: livepeer/task-runner
+    skipGpg: true
+    skipChecksum: true
+
   - name: victoria-metrics
     project: VictoriaMetrics/VictoriaMetrics
     release: v1.74.0
