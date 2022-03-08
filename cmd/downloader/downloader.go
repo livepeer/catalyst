@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
-	"encoding/json"
 	"errors"
 	"io"
 	"io/fs"
@@ -24,14 +23,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// DownloadService works on downloading services for the box to
+// machine and extracting the required binaries from artifacts.
 func DownloadService(flags types.CliFlags, manifest types.BoxManifest, service types.Service, wg *sync.WaitGroup) {
 	defer wg.Done()
 	projectInfo := github.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
 	glog.Infof("Will download to %q", flags.DownloadPath)
-
-	b, _ := json.Marshal(projectInfo)
-	glog.Info(string(b))
-	os.Exit(0)
 
 	// Download archive
 	archivePath := filepath.Join(flags.DownloadPath, projectInfo.ArchiveFileName)
@@ -78,24 +75,26 @@ func ParseYamlManifest(manifestPath string) types.BoxManifest {
 	return manifestConfig
 }
 
-func ExtractZipArchive(archiveFile, extractPath string, service types.Service) {
+// ExtractZipArchive processes a zip file and extracts a single file
+// from the service definition.
+func ExtractZipArchive(archiveFile, extractPath string, service types.Service) error {
+	var outputPath string = ""
 	if len(service.ArchivePath) > 0 && !strings.HasSuffix(service.ArchivePath, ".exe") {
 		service.ArchivePath += ".exe"
+		outputPath = filepath.Join(extractPath, service.ArchivePath)
+	}
+	if len(service.OutputPath) > 0 {
+		outputPath = filepath.Join(extractPath, service.OutputPath+".exe")
 	}
 	zipReader, err := zip.OpenReader(archiveFile)
 	utils.CheckError(err)
 	for _, file := range zipReader.File {
 		if strings.HasSuffix(file.Name, service.ArchivePath) {
-			var path string
-			if len(service.OutputPath) > 0 {
-				path = filepath.Join(extractPath, service.OutputPath+".exe")
-			} else if len(service.ArchivePath) > 0 {
-				path = filepath.Join(extractPath, service.ArchivePath)
-			} else {
-				path = filepath.Join(extractPath, file.Name)
+			if outputPath == "" {
+				outputPath = filepath.Join(extractPath, file.Name)
 			}
-			glog.Infof("Extracting to %q", path)
-			outfile, err := os.Create(path)
+			glog.Infof("Extracting to %q", outputPath)
+			outfile, err := os.Create(outputPath)
 			utils.CheckError(err)
 			reader, _ := file.Open()
 			if _, err := io.Copy(outfile, reader); err != nil {
@@ -105,13 +104,23 @@ func ExtractZipArchive(archiveFile, extractPath string, service types.Service) {
 			outfile.Close()
 		}
 	}
+	return nil
 }
 
-func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Service) {
+// ExtractTarGzipArchive processes a tarball file and extracts a
+// single file from the service definition.
+func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Service) error {
+	var outputPath string = ""
 	file, _ := os.Open(archiveFile)
 	archive, err := gzip.NewReader(file)
 	utils.CheckError(err)
 	tarReader := tar.NewReader(archive)
+	if len(service.ArchivePath) > 0 {
+		outputPath = filepath.Join(extractPath, service.ArchivePath)
+	}
+	if len(service.OutputPath) > 0 {
+		outputPath = filepath.Join(extractPath, service.OutputPath)
+	}
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
@@ -119,26 +128,23 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Servic
 		}
 		utils.CheckError(err)
 		if strings.HasSuffix(header.Name, service.ArchivePath) {
-			var path string
-			if len(service.OutputPath) > 0 {
-				path = filepath.Join(extractPath, service.OutputPath)
-			} else if len(service.ArchivePath) > 0 {
-				path = filepath.Join(extractPath, service.ArchivePath)
-			} else {
-				path = filepath.Join(extractPath, header.Name)
+			if outputPath == "" {
+				outputPath = filepath.Join(extractPath, header.Name)
 			}
-			glog.Infof("Extracting to %q", path)
-			outfile, err := os.Create(path)
+			glog.Infof("Extracting to %q", outputPath)
+			outfile, err := os.Create(outputPath)
 			utils.CheckError(err)
 			if _, err := io.Copy(outfile, tarReader); err != nil {
-				glog.Errorf("Failed to create file: %q", path)
+				glog.Errorf("Failed to create file: %q", outputPath)
 			}
 			outfile.Chmod(fs.FileMode(header.Mode))
 			outfile.Close()
 		}
 	}
+	return nil
 }
 
+// Run is the entrypoint for main program.
 func Run(buildFlags types.BuildFlags) {
 	cliFlags := cli.GetCliFlags(buildFlags)
 	var waitGroup sync.WaitGroup
