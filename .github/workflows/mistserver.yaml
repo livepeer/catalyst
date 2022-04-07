@@ -117,3 +117,46 @@ jobs:
         with:
           name: release-artifacts
           path: livepeer-in-a-box/releases/
+
+  release:
+    name: Create release for mist binaries
+    runs-on: ubuntu-20.04
+    needs:
+      - linux
+      - macos
+    steps:
+      - name: checkout
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_branch }}
+
+      - name: Download artifacts from build stages
+        uses: actions/download-artifact@v3
+        with:
+          name: release-artifacts
+          path: releases/
+
+      - uses: actions-ecosystem/action-regex-match@v2
+        id: match-tag
+        with:
+          text: ${{ github.event.workflow_run.head_branch }}
+          regex: '^v([0-9]+\.\d+\.\d+)$'
+
+      - name: Generate sha256 checksum and gpg signatures for release artifacts
+        if: ${{ steps.match-tag.outputs.match != '' }}
+        uses: livepeer/action-gh-checksum-and-gpg-sign@latest
+        with:
+          artifacts-dir: releases
+          release-name: ${{ github.event.workflow_run.head_branch }}
+          gpg-key: ${{ secrets.CI_GPG_SIGNING_KEY }}
+          gpg-key-passphrase: ${{ secrets.CI_GPG_SIGNING_PASSPHRASE }}
+
+      - name: Release to github
+        uses: softprops/action-gh-release@v1
+        if: ${{ steps.match-tag.outputs.match != '' }}
+        with:
+          generate_release_notes: true
+          tag_name: ${{ github.event.workflow_run.head_branch }}
+          files: |
+            releases/*
