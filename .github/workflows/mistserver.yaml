@@ -84,6 +84,7 @@ jobs:
       - name: Compile mist binaries
         shell: bash
         run: |
+          command -v brew && brew install coreutils
           cd livepeer-in-a-box/
           make mistserver
 
