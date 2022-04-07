@@ -29,7 +29,7 @@ func VerifyGPGSignature(fileName, signatureFileName string) error {
 	// Read GPG binary signature file
 	reader, err := ioutil.ReadFile(signatureFileName)
 	signature := crypto.NewPGPSignature(reader)
-	glog.Info("GPG signature read")
+	glog.Info("GPG signature read success!")
 
 	// Load signed file to memory as a binary message
 	data, err := ioutil.ReadFile(fileName)
@@ -38,7 +38,7 @@ func VerifyGPGSignature(fileName, signatureFileName string) error {
 	// Verification step
 	err = keyRing.VerifyDetached(message, signature, crypto.GetUnixTime())
 	if err != nil {
-		glog.Error(err)
+		glog.Errorf("GPG verification failed for %q with error %s", fileName, err)
 		return err
 	}
 	glog.Info("GPG verification successful.")

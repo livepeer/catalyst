@@ -27,8 +27,6 @@ box:
 
   - name: task-runner
     project: livepeer/task-runner
-    skipGpg: true
-    skipChecksum: true
 
   - name: livepeer-transcode
     project: livepeer/transcode-cli

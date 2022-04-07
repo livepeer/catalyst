@@ -37,6 +37,7 @@ func DownloadService(flags types.CliFlags, manifest types.BoxManifest, service t
 
 	// Download signature
 	if !service.SkipGPG {
+		glog.Infof("Doing GPG verification for service=%s", service.Name)
 		signaturePath := filepath.Join(flags.DownloadPath, projectInfo.SignatureFileName)
 		err = utils.DownloadFile(signaturePath, projectInfo.SignatureURL, flags.SkipDownloaded)
 		utils.CheckError(err)
@@ -46,6 +47,7 @@ func DownloadService(flags types.CliFlags, manifest types.BoxManifest, service t
 
 	// Download checksum
 	if !service.SkipChecksum {
+		glog.Infof("Doing SHA checksum verification for service=%s", service.Name)
 		checksumPath := filepath.Join(flags.DownloadPath, projectInfo.ChecksumFileName)
 		err = utils.DownloadFile(checksumPath, projectInfo.ChecksumURL, flags.SkipDownloaded)
 		utils.CheckError(err)

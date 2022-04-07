@@ -50,7 +50,7 @@ func CheckError(err error) {
 }
 
 func DownloadFile(path, url string, skipDownloaded bool) error {
-	glog.V(5).Infof("Downloading %s", url)
+	glog.V(9).Infof("Downloading %s", url)
 	if skipDownloaded && IsFileExists(path) {
 		glog.Infof("File already downloaded. Skipping!")
 		return nil
@@ -64,11 +64,16 @@ func DownloadFile(path, url string, skipDownloaded bool) error {
 		return fmt.Errorf("HTTP %d while downloading %s", resp.StatusCode, url)
 	}
 	defer resp.Body.Close()
-	out, err := os.Create(path)
+	tempPath := fmt.Sprintf("%s.TEMP", path)
+	out, err := os.Create(tempPath)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
 	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+	err = os.Rename(tempPath, path)
 	return err
 }
