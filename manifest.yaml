@@ -1,3 +1,4 @@
+# Refer the `README` for specification details of the manifest
 version: 2.0
 release: latest
 
@@ -28,6 +29,10 @@ box:
     project: livepeer/task-runner
     skipGpg: true
     skipChecksum: true
+
+  - name: livepeer-transcode
+    project: livepeer/transcode-cli
+    binary: livepeer-transcode
 
   - name: victoria-metrics
     project: VictoriaMetrics/VictoriaMetrics
