@@ -43,13 +43,16 @@ jobs:
         shell: bash
         run: |
           cd livepeer-in-a-box/
+          mkdir -p releases/ build/ bin/
           make mistserver
+          cd bin/
+          tar -czvf "../releases/livepeer-mistserver-linux-amd64.tar.gz" ./*
 
       - name: Upload mist binaries as build artifacts
         uses: actions/upload-artifact@master
         with:
           name: release-artifacts
-          path: livepeer-in-a-box/bin/
+          path: livepeer-in-a-box/releases/
 
   macos:
     name: Build mist binaries for macOS platform
@@ -86,16 +89,19 @@ jobs:
         run: |
           command -v brew && brew install coreutils
           cd livepeer-in-a-box/
+          mkdir -p releases/ build/ bin/
           make mistserver
+          cd bin/
+          tar -czvf "../releases/livepeer-mistserver-darwin-amd64.tar.gz" ./*
 
-      # - uses: actions-ecosystem/action-regex-match@v2
-      #   id: match-tag
-      #   with:
-      #     text: ${{ github.ref_name }}
-      #     regex: '^(master|main|v[0-9]+\.\d+\.\d+)$'
+      - uses: actions-ecosystem/action-regex-match@v2
+        id: match-tag
+        with:
+          text: ${{ github.ref_name }}
+          regex: '^(master|main|v[0-9]+\.\d+\.\d+)$'
 
       - name: Codesign and notarize binaries
-        # if: ${{ steps.match-tag.outputs.match != '' }}
+        if: ${{ steps.match-tag.outputs.match != '' }}
         uses: livepeer/action-gh-codesign-apple@latest
         with:
           developer-certificate-id: ${{ secrets.CI_MACOS_CERTIFICATE_ID }}
@@ -110,4 +116,4 @@ jobs:
         uses: actions/upload-artifact@master
         with:
           name: release-artifacts
-          path: livepeer-in-a-box/bin/
+          path: livepeer-in-a-box/releases/
