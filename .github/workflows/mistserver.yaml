@@ -1,0 +1,41 @@
+name: Build and release mist server binaries
+
+on:
+  push:
+    branches:
+      - "main"
+      - "hjp/*"
+    tags:
+      - "v*"
+
+jobs:
+  linux:
+    name: Build mist binaries for linux platform
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          path: 'livepeer-in-a-box'
+          fetch-depth: 0
+          # Check https://github.com/livepeer/go-livepeer/pull/1891
+          # for ref value discussion
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Check out mistserver code
+        uses: actions/checkout@v3
+        with:
+          repository: DDVTECH/mistserver
+          path: 'mistserver'
+          fetch-depth: 0
+          ref: livepeer-in-a-box
+
+      - name: Compile mist binaries
+        shell: bash
+        run: |
+          cd livepeer-in-a-box/
+          make mistserver
+
+  # macos:
+  #   name: Build mist binaries for macOS platform
+  #   runs-on: macos-11
