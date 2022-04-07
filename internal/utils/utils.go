@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/livepeer/livepeer-in-a-box/internal/constants"
@@ -47,6 +48,10 @@ func CheckError(err error) {
 	if err != nil {
 		glog.Fatal(err)
 	}
+}
+
+func IsCleanupFile(name string) bool {
+	return strings.HasSuffix(name, constants.ZipFileExtension) || strings.HasSuffix(name, constants.TarFileExtension) || strings.HasSuffix(name, ".sig") || strings.HasSuffix(name, "_checksums.txt")
 }
 
 func DownloadFile(path, url string, skipDownloaded bool) error {

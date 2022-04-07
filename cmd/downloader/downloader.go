@@ -15,7 +15,6 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/livepeer/livepeer-in-a-box/internal/cli"
-	"github.com/livepeer/livepeer-in-a-box/internal/constants"
 	"github.com/livepeer/livepeer-in-a-box/internal/github"
 	"github.com/livepeer/livepeer-in-a-box/internal/types"
 	"github.com/livepeer/livepeer-in-a-box/internal/utils"
@@ -170,7 +169,7 @@ func Run(buildFlags types.BuildFlags) {
 		glog.Fatal(err)
 	}
 	for _, file := range files {
-		if strings.HasSuffix(file.Name(), constants.ZipFileExtension) || strings.HasSuffix(file.Name(), constants.TarFileExtension) {
+		if utils.IsCleanupFile(file.Name()) {
 			fullpath := filepath.Join(cliFlags.DownloadPath, file.Name())
 			glog.V(5).Infof("Cleaning up %s", fullpath)
 			err = os.Remove(fullpath)
