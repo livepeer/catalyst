@@ -1,0 +1,162 @@
+name: Build and release mist server binaries
+
+on:
+  push:
+    branches:
+      - "main"
+    tags:
+      - "mist-v*"
+
+jobs:
+  linux:
+    name: Build mist binaries for linux platform
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          path: 'livepeer-in-a-box'
+          fetch-depth: 0
+          # Check https://github.com/livepeer/go-livepeer/pull/1891
+          # for ref value discussion
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Check out mistserver code
+        uses: actions/checkout@v3
+        with:
+          repository: DDVTECH/mistserver
+          path: 'mistserver'
+          fetch-depth: 0
+          ref: livepeer-in-a-box
+
+      - name: Restore build cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            livepeer-in-a-box/build
+          key: ${{ runner.os }}-build-${{ hashFiles('**/Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+
+      - name: Compile mist binaries
+        shell: bash
+        run: |
+          cd livepeer-in-a-box/
+          mkdir -p releases/ build/ bin/
+          make mistserver
+          cd bin/
+          tar -czvf "../releases/livepeer-mistserver-linux-amd64.tar.gz" ./*
+
+      - name: Upload mist binaries as build artifacts
+        uses: actions/upload-artifact@master
+        with:
+          name: release-artifacts
+          path: livepeer-in-a-box/releases/
+
+  macos:
+    name: Build mist binaries for macOS platform
+    runs-on: macos-11
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          path: 'livepeer-in-a-box'
+          fetch-depth: 0
+          # Check https://github.com/livepeer/go-livepeer/pull/1891
+          # for ref value discussion
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Check out mistserver code
+        uses: actions/checkout@v3
+        with:
+          repository: DDVTECH/mistserver
+          path: 'mistserver'
+          fetch-depth: 0
+          ref: livepeer-in-a-box
+
+      - name: Restore build cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            livepeer-in-a-box/build
+          key: ${{ runner.os }}-build-${{ hashFiles('**/Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+
+      - name: Compile mist binaries
+        shell: bash
+        run: |
+          command -v brew && brew install coreutils
+          cd livepeer-in-a-box/
+          mkdir -p releases/ build/ bin/
+          make mistserver
+          cd bin/
+          tar -czvf "../releases/livepeer-mistserver-darwin-amd64.tar.gz" ./*
+
+      - uses: actions-ecosystem/action-regex-match@v2
+        id: match-tag
+        with:
+          text: ${{ github.ref_name }}
+          regex: '^(master|main|mist-v[0-9]+\.\d+\.\d+)$'
+
+      - name: Codesign and notarize binaries
+        if: ${{ steps.match-tag.outputs.match != '' }}
+        uses: livepeer/action-gh-codesign-apple@latest
+        with:
+          developer-certificate-id: ${{ secrets.CI_MACOS_CERTIFICATE_ID }}
+          developer-certificate-base64: ${{ secrets.CI_MACOS_CERTIFICATE_BASE64 }}
+          developer-certificate-password: ${{ secrets.CI_MACOS_CERTIFICATE_PASSWORD }}
+          app-notarization-email: ${{ secrets.CI_MACOS_NOTARIZATION_USER }}
+          app-notarization-password: ${{ secrets.CI_MACOS_NOTARIZATION_PASSWORD }}
+          binary-path: "livepeer-in-a-box/bin/"
+          app-bundle-id: "org.livepeer.mistserver"
+
+      - name: Upload mist binaries as build artifacts
+        uses: actions/upload-artifact@master
+        with:
+          name: release-artifacts
+          path: livepeer-in-a-box/releases/
+
+  release:
+    name: Create release for mist binaries
+    runs-on: ubuntu-20.04
+    needs:
+      - linux
+      - macos
+    steps:
+      - name: checkout
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_branch }}
+
+      - uses: actions-ecosystem/action-regex-match@v2
+        id: match-tag
+        with:
+          text: ${{ github.ref_name }}
+          regex: '^mist-v([0-9]+\.\d+\.\d+)$'
+
+      - name: Download artifacts from build stages
+        if: ${{ steps.match-tag.outputs.match != '' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: release-artifacts
+          path: releases/
+
+      - name: Generate sha256 checksum and gpg signatures for release artifacts
+        if: ${{ steps.match-tag.outputs.match != '' }}
+        uses: livepeer/action-gh-checksum-and-gpg-sign@latest
+        with:
+          artifacts-dir: releases
+          release-name: ${{ github.ref_name }}
+          gpg-key: ${{ secrets.CI_GPG_SIGNING_KEY }}
+          gpg-key-passphrase: ${{ secrets.CI_GPG_SIGNING_PASSPHRASE }}
+
+      - name: Release to github
+        uses: softprops/action-gh-release@v1
+        if: ${{ steps.match-tag.outputs.match != '' }}
+        with:
+          generate_release_notes: true
+          tag_name: ${{ github.event.workflow_run.head_branch }}
+          files: |
+            releases/*
