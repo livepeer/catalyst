@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "main"
+      - "hjp/*"
     tags:
       - "mist-v*"
 
