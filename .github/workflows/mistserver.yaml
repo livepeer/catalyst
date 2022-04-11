@@ -67,7 +67,7 @@ jobs:
     runs-on: macos-11
     steps:
       - name: Setup env
-        run: echo GOARCH="${{ matrix.arch }}" >> $GITHUB_ENV
+        run: echo ARCH="${{ matrix.arch }}" >> $GITHUB_ENV
 
       - name: Check out code
         uses: actions/checkout@v3
@@ -91,12 +91,16 @@ jobs:
         with:
           path: |
             livepeer-in-a-box/build
-          key: ${{ runner.os }}-build-${{ hashFiles('**/Makefile') }}
+          key: ${{ runner.os }}-${{ matrix.arch }}-build-${{ hashFiles('**/Makefile') }}
           restore-keys: |
-            ${{ runner.os }}-build-
+            ${{ runner.os }}-${{ matrix.arch }}-build-
 
       - name: Compile mist binaries
         run: |
+          if [[ "${ARCH}" == "arm64" ]]; then
+            export CFLAGS="$CFLAGS --target=arm64-apple-macos11"
+            export LDFLAGS="$LDFLAGS --target=arm64-apple-macos11"
+          fi
           command -v brew && brew install coreutils
           cd livepeer-in-a-box/
           mkdir -p releases/ build/ bin/
@@ -122,8 +126,8 @@ jobs:
 
       - name: Archive built binaries
         run: |
-          cd bin/
-          tar -czvf "../releases/livepeer-mistserver-darwin-${GOARCH}.tar.gz" ./*
+          cd livepeer-in-a-box/bin/
+          tar -czvf "../releases/livepeer-mistserver-darwin-${ARCH}.tar.gz" ./*
 
       - name: Upload mist binaries as build artifacts
         uses: actions/upload-artifact@master
