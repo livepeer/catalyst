@@ -31,13 +31,13 @@ func validateFlags(flags types.CliFlags) error {
 }
 
 // GetCliFlags
-func GetCliFlags(buildFlags types.BuildFlags) types.CliFlags {
+func GetCliFlags(buildFlags types.BuildFlags) (types.CliFlags, error) {
 	cliFlags := types.CliFlags{}
 	flag.Set("logtostderr", "true")
 	vFlag := flag.Lookup("v")
 	fs := flag.NewFlagSet(constants.AppName, flag.ExitOnError)
 
-	fs.StringVar(&cliFlags.Verbosity, "v", "", "Log verbosity.  {4|5|6}")
+	fs.StringVar(&cliFlags.Verbosity, "v", "3", "Log verbosity. Integer value from 0 to 9")
 	fs.StringVar(&cliFlags.Platform, "platform", runtime.GOOS, "One of linux/windows/darwin")
 	fs.StringVar(&cliFlags.Architecture, "architecture", runtime.GOARCH, "System architecture (amd64/arm64)")
 	fs.StringVar(&cliFlags.DownloadPath, "path", fmt.Sprintf(".%sbin", string(os.PathSeparator)), "Path to store binaries")
@@ -56,6 +56,5 @@ func GetCliFlags(buildFlags types.BuildFlags) types.CliFlags {
 	vFlag.Value.Set(cliFlags.Verbosity)
 
 	err := validateFlags(cliFlags)
-	utils.CheckError(err)
-	return cliFlags
+	return cliFlags, err
 }

@@ -24,24 +24,29 @@ import (
 
 // DownloadService works on downloading services for the box to
 // machine and extracting the required binaries from artifacts.
-func DownloadService(flags types.CliFlags, manifest types.BoxManifest, service types.Service, wg *sync.WaitGroup) {
-	defer wg.Done()
+func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service types.Service) error {
 	projectInfo := github.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
 	glog.Infof("Will download to %q", flags.DownloadPath)
 
 	// Download archive
 	archivePath := filepath.Join(flags.DownloadPath, projectInfo.ArchiveFileName)
 	err := utils.DownloadFile(archivePath, projectInfo.ArchiveURL, flags.SkipDownloaded)
-	utils.CheckError(err)
+	if err != nil {
+		return nil
+	}
 
 	// Download signature
 	if !service.SkipGPG {
 		glog.Infof("Doing GPG verification for service=%s", service.Name)
 		signaturePath := filepath.Join(flags.DownloadPath, projectInfo.SignatureFileName)
 		err = utils.DownloadFile(signaturePath, projectInfo.SignatureURL, flags.SkipDownloaded)
-		utils.CheckError(err)
+		if err != nil {
+			return nil
+		}
 		err = verification.VerifyGPGSignature(archivePath, signaturePath)
-		utils.CheckError(err)
+		if err != nil {
+			return nil
+		}
 	}
 
 	// Download checksum
@@ -49,9 +54,13 @@ func DownloadService(flags types.CliFlags, manifest types.BoxManifest, service t
 		glog.Infof("Doing SHA checksum verification for service=%s", service.Name)
 		checksumPath := filepath.Join(flags.DownloadPath, projectInfo.ChecksumFileName)
 		err = utils.DownloadFile(checksumPath, projectInfo.ChecksumURL, flags.SkipDownloaded)
-		utils.CheckError(err)
+		if err != nil {
+			return nil
+		}
 		err = verification.VerifySHA256Digest(flags.DownloadPath, projectInfo.ChecksumFileName)
-		utils.CheckError(err)
+		if err != nil {
+			return nil
+		}
 	}
 
 	glog.Infof("Downloaded %s. Getting ready for extraction!", projectInfo.ArchiveFileName)
@@ -62,18 +71,21 @@ func DownloadService(flags types.CliFlags, manifest types.BoxManifest, service t
 		glog.Info("Extracting tarball archive!")
 		ExtractTarGzipArchive(archivePath, flags.DownloadPath, service)
 	}
+	return nil
 }
 
-func ParseYamlManifest(manifestPath string) types.BoxManifest {
+func ParseYamlManifest(manifestPath string) (*types.BoxManifest, error) {
 	var manifestConfig types.BoxManifest
 	glog.Infof("Reading manifest file=%q", manifestPath)
 	file, _ := ioutil.ReadFile(manifestPath)
 	err := yaml.Unmarshal(file, &manifestConfig)
-	utils.CheckError(err)
+	if err != nil {
+		return nil, err
+	}
 	if manifestConfig.Version != "2.0" {
 		panic(errors.New("Invalid manifest version. Currently supported versions: 2.0"))
 	}
-	return manifestConfig
+	return &manifestConfig, nil
 }
 
 // ExtractZipArchive processes a zip file and extracts a single file
@@ -88,7 +100,9 @@ func ExtractZipArchive(archiveFile, extractPath string, service types.Service) e
 		outputPath = filepath.Join(extractPath, service.OutputPath+".exe")
 	}
 	zipReader, err := zip.OpenReader(archiveFile)
-	utils.CheckError(err)
+	if err != nil {
+		return err
+	}
 	for _, file := range zipReader.File {
 		if strings.HasSuffix(file.Name, service.ArchivePath) {
 			if outputPath == "" {
@@ -96,7 +110,9 @@ func ExtractZipArchive(archiveFile, extractPath string, service types.Service) e
 			}
 			glog.Infof("Extracting to %q", outputPath)
 			outfile, err := os.Create(outputPath)
-			utils.CheckError(err)
+			if err != nil {
+				return err
+			}
 			reader, _ := file.Open()
 			if _, err := io.Copy(outfile, reader); err != nil {
 				glog.Error("Failed to create file")
@@ -114,7 +130,9 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Servic
 	var outputPath string = ""
 	file, _ := os.Open(archiveFile)
 	archive, err := gzip.NewReader(file)
-	utils.CheckError(err)
+	if err != nil {
+		return err
+	}
 	tarReader := tar.NewReader(archive)
 	if len(service.ArchivePath) > 0 {
 		outputPath = filepath.Join(extractPath, service.ArchivePath)
@@ -127,16 +145,23 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Servic
 		if err == io.EOF {
 			break
 		}
-		utils.CheckError(err)
+		if err != nil {
+			return err
+		}
 		if strings.HasSuffix(header.Name, service.ArchivePath) {
 			if outputPath == "" {
 				outputPath = filepath.Join(extractPath, header.Name)
 			}
 			glog.Infof("Extracting to %q", outputPath)
 			outfile, err := os.Create(outputPath)
-			utils.CheckError(err)
+			if err != nil {
+				return err
+			}
 			if _, err := io.Copy(outfile, tarReader); err != nil {
 				glog.Errorf("Failed to create file: %q", outputPath)
+			}
+			if err != nil {
+				return err
 			}
 			outfile.Chmod(fs.FileMode(header.Mode))
 			outfile.Close()
@@ -147,15 +172,26 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Servic
 
 // Run is the entrypoint for main program.
 func Run(buildFlags types.BuildFlags) {
-	cliFlags := cli.GetCliFlags(buildFlags)
+	cliFlags, err := cli.GetCliFlags(buildFlags)
+	if err != nil {
+		glog.Fatal(err)
+		return
+	}
 	var waitGroup sync.WaitGroup
-	manifest := ParseYamlManifest(cliFlags.ManifestFile)
+	manifest, err := ParseYamlManifest(cliFlags.ManifestFile)
+	if err != nil {
+		glog.Fatal(err)
+		return
+	}
 	for _, element := range manifest.Box {
 		if element.Skip {
 			continue
 		}
 		waitGroup.Add(1)
-		go DownloadService(cliFlags, manifest, element, &waitGroup)
+		go func(element types.Service) {
+			DownloadService(cliFlags, manifest, element)
+			waitGroup.Done()
+		}(element)
 	}
 	waitGroup.Wait()
 

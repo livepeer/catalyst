@@ -44,12 +44,6 @@ func PlatformExt(platform string) string {
 	return platformExtMap[platform]
 }
 
-func CheckError(err error) {
-	if err != nil {
-		glog.Fatal(err)
-	}
-}
-
 func IsCleanupFile(name string) bool {
 	return strings.HasSuffix(name, constants.ZipFileExtension) || strings.HasSuffix(name, constants.TarFileExtension) || strings.HasSuffix(name, ".sig") || strings.HasSuffix(name, "_checksums.txt")
 }
