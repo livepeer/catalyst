@@ -14,6 +14,8 @@ import (
 	"os/signal"
 	"path"
 	"strings"
+
+	"github.com/livepeer/livepeer-data/pkg/mistconnector"
 )
 
 func main() {
@@ -23,10 +25,10 @@ func main() {
 	rest := os.Args[2:]
 	// If we're being called for our OWN -j, respond accordingly
 	if len(rest) == 0 && procname == "-j" {
-		printJsonInfo(MistJSONInfo{
+		printJsonInfo(mistconnector.MistConfig{
 			Name:     "Livepeer Logger",
-			Friendly: "Logger for livepeer-* applications",
-			Desc:     "Logger for other livepeer-whatever applications. No need to add directly.",
+			FriendlyName: "Logger for livepeer-* applications",
+			Description:     "Logger for other livepeer-whatever applications. No need to add directly.",
 			Version:  "0.0.1",
 		})
 		os.Exit(0)
@@ -38,12 +40,12 @@ func main() {
 		}
 	}
 	if procname == "livepeer-victoria-metrics" && dashJ {
-		printJsonInfo(MistJSONInfo{
+		printJsonInfo(mistconnector.MistConfig{
 			Name:     "Livepeer Victoria Metrics",
-			Friendly: "Livepeer-in-a-Box packaged Victoria Metrics",
-			Desc:     "Livepeer-in-a-Box packaged Victoria Metrics. Comes with some built-in scrape configs for dev.",
+			FriendlyName: "Livepeer-in-a-Box packaged Victoria Metrics",
+			Description:     "Livepeer-in-a-Box packaged Victoria Metrics. Comes with some built-in scrape configs for dev.",
 			Version:  "0.0.1",
-			Required: map[string]MistJSONOption{
+			Required: map[string]mistconnector.MistOptional{
 				"promscrape.config": {
 					Name:    "promscrape.config",
 					Type:    "str",
@@ -114,23 +116,7 @@ func main() {
 	os.Exit(0)
 }
 
-type MistJSONOption struct {
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	Option  string `json:"option"`
-	Default string `json:"default"`
-	Help    string `json:"help"`
-}
-type MistJSONInfo struct {
-	Name     string                    `json:"name"`
-	Friendly string                    `json:"friendly"`
-	Desc     string                    `json:"desc"`
-	Optional map[string]MistJSONOption `json:"optional"`
-	Required map[string]MistJSONOption `json:"required"`
-	Version  string                    `json:"version"`
-}
-
-func printJsonInfo(jsonInfo MistJSONInfo) {
+func printJsonInfo(jsonInfo mistconnector.MistConfig) {
 	blob, err := json.Marshal(jsonInfo)
 	if err != nil {
 		panic(err)
