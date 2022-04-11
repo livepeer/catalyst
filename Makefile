@@ -43,7 +43,7 @@ build/compiled/lib/libsrt.a: build/compiled/lib/libmbedtls.a
 	&& cd $(buildpath)/srt \
 	&& mkdir build \
 	&& cd build \
-	&& cmake .. -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -D USE_ENCLIB=mbedtls -D ENABLE_SHARED=false \
+	&& cmake .. -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -D USE_ENCLIB=mbedtls -D ENABLE_SHARED=false -D ENABLE_APPS=false \
 	&& make -j${PROC_COUNT} install
 
 .PHONY: mistserver

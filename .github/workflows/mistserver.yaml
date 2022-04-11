@@ -138,6 +138,7 @@ jobs:
   release:
     name: Create release for mist binaries
     runs-on: ubuntu-20.04
+    if: ${{ github.ref_type == 'tag' }}
     needs:
       - linux
       - macos
