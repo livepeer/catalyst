@@ -57,9 +57,18 @@ jobs:
           path: livepeer-in-a-box/releases/
 
   macos:
-    name: Build mist binaries for macOS platform
+    strategy:
+      fail-fast: true
+      matrix:
+        arch:
+          - arm64
+          - amd64
+    name: Build mist binaries for macOS platform (${{ matrix.arch }})
     runs-on: macos-11
     steps:
+      - name: Setup env
+        run: echo GOARCH="${{ matrix.arch }}" >> $GITHUB_ENV
+
       - name: Check out code
         uses: actions/checkout@v3
         with:
@@ -87,14 +96,11 @@ jobs:
             ${{ runner.os }}-build-
 
       - name: Compile mist binaries
-        shell: bash
         run: |
           command -v brew && brew install coreutils
           cd livepeer-in-a-box/
           mkdir -p releases/ build/ bin/
           make mistserver
-          cd bin/
-          tar -czvf "../releases/livepeer-mistserver-darwin-amd64.tar.gz" ./*
 
       - uses: actions-ecosystem/action-regex-match@v2
         id: match-tag
@@ -113,6 +119,11 @@ jobs:
           app-notarization-password: ${{ secrets.CI_MACOS_NOTARIZATION_PASSWORD }}
           binary-path: "livepeer-in-a-box/bin/"
           app-bundle-id: "org.livepeer.mistserver"
+
+      - name: Archive built binaries
+        run: |
+          cd bin/
+          tar -czvf "../releases/livepeer-mistserver-darwin-${GOARCH}.tar.gz" ./*
 
       - name: Upload mist binaries as build artifacts
         uses: actions/upload-artifact@master
