@@ -1,38 +1,46 @@
-version: 1.0
+# Refer the `README` for specification details of the manifest
+version: 2.0
 release: latest
 
 box:
   - name: analyzer
-    src: https://github.com/livepeer/livepeer-data
+    project: livepeer/livepeer-data
 
   - name: api
-    src: https://github.com/livepeer/livepeer-com
+    project: livepeer/livepeer-com
 
   - name: mapic
-    src: https://github.com/livepeer/stream-tester
+    project: livepeer/stream-tester
     binary: livepeer-mist-api-connector
 
   - name: livepeer
-    src: https://github.com/livepeer/go-livepeer
+    project: livepeer/go-livepeer
     # release: v0.5.26-box
     binary: livepeer
     archivePath: livepeer
+    skipGpg: true
+    skipChecksum: true
 
   - name: www
-    src: https://github.com/livepeer/livepeer-com
+    project: livepeer/livepeer-com
     binary: livepeer-www
 
+  - name: task-runner
+    project: livepeer/task-runner
+
   - name: livepeer-transcode
-    src: https://github.com/livepeer/transcode-cli
+    project: livepeer/transcode-cli
     binary: livepeer-transcode
 
   - name: victoria-metrics
-    src: https://github.com/VictoriaMetrics/VictoriaMetrics
-    release: v1.73.1
+    project: VictoriaMetrics/VictoriaMetrics
+    release: v1.74.0
     archivePath: victoria-metrics-prod
     outputPath: livepeer-victoria-metrics
     srcFilenames:
-      linux-amd64: victoria-metrics-amd64-v1.73.1.tar.gz
-      linux-arm64: victoria-metrics-arm64-v1.73.1.tar.gz
-      darwin-amd64: victoria-metrics-darwin-amd64-v1.73.1.tar.gz
-      darwin-arm64: victoria-metrics-darwin-arm64-v1.73.1.tar.gz
+      linux-amd64: victoria-metrics-amd64-v1.74.0.tar.gz
+      linux-arm64: victoria-metrics-arm64-v1.74.0.tar.gz
+      darwin-amd64: victoria-metrics-darwin-amd64-v1.74.0.tar.gz
+      darwin-arm64: victoria-metrics-darwin-arm64-v1.74.0.tar.gz
+    skipGpg: true
+    skipChecksum: true
