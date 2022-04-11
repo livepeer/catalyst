@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - "main"
+      - "hjp/*"
+    paths:
+      - ".github/workflows/mistserver.yaml"
     tags:
       - "mist-v*"
 
@@ -97,7 +100,7 @@ jobs:
         id: match-tag
         with:
           text: ${{ github.ref_name }}
-          regex: '^(master|main|mist-v[0-9]+\.\d+\.\d+)$'
+          regex: '^(master|main|mist-v[0-9]+\.\d+(\.\d+)?)$'
 
       - name: Codesign and notarize binaries
         if: ${{ steps.match-tag.outputs.match != '' }}
@@ -134,7 +137,7 @@ jobs:
         id: match-tag
         with:
           text: ${{ github.ref_name }}
-          regex: '^mist-v([0-9]+\.\d+\.\d+)$'
+          regex: '^mist-v([0-9]+\.\d+(\.\d+)?)$'
 
       - name: Download artifacts from build stages
         if: ${{ steps.match-tag.outputs.match != '' }}
