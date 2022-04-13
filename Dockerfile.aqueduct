@@ -1,0 +1,32 @@
+FROM	alpine:latest	as	downloader
+
+WORKDIR	/src
+
+ARG	LP_MIST_VERSION="3.0.0"
+ARG	LP_LIVEPEER_VERSION="0.5.29"
+
+RUN	apk add --no-cache \
+	curl \
+	tar \
+	&& mkdir -p /src/mist /src/livepeer \
+	&& curl -sLO "https://github.com/livepeer/go-livepeer/releases/download/v${LP_LIVEPEER_VERSION}/livepeer-linux-amd64.tar.gz" \
+	&& tar -xzf "livepeer-linux-amd64.tar.gz" --strip-components=2 -C /src/livepeer \
+	&& rm -f "livepeer-linux-amd64.tar.gz" \
+	&& curl -sLO "https://github.com/livepeer/livepeer-in-a-box/releases/download/mist-v${LP_MIST_VERSION}/livepeer-mistserver-linux-amd64.tar.gz" \
+	&& tar -xzf "livepeer-mistserver-linux-amd64.tar.gz" --strip-components=1 -C /src/mist \
+	&& rm -f "livepeer-mistserver-linux-amd64.tar.gz"
+
+# Strip binaries of debug symbols to reduce image size
+RUN	apk add --no-cache \
+	gcc \
+	&& strip /src/mist/* \
+	&& strip /src/livepeer/*
+
+FROM	ubuntu:20.04
+
+LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
+
+COPY --from=downloader /src/livepeer/	/usr/bin/
+COPY --from=downloader /src/mist/	/usr/bin/
+
+CMD	["MistController"]
