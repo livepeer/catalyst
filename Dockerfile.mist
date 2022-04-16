@@ -14,4 +14,4 @@ RUN make mistserver
 
 FROM ubuntu:20.04
 COPY --from=mistbuild /box/bin/* /usr/bin
-CMD MistController
+ENTRYPOINT ["MistController"]
