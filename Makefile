@@ -1,4 +1,4 @@
-PROC_COUNT+="$(shell nproc)"
+PROC_COUNT?="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 GO_LDFLAG_VERSION := -X 'main.Version=$(shell git describe --all --dirty)'
 

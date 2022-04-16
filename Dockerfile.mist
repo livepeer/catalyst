@@ -1,0 +1,17 @@
+FROM ubuntu:20.04 AS mistbuild
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt update && apt install -y build-essential cmake git
+
+ARG MIST_BRANCH=livepeer-in-a-box-plus-sessions
+
+WORKDIR /box
+
+RUN git clone https://github.com/ddvtech/mistserver.git -b $MIST_BRANCH /mistserver
+
+ADD Makefile Makefile
+RUN make mistserver
+
+FROM ubuntu:20.04
+COPY --from=mistbuild /box/bin/* /usr/bin
+CMD MistController
