@@ -55,6 +55,12 @@ func main() {
 		})
 		os.Exit(0)
 	}
+	isOrch := false
+	for _, thisFlag := range rest {
+		if thisFlag == "-orchestrator" {
+			isOrch = true
+		}
+	}
 	mypid := os.Getpid()
 	cmd := exec.Command(os.Args[1], rest...)
 	cmd.Stdin = os.Stdin
@@ -80,7 +86,11 @@ func main() {
 				scanner := bufio.NewScanner(pipe)
 				for scanner.Scan() {
 					text := scanner.Text()
-					fmt.Fprintf(os.Stderr, "INFO|%s|%d|||%s\n", procname, mypid, text)
+					priority := "INFO"
+					if isOrch {
+						priority = "WARN"
+					}
+					fmt.Fprintf(os.Stderr, "%s|%s|%d|||%s\n", priority, procname, mypid, text)
 				}
 			}(pipe)
 		}
