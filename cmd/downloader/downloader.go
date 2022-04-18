@@ -91,7 +91,7 @@ func ParseYamlManifest(manifestPath string) (*types.BoxManifest, error) {
 // ExtractZipArchive processes a zip file and extracts a single file
 // from the service definition.
 func ExtractZipArchive(archiveFile, extractPath string, service types.Service) error {
-	var outputPath string = ""
+	var outputPath string
 	if len(service.ArchivePath) > 0 && !strings.HasSuffix(service.ArchivePath, ".exe") {
 		service.ArchivePath += ".exe"
 		outputPath = filepath.Join(extractPath, service.ArchivePath)
@@ -127,7 +127,7 @@ func ExtractZipArchive(archiveFile, extractPath string, service types.Service) e
 // ExtractTarGzipArchive processes a tarball file and extracts a
 // single file from the service definition.
 func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Service) error {
-	var outputPath string = ""
+	var outputPath string
 	file, _ := os.Open(archiveFile)
 	archive, err := gzip.NewReader(file)
 	if err != nil {
