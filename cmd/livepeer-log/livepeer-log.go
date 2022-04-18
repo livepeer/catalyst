@@ -26,10 +26,10 @@ func main() {
 	// If we're being called for our OWN -j, respond accordingly
 	if len(rest) == 0 && procname == "-j" {
 		printJsonInfo(mistconnector.MistConfig{
-			Name:     "Livepeer Logger",
+			Name:         "Livepeer Logger",
 			FriendlyName: "Logger for livepeer-* applications",
-			Description:     "Logger for other livepeer-whatever applications. No need to add directly.",
-			Version:  "0.0.1",
+			Description:  "Logger for other livepeer-whatever applications. No need to add directly.",
+			Version:      "0.0.1",
 		})
 		os.Exit(0)
 	}
@@ -41,10 +41,10 @@ func main() {
 	}
 	if procname == "livepeer-victoria-metrics" && dashJ {
 		printJsonInfo(mistconnector.MistConfig{
-			Name:     "Livepeer Victoria Metrics",
+			Name:         "Livepeer Victoria Metrics",
 			FriendlyName: "Livepeer-in-a-Box packaged Victoria Metrics",
-			Description:     "Livepeer-in-a-Box packaged Victoria Metrics. Comes with some built-in scrape configs for dev.",
-			Version:  "0.0.1",
+			Description:  "Livepeer-in-a-Box packaged Victoria Metrics. Comes with some built-in scrape configs for dev.",
+			Version:      "0.0.1",
 			Required: map[string]mistconnector.MistOptional{
 				"promscrape.config": {
 					Name:    "promscrape.config",
