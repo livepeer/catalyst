@@ -43,11 +43,10 @@ jobs:
           go fmt ./...
           git diff --exit-code
 
-      - name: Lint
-        uses: golangci/golangci-lint-action@v3
+      - name: Run Revive Action by building from repository
+        uses: morphy2k/revive-action@v2
         with:
-          version: v1.39.0
-          args: '--disable-all --enable=gofmt --enable=vet --enable=golint --deadline=4m pm verification'
+          config: config.toml
 
       - name: misspell
         uses: reviewdog/action-misspell@v1
