@@ -16,7 +16,11 @@ func TestTagInformation(t *testing.T) {
 		"livepeer/go-livepeer",
 	}
 	for _, project := range projects {
-		GetLatestRelease(project)
+		_, err := GetLatestRelease(project)
+		if err != nil {
+			t.Error("could not fetch tag information")
+			t.Fail()
+		}
 	}
 }
 

@@ -1,0 +1,62 @@
+name: Trigger test suite
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Test the livepeer-box project
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          # Check https://github.com/livepeer/go-livepeer/pull/1891
+          # for ref value discussion
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up go
+        id: go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.17
+
+      - name: Cache go modules
+        id: cache-go-mod
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install go modules
+        if: steps.cache-go-mod.outputs.cache-hit != 'true'
+        run: go mod download
+
+      - name: go fmt
+        run: |
+          go fmt ./...
+          git diff --exit-code
+
+      - name: Run Revive Action by building from repository
+        uses: morphy2k/revive-action@v2
+        with:
+          config: config.toml
+
+      - name: misspell
+        uses: reviewdog/action-misspell@v1
+
+      - name: Run tests with coverage
+        run: go test ./... -race -covermode=atomic -coverprofile=coverage.out
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.out
+          name: livepeer-in-a-box
+          verbose: true

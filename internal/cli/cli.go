@@ -16,16 +16,16 @@ import (
 func validateFlags(flags types.CliFlags) error {
 	if !utils.IsSupportedPlatformArch(flags.Platform, flags.Architecture) {
 		return fmt.Errorf(
-			"Invalid combination of platform+architecture detected: %s+%s",
+			"invalid combination of platform+architecture detected: %s+%s",
 			flags.Platform,
 			flags.Architecture,
 		)
 	}
 	if !utils.IsFileExists(flags.ManifestFile) {
-		return errors.New("Invalid path to manifest file!")
+		return errors.New("invalid path to manifest file")
 	}
 	if info, err := os.Stat(flags.DownloadPath); !(err == nil && info.IsDir()) {
-		return errors.New("Invalid path provided for downloaded binaries! Check if it exists?")
+		return errors.New("invalid path provided for downloaded binaries! check if it exists?")
 	}
 	return nil
 }
@@ -44,6 +44,13 @@ func GetCliFlags(buildFlags types.BuildFlags) (types.CliFlags, error) {
 	fs.StringVar(&cliFlags.ManifestFile, "manifest", "manifest.yaml", "Path to manifest yaml file")
 	fs.BoolVar(&cliFlags.SkipDownloaded, "skip-downloaded", false, "Skip already downloaded archive (if found)")
 	fs.BoolVar(&cliFlags.Cleanup, "cleanup", true, "Cleanup downloaded archives after extraction")
+
+	version := fs.Bool("version", false, "Get version information")
+
+	if *version {
+		fmt.Printf("livepeer-box version: %s\n", buildFlags.Version)
+		os.Exit(0)
+	}
 
 	ff.Parse(
 		fs, os.Args[1:],
