@@ -125,6 +125,10 @@ dev:
 livepeer-log:
 	go build -o ./bin/livepeer-log ./cmd/livepeer-log/livepeer-log.go
 
+.PHONY: catalyst
+catalyst:
+	go build -o ./bin/catalyst ./cmd/catalyst/catalyst.go
+
 .PHONY: clean
 clean:
 	git clean -ffdx && mkdir -p bin build
