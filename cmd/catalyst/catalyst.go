@@ -67,15 +67,10 @@ func ensureConfigFile(cli CLI) (string, error) {
 
 	confPath := fmt.Sprintf("%s/catalyst.json", cli.DataDir)
 
-	_, err := os.Stat(confPath)
-	if err == nil {
+	if utils.IsFileExists(confPath) {
 		// Already exists
 		glog.Infof("found %s, skipping config generation", confPath)
 		return confPath, nil
-	}
-	if !errors.Is(err, os.ErrNotExist) {
-		// Error other than "file not found"
-		return "", err
 	}
 
 	glog.Infof("First boot detected, generating config file...")
