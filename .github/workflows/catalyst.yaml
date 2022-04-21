@@ -10,6 +10,9 @@ on:
       - "main"
       - "*catalyst*"
 
+env:
+  DOCKER_IMAGE_NAME: livepeerci/catalyst
+
 jobs:
   catalyst:
     name: Build and publish docker image
@@ -27,16 +30,25 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.DOCKER_IMAGE_NAME }}
+
       - name: Get UTC date for docker tag
         id: docker-date-tag
         run: |
-          echo "::set-output name=date::$(date -u +"%Y%m%d%H%M%S")"
+          echo "::set-output name=date::$(date -u +'%Y%m%d%H%M%S')"
 
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
           push: true
           tags: |
-            livepeerci/catalyst:latest
-            livepeerci/catalyst:${{ steps.docker-date-tag.outputs.date }}
+            ${{ env.DOCKER_IMAGE_NAME }}:latest
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ steps.docker-date-tag.outputs.date }}
           file: "Dockerfile.catalyst"
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
