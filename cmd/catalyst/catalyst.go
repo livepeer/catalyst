@@ -77,6 +77,12 @@ func ensureConfigFile(cli CLI) (string, error) {
 	} else if err != nil {
 		return "", fmt.Errorf("error loading catalyst.%s.json: %s", cli.Mode, err)
 	}
+
+	// mode-specific checks
+	if cli.Mode == "api" && cli.APIKey == "" {
+		return "", fmt.Errorf("--apiKey is required in --mode=api")
+	}
+
 	tmpl := string(blob)
 	f, err := os.Create(confPath)
 	if err != nil {
