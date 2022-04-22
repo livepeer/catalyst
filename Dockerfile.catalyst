@@ -88,4 +88,6 @@ COPY --from=lpbuild	/opt/	/usr/bin/
 COPY --from=lplog-build	/src/livepeer-in-a-box/bin/	/usr/bin/
 COPY --from=catalyst-build	/src/bin/	/usr/bin/
 
+EXPOSE	1935 4242 8080 8889/udp
+
 ENTRYPOINT	["/usr/bin/catalyst"]
