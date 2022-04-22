@@ -47,9 +47,9 @@ RUN	apt update -yq \
 	&& apt install -yqq build-essential curl gcc g++ git gnutls-dev autoconf pkg-config golang-goprotobuf-dev \
 	&& mkdir -p /opt
 
-RUN	git clone -b auth-header-2 https://github.com/livepeer/go-livepeer.git \
+RUN	git clone https://github.com/livepeer/go-livepeer.git \
 	&& cd go-livepeer \
-	&& go mod download -x \
+	&& go mod download \
 	&& ./install_ffmpeg.sh /root
 
 ENV	PKG_CONFIG_PATH="/root/compiled/lib/pkgconfig"	BUILD_TAGS="${BUILD_TAGS}"

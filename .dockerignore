@@ -1,3 +1,6 @@
 .*
+*~
+Dockerfile.catalyst
 bin/
+lib/
 build/
