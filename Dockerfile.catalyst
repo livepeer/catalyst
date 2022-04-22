@@ -83,6 +83,11 @@ FROM	ubuntu:20.04
 
 LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
 
+# Needed for working TLS
+RUN apt-get update \
+	&& apt-get install -y ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY --from=mistbuild	/opt/bin/	/usr/bin/
 COPY --from=lpbuild	/opt/	/usr/bin/
 COPY --from=lplog-build	/src/livepeer-in-a-box/bin/	/usr/bin/
