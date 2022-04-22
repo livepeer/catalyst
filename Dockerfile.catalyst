@@ -31,7 +31,7 @@ ENV LD_LIBRARY_PATH="/src/compiled/lib" C_INCLUDE_PATH="/src/compiled/include"
 RUN	git clone -b catalyst https://github.com/DDVTECH/mistserver.git \
 	&& mkdir -p mistserver/build \
 	&& cd mistserver/build \
-	&& git show 9e7e080e3a5dbef8fa4164fe7351cf6178911389 \
+	&& git show a773d1270 \
 	&& cmake .. -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=/opt -DCMAKE_PREFIX_PATH=/src/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 	&& make -j$(nproc) \
 	&& make install \
