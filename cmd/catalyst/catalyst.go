@@ -20,7 +20,7 @@ import (
 var conf embed.FS
 
 type CLI struct {
-	Mode, APIKey, OrchAddr, DataDir, EthPassword, EthURL string
+	Mode, APIKey, EthOrchAddr, DataDir, EthPassword, EthURL string
 }
 
 func main() {
@@ -34,6 +34,7 @@ func main() {
 	fs.StringVar(&cli.Mode, "mode", "", "Allowed options: local, api, mainnet")
 	fs.StringVar(&cli.APIKey, "apiKey", "", "With --mode=api, which Livepeer.com API key should you use?")
 	ethOrchAddr := fs.String("ethOrchAddr", "", "With --mode=mainnet, the Ethereum address of a hardcoded orchestrator")
+	fs.StringVar(&cli.EthURL, "ethUrl", "", "Address of an Arbitrum Mainnet HTTP-RPC node")
 	fs.StringVar(&cli.EthPassword, "ethPassword", "", "With --mode=mainnet, password for mounted Ethereum wallet. Will be prompted if not provided.")
 	fs.StringVar(&cli.DataDir, "dataDir", "/etc/livepeer", "Directory within the container to save settings")
 
@@ -61,7 +62,7 @@ func main() {
 }
 
 func ensureConfigFile(cli CLI) (string, error) {
-	if _, err := os.Stat(cli.DataDir + "/not-mounted"); !errors.Is(err, os.ErrNotExist) {
+	if utils.IsFileExists(cli.DataDir + "/not-mounted") {
 		return "", fmt.Errorf("settings directory not bind-mounted. Please run with -v ./livepeer:%s", cli.DataDir)
 	}
 
@@ -106,6 +107,7 @@ func ensureConfigFile(cli CLI) (string, error) {
 	return confPath, nil
 
 		w.Flush()
+	}
 	}
 
 	if utils.IsFileExists(confPath) {

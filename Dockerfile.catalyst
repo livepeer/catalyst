@@ -49,6 +49,7 @@ RUN	apt update -yq \
 
 RUN	git clone https://github.com/livepeer/go-livepeer.git \
 	&& cd go-livepeer \
+	&& git checkout eli/eth-password \
 	&& go mod download \
 	&& ./install_ffmpeg.sh /root
 
@@ -56,7 +57,6 @@ ENV	PKG_CONFIG_PATH="/root/compiled/lib/pkgconfig"	BUILD_TAGS="${BUILD_TAGS}"
 
 RUN	cd go-livepeer/ \
 	&& BUILD_TAGS=mainnet make -j$(nproc) livepeer livepeer_cli \
-	&& make -j$(nproc) livepeer livepeer_cli \
 	&& mv livepeer* /opt \
 	&& strip /opt/*
 
