@@ -20,7 +20,7 @@ import (
 var conf embed.FS
 
 type CLI struct {
-	Mode, APIKey, EthOrchAddr, DataDir, EthPassword, EthURL string
+	Mode, APIKey, OrchAddr, DataDir, EthPassword, EthURL string
 }
 
 func main() {
@@ -33,7 +33,7 @@ func main() {
 	verbosity := fs.String("v", "", "Log verbosity.  {4|5|6}")
 	fs.StringVar(&cli.Mode, "mode", "", "Allowed options: local, api, mainnet")
 	fs.StringVar(&cli.APIKey, "apiKey", "", "With --mode=api, which Livepeer.com API key should you use?")
-	fs.StringVar(&cli.EthOrchAddr, "ethOrchAddr", "", "With --mode=mainnet, the Ethereum address of a hardcoded orchestrator")
+	fs.StringVar(&cli.OrchAddr, "orchAddr", "", "With --mode=mainnet, the Ethereum address of a hardcoded orchestrator")
 	fs.StringVar(&cli.EthURL, "ethUrl", "", "Address of an Arbitrum Mainnet HTTP-RPC node")
 	fs.StringVar(&cli.EthPassword, "ethPassword", "", "With --mode=mainnet, password for mounted Ethereum wallet. Will be prompted if not provided.")
 	fs.StringVar(&cli.DataDir, "dataDir", "/etc/livepeer", "Directory within the container to save settings")
@@ -47,8 +47,6 @@ func main() {
 	)
 	flag.CommandLine.Parse(nil)
 	vFlag.Value.Set(*verbosity)
-
-	glog.V(6).Infof("mode=%s apiKey=%s ethOrchAddr=%s", cli.Mode, cli.APIKey, cli.EthOrchAddr)
 
 	confPath, err := ensureConfigFile(cli)
 	if err != nil {

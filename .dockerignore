@@ -4,3 +4,4 @@ Dockerfile.catalyst
 bin/
 lib/
 build/
+data/

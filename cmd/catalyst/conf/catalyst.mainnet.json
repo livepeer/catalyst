@@ -47,6 +47,7 @@
         "metricsPerStream": false,
         "monitor": true,
         "network": "arbitrum-one-mainnet",
+        "orchAddr": "{{ .OrchAddr }}",
         "orchestrator": false,
         "redeemer": false,
         "reward": false,
