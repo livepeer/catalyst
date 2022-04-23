@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"embed"
 	"errors"
 	"flag"
@@ -12,13 +13,14 @@ import (
 	"github.com/golang/glog"
 	"github.com/livepeer/livepeer-in-a-box/internal/utils"
 	ff "github.com/peterbourgon/ff/v3"
+	"golang.org/x/term"
 )
 
 //go:embed conf
 var conf embed.FS
 
 type CLI struct {
-	Mode, APIKey, EthOrchAddr, DataDir string
+	Mode, APIKey, EthOrchAddr, DataDir, EthPassword, EthURL string
 }
 
 func main() {
@@ -32,6 +34,8 @@ func main() {
 	fs.StringVar(&cli.Mode, "mode", "", "Allowed options: local, api, mainnet")
 	fs.StringVar(&cli.APIKey, "apiKey", "", "With --mode=api, which Livepeer.com API key should you use?")
 	fs.StringVar(&cli.EthOrchAddr, "ethOrchAddr", "", "With --mode=mainnet, the Ethereum address of a hardcoded orchestrator")
+	fs.StringVar(&cli.EthURL, "ethUrl", "", "Address of an Arbitrum Mainnet HTTP-RPC node")
+	fs.StringVar(&cli.EthPassword, "ethPassword", "", "With --mode=mainnet, password for mounted Ethereum wallet. Will be prompted if not provided.")
 	fs.StringVar(&cli.DataDir, "dataDir", "/etc/livepeer", "Directory within the container to save settings")
 
 	ff.Parse(
@@ -58,11 +62,53 @@ func main() {
 }
 
 func ensureConfigFile(cli CLI) (string, error) {
-	if _, err := os.Stat(cli.DataDir + "/not-mounted"); !errors.Is(err, os.ErrNotExist) {
+	if utils.IsFileExists(cli.DataDir + "/not-mounted") {
 		return "", fmt.Errorf("settings directory not bind-mounted. Please run with -v ./livepeer:%s", cli.DataDir)
 	}
 
 	confPath := fmt.Sprintf("%s/catalyst.json", cli.DataDir)
+
+	if cli.Mode == "mainnet" && cli.EthURL == "" {
+		return "", fmt.Errorf("--ethUrl is required with --mode=mainnet")
+	}
+
+	if cli.Mode == "mainnet" && cli.EthPassword == "" {
+		keystoreExists := utils.IsFileExists(cli.DataDir + "/mainnet-broadcaster/keystore")
+		if !keystoreExists {
+			glog.Infof("No Ethereum account detected, creating new account.")
+		}
+		fmt.Print("Enter password for Ethereum account: ")
+		passphraseBytes, err := term.ReadPassword(int(syscall.Stdin))
+		fmt.Println("")
+		passphrase := string(passphraseBytes)
+		if err != nil {
+			return "", err
+		}
+		if !keystoreExists {
+			fmt.Print("Confirm password for new Ethereum account: ")
+			confirmPassphraseBytes, err := term.ReadPassword(int(syscall.Stdin))
+			fmt.Println("")
+			confirmPassphrase := string(confirmPassphraseBytes)
+			if err != nil {
+				return "", err
+			}
+			if passphrase != confirmPassphrase {
+				return "", fmt.Errorf("passphrase did not match")
+			}
+		}
+		pwFile, err := os.Create("/tmp/pw.conf")
+		if err != nil {
+			return "", err
+		}
+		defer pwFile.Close()
+		w := bufio.NewWriter(pwFile)
+		_, err = w.WriteString("ethPassword " + passphrase)
+		if err != nil {
+			return "", err
+		}
+
+		w.Flush()
+	}
 
 	if utils.IsFileExists(confPath) {
 		// Already exists
