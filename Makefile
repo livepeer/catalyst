@@ -23,11 +23,12 @@ build/compiled/lib/libmbedtls.a:
 	export PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig \
 	&& export LD_LIBRARY_PATH=$(buildpath)/compiled/lib \
 	&& export C_INCLUDE_PATH=$(buildpath)/compiled/include \
+	&& rm -rf $(buildpath)/mbedtls \
 	&& git clone -b dtls_srtp_support --depth=1 https://github.com/livepeer/mbedtls.git $(buildpath)/mbedtls \
   && cd $(buildpath)/mbedtls \
   && mkdir build \
   && cd build \
-  && cmake -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled .. \
+  && cmake -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -DUSE_STATIC_MBEDTLS_LIBRARY=true -DCMAKE_C_FLAGS="-fPIC" .. \
   && make -j$(nproc) install
 
 build/compiled/lib/libsrtp2.a:
@@ -35,16 +36,17 @@ build/compiled/lib/libsrtp2.a:
   && cd $(buildpath)/libsrtp \
   && mkdir build \
   && cd build \
-  && cmake -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled .. \
+  && cmake -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -DCMAKE_C_FLAGS="-fPIC" .. \
   && make -j$(nproc) install
 
 build/compiled/lib/libsrt.a: build/compiled/lib/libmbedtls.a
 build/compiled/lib/libsrt.a:
-	git clone https://github.com/Haivision/srt.git $(buildpath)/srt \
+	rm -rf $(buildpath)/srt \
+	&& git clone https://github.com/Haivision/srt.git $(buildpath)/srt \
   && cd $(buildpath)/srt \
   && mkdir build \
   && cd build \
-  && cmake .. -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -D USE_ENCLIB=mbedtls -D ENABLE_SHARED=false \
+  && cmake .. -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -D USE_ENCLIB=mbedtls -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_PREFIX_PATH=$(buildpath)/compiled \
   && make -j$(nproc) install
 
 mistserver: build/compiled/lib/libmbedtls.a build/compiled/lib/libsrtp2.a build/compiled/lib/libsrt.a
@@ -57,7 +59,7 @@ mistserver:
 	export C_INCLUDE_PATH=~$(buildpath)/compiled/include \
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
-	&& cmake ../../../mistserver -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+	&& cmake ../../../mistserver -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_SHARED_LIBS=yes -DCMAKE_C_FLAGS="-fPIC" \
 	&& make -j${PROC_COUNT} \
 	&& make install
 

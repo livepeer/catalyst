@@ -3,7 +3,7 @@ FROM ubuntu:20.04 AS mistbuild
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update && apt install -y build-essential cmake git
 
-ARG MIST_BRANCH=livepeer-in-a-box-plus-sessions
+ARG MIST_BRANCH=catalyst
 
 WORKDIR /box
 
