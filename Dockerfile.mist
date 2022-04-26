@@ -10,8 +10,9 @@ WORKDIR /box
 RUN git clone https://github.com/ddvtech/mistserver.git -b $MIST_BRANCH /mistserver
 
 ADD Makefile Makefile
-RUN make mistserver
+RUN make mistserver BUILD_SHARED_LIBS=yes
 
 FROM ubuntu:20.04
 COPY --from=mistbuild /box/bin/* /usr/bin
+COPY --from=mistbuild /box/lib/* /usr/lib
 ENTRYPOINT ["MistController"]

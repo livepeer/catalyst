@@ -1,6 +1,7 @@
 PROC_COUNT?="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 GO_LDFLAG_VERSION := -X 'main.Version=$(shell git describe --all --dirty)'
+BUILD_SHARED_LIBS ?= "no"
 
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
@@ -46,7 +47,7 @@ build/compiled/lib/libsrt.a:
   && cd $(buildpath)/srt \
   && mkdir build \
   && cd build \
-  && cmake .. -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -D USE_ENCLIB=mbedtls -DCMAKE_C_FLAGS="-fPIC" -DCMAKE_PREFIX_PATH=$(buildpath)/compiled \
+  && cmake .. -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -D USE_ENCLIB=mbedtls -D CMAKE_POSITION_INDEPENDENT_CODE=on -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DENABLE_SHARED=no \
   && make -j$(nproc) install
 
 mistserver: build/compiled/lib/libmbedtls.a build/compiled/lib/libsrtp2.a build/compiled/lib/libsrt.a
@@ -59,7 +60,7 @@ mistserver:
 	export C_INCLUDE_PATH=~$(buildpath)/compiled/include \
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
-	&& cmake ../../../mistserver -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_SHARED_LIBS=yes -DCMAKE_C_FLAGS="-fPIC" \
+	&& cmake ../../../mistserver -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS} -DCMAKE_C_FLAGS="-fPIC" \
 	&& make -j${PROC_COUNT} \
 	&& make install
 
