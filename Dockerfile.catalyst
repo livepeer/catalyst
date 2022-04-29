@@ -80,19 +80,22 @@ COPY	.	.
 RUN	make catalyst \
 	&& strip bin/*
 
+FROM livepeer/mist-api-connector:v0.12.5-5-gc5f9da9 AS mapic
+
 FROM	ubuntu:20.04
 
 LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
 
 # Needed for working TLS
 RUN apt-get update \
-	&& apt-get install -y ca-certificates \
+	&& apt-get install -y ca-certificates musl \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=mistbuild	/opt/bin/	/usr/bin/
 COPY --from=lpbuild	/opt/	/usr/bin/
 COPY --from=lplog-build	/src/livepeer-in-a-box/bin/	/usr/bin/
 COPY --from=catalyst-build	/src/bin/	/usr/bin/
+COPY --from=mapic /root/mist-api-connector /usr/bin/livepeer-mist-api-connector
 
 EXPOSE	1935 4242 8080 8889/udp
 
