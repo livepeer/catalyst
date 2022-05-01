@@ -34,8 +34,11 @@ RUN	git clone -b catalyst https://github.com/DDVTECH/mistserver.git \
 	&& git checkout 3c61d7baae3195b8898fc88cd6c89960268b054b \
 	&& cmake .. -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=/opt -DCMAKE_PREFIX_PATH=/src/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 	&& make -j$(nproc) \
-	&& make install \
-	&& strip /opt/bin/*
+	&& make install
+
+ARG STRIP_BINARIES=true
+
+RUN if [ "$STRIP_BINARIES" = "true" ]; then strip /opt/bin/*; fi
 
 FROM	golang:1-stretch	as	lpbuild
 
