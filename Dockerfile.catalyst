@@ -38,10 +38,6 @@ RUN	git clone -b catalyst https://github.com/DDVTECH/mistserver.git \
 	&& make -j$(nproc) \
 	&& make install
 
-ARG STRIP_BINARIES=true
-
-RUN if [ "$STRIP_BINARIES" = "true" ]; then strip /opt/bin/*; fi
-
 FROM	golang:1-stretch	as	lpbuild
 
 ARG	BUILD_TAGS="dev"
@@ -61,8 +57,7 @@ ENV	PKG_CONFIG_PATH="/root/compiled/lib/pkgconfig"	BUILD_TAGS="${BUILD_TAGS}"
 
 RUN	cd go-livepeer/ \
 	&& BUILD_TAGS=mainnet make -j$(nproc) livepeer livepeer_cli \
-	&& mv livepeer* /opt \
-	&& strip /opt/*
+	&& mv livepeer* /opt
 
 FROM	golang:1-stretch	as	lplog-build
 
@@ -72,8 +67,7 @@ RUN	apt update \
 	&& apt install -yqq build-essential git \
 	&& git clone https://github.com/livepeer/livepeer-in-a-box.git \
 	&& cd livepeer-in-a-box \
-	&& make livepeer-log \
-	&& strip bin/*
+	&& make livepeer-log
 
 FROM	golang:1-stretch	as	catalyst-build
 
@@ -81,10 +75,26 @@ WORKDIR /src
 
 COPY	.	.
 
-RUN	make catalyst \
-	&& strip bin/*
+RUN	make catalyst
 
-FROM livepeer/mist-api-connector:v0.12.5-7-gaebcc22 AS mapic
+FROM	livepeer/mist-api-connector:v0.12.5-7-gaebcc22 AS mapic
+
+FROM	ubuntu:20.04	AS	bin-strip
+
+WORKDIR	/opt
+
+COPY --from=mistbuild	/opt/bin/	/opt/
+COPY --from=lpbuild	/opt/	/opt/
+COPY --from=lplog-build	/src/livepeer-in-a-box/bin/	/opt/
+COPY --from=catalyst-build	/src/bin/	/opt/
+COPY --from=mapic /root/mist-api-connector /opt/livepeer-mist-api-connector
+
+RUN	apt update -y \
+	&& apt install -yqq build-essential
+
+ARG	STRIP_BINARIES=true
+
+RUN	if [ "$STRIP_BINARIES" = "true" ]; then strip /opt/*; fi
 
 FROM	ubuntu:20.04
 
@@ -95,11 +105,7 @@ RUN apt-get update \
 	&& apt-get install -y ca-certificates musl \
   && rm -rf /var/lib/apt/lists/*
 
-COPY --from=mistbuild	/opt/bin/	/usr/bin/
-COPY --from=lpbuild	/opt/	/usr/bin/
-COPY --from=lplog-build	/src/livepeer-in-a-box/bin/	/usr/bin/
-COPY --from=catalyst-build	/src/bin/	/usr/bin/
-COPY --from=mapic /root/mist-api-connector /usr/bin/livepeer-mist-api-connector
+COPY --from=bin-strip	/opt/	/usr/bin/
 
 EXPOSE	1935 4242 8080 8889/udp
 

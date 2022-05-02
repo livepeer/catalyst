@@ -1,6 +1,8 @@
 PROC_COUNT+="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 GO_LDFLAG_VERSION := -X 'main.Version=$(shell git describe --all --dirty)'
+MIST_COMMIT ?= "catalyst"
+STRIP_BINARIES ?= "true"
 
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
@@ -132,6 +134,15 @@ catalyst:
 .PHONY: clean
 clean:
 	git clean -ffdx && mkdir -p bin build
+
+.PHONY: docker
+docker:
+	docker buildx build \
+	  --file Dockerfile.catalyst \
+	  --tag catalyst:latest \
+	  --tag "catalyst:$(shell date -u "+%Y%m%d%H%M%S")" \
+	  --build-arg MIST_COMMIT="$(MIST_COMMIT)" \
+	  --build-arg STRIP_BINARIES="$(STRIP_BINARIES)" .
 
 .PHONY: docker-compose
 docker-compose:
