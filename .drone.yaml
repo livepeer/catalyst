@@ -1,0 +1,16 @@
+---
+
+kind: pipeline
+type: exec
+name: test
+
+platform:
+  os: darwin
+  arch: amd64
+
+steps:
+  - name: test
+    commands:
+      - echo $PATH
+      - go mod download -x
+      - go test ./...
