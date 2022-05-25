@@ -77,7 +77,7 @@ COPY	.	.
 
 RUN	make catalyst
 
-FROM	livepeer/mist-api-connector:v0.12.5-7-gaebcc22 AS mapic
+FROM	livepeer/mist-api-connector:v0.12.5-13-g8feb67c AS mapic
 
 FROM	ubuntu:20.04	AS	bin-strip
 
