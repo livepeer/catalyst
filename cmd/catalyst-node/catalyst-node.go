@@ -1,13 +1,26 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"time"
 
 	serfclient "github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"github.com/mitchellh/cli"
+	"github.com/peterbourgon/ff/v3"
+)
+
+type (
+	catalystConfig struct {
+		serfRPCAddress           string
+		serfRPCAuthKey           string
+		mistLoadBalancerEndpoint string
+	}
 )
 
 var Commands map[string]cli.CommandFactory
@@ -31,10 +44,10 @@ func init() {
 	}
 }
 
-func runClient() error {
+func runClient(config catalystConfig) error {
 	// eli note: hardcoded. needs to parse out configuration from the CLI
-	config := serfclient.Config{Addr: "127.0.0.1:7373", AuthKey: ""}
-	client, err := serfclient.ClientFromConfig(&config)
+
+	client, err := connectSerfAgent(config.serfRPCAddress, config.serfRPCAuthKey)
 
 	if err != nil {
 		return err
@@ -60,21 +73,149 @@ func runClient() error {
 	// eli note: uncertain how we handle dis/reconnects here. but it's local, so hopefully rare?
 	for {
 		event := <-eventCh
-		fmt.Printf("got event: %v\n", event)
-		// eli note: this is the part where we trigger reconcillation with Mist
+		fmt.Printf(" got event: %v\n", event)
+
+		members, _ := getSerfMembers(client)
+		balancedServers := getMistLoadBalancerServers(config.mistLoadBalancerEndpoint)
+
+		membersMap := make(map[string]bool)
+
+		for _, member := range members {
+			member_host := member.Addr.String()
+
+			// commented out as for now the load balancer does not return ports
+			//if member.Port != 0 {
+			//	member_host = fmt.Sprintf("%s:%d", member_host, member.Port)
+			//}
+
+			membersMap[member_host] = true
+		}
+
+		fmt.Printf("current members in cluster: %v\n", membersMap)
+		fmt.Printf("current members in load balancer: %v\n", balancedServers)
+
+		// compare membersMap and balancedServers
+		// del all servers not present in membersMap but present in balancedServers
+		// add all servers not present in balancedServers but present in membersMap
+
+		// note: untested as per MistUtilLoad ports
+		for k := range balancedServers {
+			if _, ok := membersMap[k]; !ok {
+				fmt.Printf("deleting server %s from load balancer\n", k)
+				changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "del")
+			}
+		}
+
+		for k := range membersMap {
+			if _, ok := balancedServers[k]; !ok {
+				fmt.Printf("adding server %s to load balancer\n", k)
+				changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "add")
+			}
+		}
+
 	}
 
 	return nil
 }
 
+func connectSerfAgent(serfRPCAddress string, serfRPCAuthKey string) (*serfclient.RPCClient, error) {
+	return serfclient.ClientFromConfig(&serfclient.Config{
+		Addr:    serfRPCAddress,
+		AuthKey: serfRPCAuthKey,
+	})
+}
+
+func getSerfMembers(client *serfclient.RPCClient) ([]serfclient.Member, error) {
+	return client.Members()
+}
+
+func changeLoadBalancerServers(endpoint string, server string, action string) {
+	url := endpoint + "?" + action + "server=" + server
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		fmt.Printf("Error creating request: %s", err)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("Error making request: %s", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := ioutil.ReadAll(resp.Body)
+		fmt.Printf("Error response from load balancer changing servers: %s\n", string(b))
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Error reading response: %s", err)
+	}
+	fmt.Println("requested mist to " + action + " server " + server + " to the load balancer")
+	fmt.Println(string(b))
+}
+
+func getMistLoadBalancerServers(endpoint string) map[string]interface{} {
+
+	url := endpoint + "?lstservers=1"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Printf("Error creating request: %s", err)
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("Error making request: %s", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		b, _ := ioutil.ReadAll(resp.Body)
+		fmt.Printf("Error response from load balancer listing servers: %s\n", string(b))
+	}
+	b, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		fmt.Printf("Error reading response: %s", err)
+	}
+
+	var mistResponse map[string]interface{}
+
+	json.Unmarshal([]byte(string(b)), &mistResponse)
+
+	return mistResponse
+}
+
 func main() {
 	args := os.Args[1:]
+
+	flag.Set("logtostderr", "true")
+	fs := flag.NewFlagSet("catalyst-node-connected", flag.ExitOnError)
+
+	serfRPCAddress := fs.String("serf-rpc-address", "127.0.0.1:7373", "Serf RPC address")
+	serfRPCAuthKey := fs.String("serf-rpc-auth-key", "", "Serf RPC auth key")
+	mistLoadBalancerEndpoint := fs.String("mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
+
+	ff.Parse(
+		fs, os.Args[1:],
+		ff.WithConfigFileFlag("config"),
+		ff.WithConfigFileParser(ff.PlainParser),
+		ff.WithEnvVarPrefix("CATALYST_NODE"),
+		ff.WithEnvVarSplit(","),
+	)
+	flag.CommandLine.Parse(nil)
+
+	config := catalystConfig{
+		serfRPCAddress:           *serfRPCAddress,
+		serfRPCAuthKey:           *serfRPCAuthKey,
+		mistLoadBalancerEndpoint: *mistLoadBalancerEndpoint,
+	}
 
 	go func() {
 		// eli note: i put this in a loop in case client boots before server.
 		// doesn't seem to happen in practice.
 		for {
-			err := runClient()
+			err := runClient(config)
 			if err != nil {
 				fmt.Printf("Error starting client: %v", err)
 			}
