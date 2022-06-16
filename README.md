@@ -7,6 +7,9 @@ directory as livepeer-in-a-box:
 
  - [go-livepeer](https://github.com/livepeer/go-livepeer) (any branch, only there for `install_ffmpeg.sh`)
  - [mistserver](https://github.com/DDVTECH/mistserver) (`catalyst` branch)
+ - [task-runner](https://github.com/livepeer/task-runner) (`main` branch)
+
+go1.17 is recommended because building with < 1.17 (specifically 1.16) can result in issue on arm64 architectures.
 
 From there:
 
