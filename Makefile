@@ -1,5 +1,7 @@
 PROC_COUNT+="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
+# The -DCMAKE_OSX_ARCHITECTURES flag should be ignored on non-OSX platforms
+CMAKE_OSX_ARCHITECTURES=$(shell uname -m)
 GO_LDFLAG_VERSION := -X 'main.Version=$(shell git describe --all --dirty)'
 
 $(shell mkdir -p ./bin)
@@ -27,7 +29,7 @@ build/compiled/lib/libmbedtls.a:
   && cd $(buildpath)/mbedtls \
   && mkdir build \
   && cd build \
-  && cmake -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled .. \
+  && cmake -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} .. \
   && make -j$(nproc) install
 
 build/compiled/lib/libsrtp2.a:
@@ -35,7 +37,7 @@ build/compiled/lib/libsrtp2.a:
   && cd $(buildpath)/libsrtp \
   && mkdir build \
   && cd build \
-  && cmake -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled .. \
+  && cmake -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} .. \
   && make -j$(nproc) install
 
 build/compiled/lib/libsrt.a: build/compiled/lib/libmbedtls.a
@@ -44,7 +46,7 @@ build/compiled/lib/libsrt.a:
   && cd $(buildpath)/srt \
   && mkdir build \
   && cd build \
-  && cmake .. -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -D USE_ENCLIB=mbedtls -D ENABLE_SHARED=false \
+  && cmake .. -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -D USE_ENCLIB=mbedtls -D ENABLE_SHARED=false -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} \
   && make -j$(nproc) install
 
 mistserver: build/compiled/lib/libmbedtls.a build/compiled/lib/libsrtp2.a build/compiled/lib/libsrt.a
@@ -57,7 +59,7 @@ mistserver:
 	export C_INCLUDE_PATH=~$(buildpath)/compiled/include \
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
-	&& cmake ../../../mistserver -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+	&& cmake ../../../mistserver -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} \
 	&& make -j${PROC_COUNT} \
 	&& make install
 
