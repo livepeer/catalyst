@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -75,8 +77,18 @@ func runClient(config catalystConfig) error {
 		event := <-eventCh
 		fmt.Printf(" got event: %v\n", event)
 
-		members, _ := getSerfMembers(client)
-		balancedServers := getMistLoadBalancerServers(config.mistLoadBalancerEndpoint)
+		members, err := getSerfMembers(client)
+
+		if err != nil {
+			return err
+		}
+
+		balancedServers, err := getMistLoadBalancerServers(config.mistLoadBalancerEndpoint)
+
+		if err != nil {
+			fmt.Printf("Error getting mist load balancer servers: %s\n", err)
+			return err
+		}
 
 		membersMap := make(map[string]bool)
 
@@ -129,61 +141,70 @@ func getSerfMembers(client *serfclient.RPCClient) ([]serfclient.Member, error) {
 	return client.Members()
 }
 
-func changeLoadBalancerServers(endpoint string, server string, action string) {
-	url := endpoint + "?" + action + "server=" + server
+func changeLoadBalancerServers(endpoint string, server string, action string) ([]byte, error) {
+	url := endpoint + "?" + url.QueryEscape(action+"server="+server)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		fmt.Printf("Error creating request: %s", err)
+		return nil, err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("Error making request: %s", err)
+		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := ioutil.ReadAll(resp.Body)
 		fmt.Printf("Error response from load balancer changing servers: %s\n", string(b))
+		return b, errors.New(string(b))
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("Error reading response: %s", err)
+		return nil, err
 	}
 	fmt.Println("requested mist to " + action + " server " + server + " to the load balancer")
 	fmt.Println(string(b))
+	return b, nil
 }
 
-func getMistLoadBalancerServers(endpoint string) map[string]interface{} {
+func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error) {
 
 	url := endpoint + "?lstservers=1"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Printf("Error creating request: %s", err)
+		return nil, err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("Error making request: %s", err)
+		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := ioutil.ReadAll(resp.Body)
 		fmt.Printf("Error response from load balancer listing servers: %s\n", string(b))
+		return nil, errors.New(string(b))
 	}
 	b, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
 		fmt.Printf("Error reading response: %s", err)
+		return nil, err
 	}
 
 	var mistResponse map[string]interface{}
 
 	json.Unmarshal([]byte(string(b)), &mistResponse)
 
-	return mistResponse
+	return mistResponse, nil
 }
 
 func main() {
