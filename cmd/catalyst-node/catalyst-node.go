@@ -124,7 +124,6 @@ func runClient(config catalystConfig) error {
 		for k := range membersMap {
 			if _, ok := balancedServers[k]; !ok {
 				fmt.Printf("adding server %s to load balancer\n", k)
-				changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "add")
 				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "add")
 				if err != nil {
 					fmt.Printf("Error adding server %s to load balancer: %s\n", k, err)
