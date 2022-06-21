@@ -114,7 +114,10 @@ func runClient(config catalystConfig) error {
 		for k := range balancedServers {
 			if _, ok := membersMap[k]; !ok {
 				fmt.Printf("deleting server %s from load balancer\n", k)
-				changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "del")
+				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "del")
+				if err != nil {
+					fmt.Printf("Error deleting server %s from load balancer: %s\n", k, err)
+				}
 			}
 		}
 
@@ -122,6 +125,10 @@ func runClient(config catalystConfig) error {
 			if _, ok := balancedServers[k]; !ok {
 				fmt.Printf("adding server %s to load balancer\n", k)
 				changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "add")
+				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "add")
+				if err != nil {
+					fmt.Printf("Error adding server %s to load balancer: %s\n", k, err)
+				}
 			}
 		}
 
