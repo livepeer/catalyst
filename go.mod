@@ -3,6 +3,7 @@ module livepeer.org/catalyst-node/v2
 go 1.18
 
 require (
+	github.com/golang/glog v1.0.0
 	github.com/hashicorp/serf v0.9.7
 	github.com/mitchellh/cli v1.1.3
 	github.com/peterbourgon/ff/v3 v3.1.2

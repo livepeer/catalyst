@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/golang/glog"
 	serfclient "github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"github.com/mitchellh/cli"
@@ -75,7 +76,7 @@ func runClient(config catalystConfig) error {
 	// eli note: uncertain how we handle dis/reconnects here. but it's local, so hopefully rare?
 	for {
 		event := <-eventCh
-		fmt.Printf(" got event: %v\n", event)
+		glog.Infof("got event: ", event)
 
 		members, err := getSerfMembers(client)
 
@@ -86,7 +87,7 @@ func runClient(config catalystConfig) error {
 		balancedServers, err := getMistLoadBalancerServers(config.mistLoadBalancerEndpoint)
 
 		if err != nil {
-			fmt.Printf("Error getting mist load balancer servers: %s\n", err)
+			glog.Errorf("Error getting mist load balancer servers: %s\n", err)
 			return err
 		}
 
@@ -103,8 +104,8 @@ func runClient(config catalystConfig) error {
 			membersMap[member_host] = true
 		}
 
-		fmt.Printf("current members in cluster: %v\n", membersMap)
-		fmt.Printf("current members in load balancer: %v\n", balancedServers)
+		glog.Infof("current members in cluster: %v\n", membersMap)
+		glog.Infof("current members in load balancer: %v\n", balancedServers)
 
 		// compare membersMap and balancedServers
 		// del all servers not present in membersMap but present in balancedServers
@@ -113,20 +114,20 @@ func runClient(config catalystConfig) error {
 		// note: untested as per MistUtilLoad ports
 		for k := range balancedServers {
 			if _, ok := membersMap[k]; !ok {
-				fmt.Printf("deleting server %s from load balancer\n", k)
+				glog.Infof("deleting server %s from load balancer\n", k)
 				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "del")
 				if err != nil {
-					fmt.Printf("Error deleting server %s from load balancer: %s\n", k, err)
+					glog.Errorf("Error deleting server %s from load balancer: %s\n", k, err)
 				}
 			}
 		}
 
 		for k := range membersMap {
 			if _, ok := balancedServers[k]; !ok {
-				fmt.Printf("adding server %s to load balancer\n", k)
+				glog.Infof("adding server %s to load balancer\n", k)
 				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "add")
 				if err != nil {
-					fmt.Printf("Error adding server %s to load balancer: %s\n", k, err)
+					glog.Errorf("Error adding server %s to load balancer: %s\n", k, err)
 				}
 			}
 		}
@@ -151,30 +152,30 @@ func changeLoadBalancerServers(endpoint string, server string, action string) ([
 	url := endpoint + "?" + action + "server=" + url.QueryEscape(server)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
-		fmt.Printf("Error creating request: %s", err)
+		glog.Errorf("Error creating request: %s", err)
 		return nil, err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("Error making request: %s", err)
+		glog.Errorf("Error making request: %s", err)
 		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := ioutil.ReadAll(resp.Body)
-		fmt.Printf("Error response from load balancer changing servers: %s\n", string(b))
+		glog.Errorf("Error response from load balancer changing servers: %s\n", string(b))
 		return b, errors.New(string(b))
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Printf("Error reading response: %s", err)
+		glog.Errorf("Error reading response: %s", err)
 		return nil, err
 	}
-	fmt.Println("requested mist to " + action + " server " + server + " to the load balancer")
-	fmt.Println(string(b))
+	glog.Infof("requested mist to %s server %s to the load balancer\n", action, server)
+	glog.Infof(string(b))
 	return b, nil
 }
 
@@ -183,26 +184,26 @@ func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error)
 	url := endpoint + "?lstservers=1"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		fmt.Printf("Error creating request: %s", err)
+		glog.Errorf("Error creating request: %s", err)
 		return nil, err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("Error making request: %s", err)
+		glog.Errorf("Error making request: %s", err)
 		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := ioutil.ReadAll(resp.Body)
-		fmt.Printf("Error response from load balancer listing servers: %s\n", string(b))
+		glog.Errorf("Error response from load balancer listing servers: %s\n", string(b))
 		return nil, errors.New(string(b))
 	}
 	b, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		fmt.Printf("Error reading response: %s", err)
+		glog.Errorf("Error reading response: %s", err)
 		return nil, err
 	}
 
@@ -244,7 +245,7 @@ func main() {
 		for {
 			err := runClient(config)
 			if err != nil {
-				fmt.Printf("Error starting client: %v", err)
+				glog.Errorf("Error starting client: %v", err)
 			}
 			time.Sleep(1 * time.Second)
 		}
@@ -259,6 +260,7 @@ func main() {
 	exitCode, err := cli.Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error executing CLI: %s\n", err.Error())
+		glog.Fatalf("Error executing CLI: %s\n", err.Error())
 		os.Exit(1)
 	}
 
