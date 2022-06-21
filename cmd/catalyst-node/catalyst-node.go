@@ -142,7 +142,7 @@ func getSerfMembers(client *serfclient.RPCClient) ([]serfclient.Member, error) {
 }
 
 func changeLoadBalancerServers(endpoint string, server string, action string) ([]byte, error) {
-	url := endpoint + "?" + url.QueryEscape(action+"server="+server)
+	url := endpoint + "?" + action + "server=" + url.QueryEscape(server)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		fmt.Printf("Error creating request: %s", err)
