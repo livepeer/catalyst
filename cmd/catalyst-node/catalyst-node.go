@@ -74,8 +74,22 @@ func runClient(config catalystConfig) error {
 	// defer client.Stop(monHandle)
 
 	// eli note: uncertain how we handle dis/reconnects here. but it's local, so hopefully rare?
+	event := <-eventCh
+	inbox := make(chan map[string]interface{}, 1)
+	go func() {
+		for {
+			e := <-eventCh
+			select {
+			case inbox <- e:
+				// Event is now in the inbox
+			default:
+				// Overflow event gets dropped
+			}
+		}
+	}()
+
 	for {
-		event := <-eventCh
+		<-inbox
 		glog.Infof("got event: ", event)
 
 		members, err := getSerfMembers(client)
@@ -131,7 +145,6 @@ func runClient(config catalystConfig) error {
 				}
 			}
 		}
-
 	}
 
 	return nil
