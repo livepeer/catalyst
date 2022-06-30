@@ -48,7 +48,6 @@ func init() {
 }
 
 func runClient(config catalystConfig) error {
-	// eli note: hardcoded. needs to parse out configuration from the CLI
 
 	client, err := connectSerfAgent(config.serfRPCAddress, config.serfRPCAuthKey)
 
@@ -60,7 +59,7 @@ func runClient(config catalystConfig) error {
 	eventCh := make(chan map[string]interface{}, 1024)
 	streamHandle, err := client.Stream("*", eventCh)
 	if err != nil {
-		return fmt.Errorf("error starting stream: %s", err)
+		return fmt.Errorf("error starting stream: %w", err)
 	}
 	defer client.Stop(streamHandle)
 
@@ -101,7 +100,7 @@ func runClient(config catalystConfig) error {
 		balancedServers, err := getMistLoadBalancerServers(config.mistLoadBalancerEndpoint)
 
 		if err != nil {
-			glog.Errorf("Error getting mist load balancer servers: %s\n", err)
+			glog.Errorf("Error getting mist load balancer servers: %w\n", err)
 			return err
 		}
 
@@ -131,7 +130,7 @@ func runClient(config catalystConfig) error {
 				glog.Infof("deleting server %s from load balancer\n", k)
 				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "del")
 				if err != nil {
-					glog.Errorf("Error deleting server %s from load balancer: %s\n", k, err)
+					glog.Errorf("Error deleting server %s from load balancer: %w\n", k, err)
 				}
 			}
 		}
@@ -141,7 +140,7 @@ func runClient(config catalystConfig) error {
 				glog.Infof("adding server %s to load balancer\n", k)
 				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "add")
 				if err != nil {
-					glog.Errorf("Error adding server %s to load balancer: %s\n", k, err)
+					glog.Errorf("Error adding server %s to load balancer: %w\n", k, err)
 				}
 			}
 		}
@@ -165,30 +164,31 @@ func changeLoadBalancerServers(endpoint string, server string, action string) ([
 	url := endpoint + "?" + action + "server=" + url.QueryEscape(server)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
-		glog.Errorf("Error creating request: %s", err)
+		glog.Errorf("Error creating request: %w", err)
 		return nil, err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		glog.Errorf("Error making request: %s", err)
+		glog.Errorf("Error making request: %w", err)
+		return nil, err
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		glog.Errorf("Error reading response: %w", err)
 		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		b, _ := ioutil.ReadAll(resp.Body)
 		glog.Errorf("Error response from load balancer changing servers: %s\n", string(b))
 		return b, errors.New(string(b))
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		glog.Errorf("Error reading response: %s", err)
-		return nil, err
-	}
-	glog.Infof("requested mist to %s server %s to the load balancer\n", action, server)
-	glog.Infof(string(b))
+	glog.V(6).Infof("requested mist to %s server %s to the load balancer\n", action, server)
+	glog.V(6).Infof(string(b))
 	return b, nil
 }
 
@@ -197,14 +197,14 @@ func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error)
 	url := endpoint + "?lstservers=1"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		glog.Errorf("Error creating request: %s", err)
+		glog.Errorf("Error creating request: %w", err)
 		return nil, err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		glog.Errorf("Error making request: %s", err)
+		glog.Errorf("Error making request: %w", err)
 		return nil, err
 	}
 
@@ -216,7 +216,7 @@ func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error)
 	b, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		glog.Errorf("Error reading response: %s", err)
+		glog.Errorf("Error reading response: %w", err)
 		return nil, err
 	}
 
@@ -231,8 +231,10 @@ func main() {
 	args := os.Args[1:]
 
 	flag.Set("logtostderr", "true")
+	vFlag := flag.Lookup("v")
 	fs := flag.NewFlagSet("catalyst-node-connected", flag.ExitOnError)
 
+	verbosity := fs.String("v", "", "Log verbosity.  {4|5|6}")
 	serfRPCAddress := fs.String("serf-rpc-address", "127.0.0.1:7373", "Serf RPC address")
 	serfRPCAuthKey := fs.String("serf-rpc-auth-key", "", "Serf RPC auth key")
 	mistLoadBalancerEndpoint := fs.String("mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
@@ -244,6 +246,7 @@ func main() {
 		ff.WithEnvVarPrefix("CATALYST_NODE"),
 		ff.WithEnvVarSplit(","),
 	)
+	vFlag.Value.Set(*verbosity)
 	flag.CommandLine.Parse(nil)
 
 	config := catalystConfig{
@@ -258,7 +261,7 @@ func main() {
 		for {
 			err := runClient(config)
 			if err != nil {
-				glog.Errorf("Error starting client: %v", err)
+				glog.Errorf("Error starting client: %w", err)
 			}
 			time.Sleep(1 * time.Second)
 		}
