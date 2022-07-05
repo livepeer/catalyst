@@ -89,7 +89,7 @@ func runClient(config catalystConfig) error {
 
 	for {
 		<-inbox
-		glog.Infof("got event: ", event)
+		glog.V(5).Infof("got event: %v", event)
 
 		members, err := getSerfMembers(client)
 
