@@ -144,3 +144,7 @@ docker-compose-rm:
 full-reset: docker-compose-rm clean all
 	mv $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf $(HOME)/.config/livepeer-in-a-box/mistserver-$$(date +%s).dev.conf || echo '' \
 	&& echo "done"
+
+.PHONY: livepeer-catalyst-node
+livepeer-catalyst-node:
+	go build -o ./bin/livepeer-catalyst-node -ldflags="$(GO_LDFLAG_VERSION)" cmd/catalyst-node/catalyst-node.go
