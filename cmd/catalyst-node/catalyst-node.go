@@ -107,14 +107,14 @@ func runClient(config catalystConfig) error {
 		membersMap := make(map[string]bool)
 
 		for _, member := range members {
-			member_host := member.Addr.String()
+			memberHost := member.Addr.String()
 
 			// commented out as for now the load balancer does not return ports
 			//if member.Port != 0 {
-			//	member_host = fmt.Sprintf("%s:%d", member_host, member.Port)
+			//	memberHost = fmt.Sprintf("%s:%d", memberHost, member.Port)
 			//}
 
-			membersMap[member_host] = true
+			membersMap[memberHost] = true
 		}
 
 		glog.Infof("current members in cluster: %v\n", membersMap)
