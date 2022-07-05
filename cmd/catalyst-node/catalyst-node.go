@@ -100,7 +100,7 @@ func runClient(config catalystConfig) error {
 		balancedServers, err := getMistLoadBalancerServers(config.mistLoadBalancerEndpoint)
 
 		if err != nil {
-			glog.Errorf("Error getting mist load balancer servers: %w\n", err)
+			glog.Errorf("Error getting mist load balancer servers: %v\n", err)
 			return err
 		}
 
@@ -130,7 +130,7 @@ func runClient(config catalystConfig) error {
 				glog.Infof("deleting server %s from load balancer\n", k)
 				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "del")
 				if err != nil {
-					glog.Errorf("Error deleting server %s from load balancer: %w\n", k, err)
+					glog.Errorf("Error deleting server %s from load balancer: %v\n", k, err)
 				}
 			}
 		}
@@ -140,7 +140,7 @@ func runClient(config catalystConfig) error {
 				glog.Infof("adding server %s to load balancer\n", k)
 				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "add")
 				if err != nil {
-					glog.Errorf("Error adding server %s to load balancer: %w\n", k, err)
+					glog.Errorf("Error adding server %s to load balancer: %v\n", k, err)
 				}
 			}
 		}
@@ -164,21 +164,21 @@ func changeLoadBalancerServers(endpoint string, server string, action string) ([
 	url := endpoint + "?" + action + "server=" + url.QueryEscape(server)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
-		glog.Errorf("Error creating request: %w", err)
+		glog.Errorf("Error creating request: %v", err)
 		return nil, err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		glog.Errorf("Error making request: %w", err)
+		glog.Errorf("Error making request: %v", err)
 		return nil, err
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		glog.Errorf("Error reading response: %w", err)
+		glog.Errorf("Error reading response: %v", err)
 		return nil, err
 	}
 
@@ -197,14 +197,14 @@ func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error)
 	url := endpoint + "?lstservers=1"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		glog.Errorf("Error creating request: %w", err)
+		glog.Errorf("Error creating request: %v", err)
 		return nil, err
 	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		glog.Errorf("Error making request: %w", err)
+		glog.Errorf("Error making request: %v", err)
 		return nil, err
 	}
 
@@ -216,7 +216,7 @@ func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error)
 	b, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		glog.Errorf("Error reading response: %w", err)
+		glog.Errorf("Error reading response: %v", err)
 		return nil, err
 	}
 
@@ -261,7 +261,7 @@ func main() {
 		for {
 			err := runClient(config)
 			if err != nil {
-				glog.Errorf("Error starting client: %w", err)
+				glog.Errorf("Error starting client: %v", err)
 			}
 			time.Sleep(1 * time.Second)
 		}
