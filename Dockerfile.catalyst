@@ -1,0 +1,98 @@
+FROM	ubuntu:20.04	as	mistbuild
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+WORKDIR	/src
+
+RUN	apt update -yq \
+	&& apt install -yqq build-essential cmake git
+
+RUN	git clone https://github.com/cisco/libsrtp.git \
+	&& mkdir -p libsrtp/build \
+	&& cd libsrtp/build \
+	&& cmake -DCMAKE_INSTALL_PREFIX=/src/compiled .. \
+	&& make -j$(nproc) install \
+	&& cd /src \
+	&& git clone -b dtls_srtp_support --depth=1 https://github.com/livepeer/mbedtls.git \
+	&& cd mbedtls \
+	&& mkdir build \
+	&& cd build \
+	&& cmake -DCMAKE_INSTALL_PREFIX=/src/compiled .. \
+	&& make -j$(nproc) install \
+	&& cd /src \
+	&& git clone https://github.com/Haivision/srt.git \
+	&& mkdir -p srt/build \
+	&& cd srt/build \
+	&& cmake .. -DCMAKE_INSTALL_PREFIX=/src/compiled -D USE_ENCLIB=mbedtls -D ENABLE_SHARED=false \
+	&& make -j$(nproc) install
+
+ENV LD_LIBRARY_PATH="/src/compiled/lib" C_INCLUDE_PATH="/src/compiled/include"
+
+RUN	git clone -b catalyst-ui https://github.com/DDVTECH/mistserver.git \
+	&& mkdir -p mistserver/build \
+	&& cd mistserver/build \
+	&& git checkout 82d0fae78 \
+	&& cmake .. -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=/opt -DCMAKE_PREFIX_PATH=/src/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+	&& make -j$(nproc) \
+	&& make install \
+	&& strip /opt/bin/*
+
+FROM	golang:1-stretch	as	lpbuild
+
+ARG	BUILD_TAGS="dev"
+
+WORKDIR	/src
+
+RUN	apt update -yq \
+	&& apt install -yqq build-essential curl gcc g++ git gnutls-dev autoconf pkg-config golang-goprotobuf-dev \
+	&& mkdir -p /opt
+
+RUN	git clone https://github.com/livepeer/go-livepeer.git \
+	&& cd go-livepeer \
+	&& go mod download \
+	&& ./install_ffmpeg.sh /root
+
+ENV	PKG_CONFIG_PATH="/root/compiled/lib/pkgconfig"	BUILD_TAGS="${BUILD_TAGS}"
+
+RUN	cd go-livepeer/ \
+	&& BUILD_TAGS=mainnet make -j$(nproc) livepeer livepeer_cli \
+	&& mv livepeer* /opt \
+	&& strip /opt/*
+
+FROM	golang:1-stretch	as	lplog-build
+
+WORKDIR /src
+
+RUN	apt update \
+	&& apt install -yqq build-essential git \
+	&& git clone https://github.com/livepeer/livepeer-in-a-box.git \
+	&& cd livepeer-in-a-box \
+	&& make livepeer-log \
+	&& strip bin/*
+
+FROM	golang:1-stretch	as	catalyst-build
+
+WORKDIR /src
+
+COPY	.	.
+
+RUN	make catalyst \
+	&& strip bin/*
+
+FROM	ubuntu:20.04
+
+LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
+
+# Needed for working TLS
+RUN apt-get update \
+	&& apt-get install -y ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY --from=mistbuild	/opt/bin/	/usr/bin/
+COPY --from=lpbuild	/opt/	/usr/bin/
+COPY --from=lplog-build	/src/livepeer-in-a-box/bin/	/usr/bin/
+COPY --from=catalyst-build	/src/bin/	/usr/bin/
+
+EXPOSE	1935 4242 8080 8889/udp
+
+ENTRYPOINT	["/usr/bin/catalyst"]
