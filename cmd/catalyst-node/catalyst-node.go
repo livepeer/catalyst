@@ -18,13 +18,11 @@ import (
 	"github.com/peterbourgon/ff/v3"
 )
 
-type (
-	catalystConfig struct {
-		serfRPCAddress           string
-		serfRPCAuthKey           string
-		mistLoadBalancerEndpoint string
-	}
-)
+type catalystConfig struct {
+	serfRPCAddress           string
+	serfRPCAuthKey           string
+	mistLoadBalancerEndpoint string
+}
 
 var Commands map[string]cli.CommandFactory
 
