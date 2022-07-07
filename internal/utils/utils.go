@@ -29,7 +29,7 @@ func IsSupportedPlatformArch(platform, arch string) bool {
 }
 
 func IsFileExists(path string) bool {
-	glog.Infof("Checking if file exists at path=%q", path)
+	glog.V(6).Infof("Checking if file exists at path=%q", path)
 	info, err := os.Stat(path)
 	return err == nil && info.Size() > 0
 }

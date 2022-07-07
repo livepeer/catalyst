@@ -104,6 +104,14 @@ livepeer-mist-api-connector:
 	&& cd - \
 	&& cp ../stream-tester/build/mist-api-connector ./bin/livepeer-mist-api-connector
 
+.PHONY: livepeer-catalyst-node
+livepeer-catalyst-node:
+	set -x \
+	&& cd ../catalyst-node \
+	&& make \
+	&& cd - \
+	&& cp ../catalyst-node/build/catalyst-node ./bin/livepeer-catalyst-node
+
 .PHONY: download
 download:
 	go run main.go -v=5 $(ARGS)
@@ -126,6 +134,10 @@ dev:
 .PHONY: livepeer-log
 livepeer-log:
 	go build -o ./bin/livepeer-log ./cmd/livepeer-log/livepeer-log.go
+
+.PHONY: catalyst
+catalyst:
+	go build -o ./bin/catalyst ./cmd/catalyst/catalyst.go
 
 .PHONY: clean
 clean:
