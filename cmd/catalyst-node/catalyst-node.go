@@ -54,23 +54,13 @@ func runClient(config catalystConfig) error {
 	}
 	defer client.Close()
 
-	eventCh := make(chan map[string]interface{}, 1024)
+	eventCh := make(chan map[string]interface{})
 	streamHandle, err := client.Stream("*", eventCh)
 	if err != nil {
 		return fmt.Errorf("error starting stream: %w", err)
 	}
 	defer client.Stop(streamHandle)
 
-	// eli note: not sure if this is useful yet, but we can do this as well:
-
-	// logCh := make(chan string, 1024)
-	// monHandle, err := client.Monitor(logutils.LogLevel("INFO"), logCh)
-	// if err != nil {
-	// 	return fmt.Errorf("error starting monitor: %s", err)
-	// }
-	// defer client.Stop(monHandle)
-
-	// eli note: uncertain how we handle dis/reconnects here. but it's local, so hopefully rare?
 	event := <-eventCh
 	inbox := make(chan map[string]interface{}, 1)
 	go func() {
