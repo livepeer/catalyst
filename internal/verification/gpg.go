@@ -5,7 +5,7 @@ import (
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/golang/glog"
-	"github.com/livepeer/livepeer-in-a-box/internal/constants"
+	"github.com/livepeer/catalyst/internal/constants"
 )
 
 // VerifyGPGSignature raises an error if provided `.sig` file is not

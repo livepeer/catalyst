@@ -1,39 +1,52 @@
 # Refer the `README` for specification details of the manifest
-version: 2.0
+version: 3.0
 release: latest
 
 box:
   - name: analyzer
-    project: livepeer/livepeer-data
+    strategy:
+      project: livepeer/livepeer-data
 
   - name: api
-    project: livepeer/livepeer-com
+    strategy:
+      project: livepeer/livepeer-com
 
   - name: mapic
-    project: livepeer/stream-tester
+    strategy:
+      project: livepeer/stream-tester
     binary: livepeer-mist-api-connector
 
   - name: livepeer
-    project: livepeer/go-livepeer
+    strategy:
+      project: livepeer/go-livepeer
     # release: v0.5.26-box
     binary: livepeer
     archivePath: livepeer
+
+  - name: mistserver
+    strategy:
+      download: bucket
+      project: mistserver
+    release: eli/json-manifest
     skipGpg: true
-    skipChecksum: true
 
   - name: www
-    project: livepeer/livepeer-com
+    strategy:
+      project: livepeer/livepeer-com
     binary: livepeer-www
 
   - name: task-runner
-    project: livepeer/task-runner
+    strategy:
+      project: livepeer/task-runner
 
   - name: livepeer-transcode
-    project: livepeer/transcode-cli
+    strategy:
+      project: livepeer/transcode-cli
     binary: livepeer-transcode
 
   - name: victoria-metrics
-    project: VictoriaMetrics/VictoriaMetrics
+    strategy:
+      project: VictoriaMetrics/VictoriaMetrics
     release: v1.74.0
     archivePath: victoria-metrics-prod
     outputPath: livepeer-victoria-metrics

@@ -6,6 +6,8 @@ const (
 	SignatureFileExtension  = "sig"
 	ChecksumFileSuffix      = "checksums.txt"
 	TaggedDownloadURLFormat = "https://github.com/%s/releases/download/%s/%s"
+	BucketDownloadURLFormat = "https://build.livepeer.live/%s/%s/%s"
+	BucketManifestURLFormat = "https://build.livepeer.live/%s/%s.json"
 	PGPKeyFingerprint       = "A2F9039A8603C44C21414432A2224D4537874DB2"
 	ZipFileExtension        = "zip"
 	TarFileExtension        = "tar.gz"

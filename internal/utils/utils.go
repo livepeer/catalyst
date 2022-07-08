@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/livepeer/livepeer-in-a-box/internal/constants"
+	"github.com/livepeer/catalyst/internal/constants"
 )
 
 func IsSupportedPlatformArch(platform, arch string) bool {
@@ -32,6 +32,10 @@ func IsFileExists(path string) bool {
 	glog.V(6).Infof("Checking if file exists at path=%q", path)
 	info, err := os.Stat(path)
 	return err == nil && info.Size() > 0
+}
+
+func CleanBranchName(branch string) string {
+	return strings.ReplaceAll(branch, "/", "-")
 }
 
 func PlatformExt(platform string) string {

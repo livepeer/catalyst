@@ -8,7 +8,7 @@ STRIP_BINARIES ?= "true"
 
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
-$(shell mkdir -p $(HOME)/.config/livepeer-in-a-box)
+$(shell mkdir -p $(HOME)/.config/livepeer)
 buildpath=$(realpath ./build)
 
 .PHONY: all
@@ -130,8 +130,8 @@ dev:
 		&& rm -rf /Volumes/RAMDisk/mist \
 		&& export TMP=/Volumes/RAMDisk; \
 	fi \
-	&& stat $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf || cp ./config/mistserver.dev.conf $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf \
-	&& ./bin/MistController -c $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf
+	&& stat $(HOME)/.config/livepeer/mistserver.dev.conf || cp ./config/mistserver.dev.conf $(HOME)/.config/livepeer/mistserver.dev.conf \
+	&& ./bin/MistController -c $(HOME)/.config/livepeer/mistserver.dev.conf
 
 .PHONY: livepeer-log
 livepeer-log:
@@ -165,7 +165,7 @@ docker-compose-rm:
 
 .PHONY: full-reset
 full-reset: docker-compose-rm clean all
-	mv $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf $(HOME)/.config/livepeer-in-a-box/mistserver-$$(date +%s).dev.conf || echo '' \
+	mv $(HOME)/.config/livepeer/mistserver.dev.conf $(HOME)/.config/livepeer/mistserver-$$(date +%s).dev.conf || echo '' \
 	&& echo "done"
 
 .PHONY: livepeer-catalyst-node

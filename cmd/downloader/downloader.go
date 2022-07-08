@@ -14,18 +14,24 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
-	"github.com/livepeer/livepeer-in-a-box/internal/cli"
-	"github.com/livepeer/livepeer-in-a-box/internal/github"
-	"github.com/livepeer/livepeer-in-a-box/internal/types"
-	"github.com/livepeer/livepeer-in-a-box/internal/utils"
-	"github.com/livepeer/livepeer-in-a-box/internal/verification"
+	"github.com/livepeer/catalyst/internal/bucket"
+	"github.com/livepeer/catalyst/internal/cli"
+	"github.com/livepeer/catalyst/internal/github"
+	"github.com/livepeer/catalyst/internal/types"
+	"github.com/livepeer/catalyst/internal/utils"
+	"github.com/livepeer/catalyst/internal/verification"
 	"gopkg.in/yaml.v2"
 )
 
 // DownloadService works on downloading services for the box to
 // machine and extracting the required binaries from artifacts.
 func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service types.Service) error {
-	projectInfo := github.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
+	var projectInfo *types.ArtifactInfo
+	if service.Strategy.Download == "github" {
+		projectInfo = github.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
+	} else if service.Strategy.Download == "bucket" {
+		projectInfo = bucket.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
+	}
 	glog.Infof("Will download to %q", flags.DownloadPath)
 
 	// Download archive
@@ -82,8 +88,8 @@ func ParseYamlManifest(manifestPath string) (*types.BoxManifest, error) {
 	if err != nil {
 		return nil, err
 	}
-	if manifestConfig.Version != "2.0" {
-		panic(errors.New("Invalid manifest version. Currently supported versions: 2.0"))
+	if manifestConfig.Version != "3.0" {
+		panic(errors.New("Invalid manifest version. Currently supported versions: 3.0"))
 	}
 	return &manifestConfig, nil
 }

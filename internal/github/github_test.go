@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/livepeer/livepeer-in-a-box/internal/types"
+	"github.com/livepeer/catalyst/internal/types"
 )
 
 func TestTagInformation(t *testing.T) {

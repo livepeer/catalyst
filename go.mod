@@ -1,4 +1,4 @@
-module github.com/livepeer/livepeer-in-a-box
+module github.com/livepeer/catalyst
 
 go 1.17
 

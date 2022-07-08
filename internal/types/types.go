@@ -8,6 +8,13 @@ type TagInformation struct {
 	Draft      bool   `json:"draft"`
 }
 
+type BuildManifestInformation struct {
+	Builds map[string]string `json:"builds"`
+	Commit string            `json:"commit"`
+	Branch string            `json:"branch"`
+	Ref    string            `json:"ref"`
+}
+
 type BuildFlags struct {
 	Version string
 }
@@ -23,8 +30,11 @@ type CliFlags struct {
 }
 
 type Service struct {
-	Name         string            `yaml:"name"`
-	Project      string            `yaml:"project"`
+	Name     string `yaml:"name"`
+	Strategy struct {
+		Download string `yaml:"download"`
+		Project  string `yaml:"project"`
+	} `yaml:"strategy"`
 	Binary       string            `yaml:"binary,omitempty"`
 	Release      string            `yaml:"release,omitempty"`
 	ArchivePath  string            `yaml:"archivePath,omitempty"`

@@ -7,9 +7,9 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/livepeer/livepeer-in-a-box/internal/constants"
-	"github.com/livepeer/livepeer-in-a-box/internal/types"
-	"github.com/livepeer/livepeer-in-a-box/internal/utils"
+	"github.com/livepeer/catalyst/internal/constants"
+	"github.com/livepeer/catalyst/internal/types"
+	"github.com/livepeer/catalyst/internal/utils"
 	"github.com/peterbourgon/ff/v3"
 )
 

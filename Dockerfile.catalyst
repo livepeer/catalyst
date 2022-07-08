@@ -65,8 +65,8 @@ WORKDIR /src
 
 RUN	apt update \
 	&& apt install -yqq build-essential git \
-	&& git clone https://github.com/livepeer/livepeer-in-a-box.git \
-	&& cd livepeer-in-a-box \
+	&& git clone https://github.com/livepeer/catalyst.git \
+	&& cd catalyst \
 	&& make livepeer-log
 
 FROM	golang:1-stretch	as	catalyst-build
@@ -85,7 +85,7 @@ WORKDIR	/opt
 
 COPY --from=mistbuild	/opt/bin/	/opt/
 COPY --from=lpbuild	/opt/	/opt/
-COPY --from=lplog-build	/src/livepeer-in-a-box/bin/	/opt/
+COPY --from=lplog-build	/src/catalyst/bin/	/opt/
 COPY --from=catalyst-build	/src/bin/	/opt/
 COPY --from=mapic /root/mist-api-connector /opt/livepeer-mist-api-connector
 
