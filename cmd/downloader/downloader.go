@@ -27,12 +27,15 @@ import (
 // machine and extracting the required binaries from artifacts.
 func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service types.Service) error {
 	var projectInfo *types.ArtifactInfo
-	if service.Strategy.Download == "github" {
-		projectInfo = github.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
-	} else if service.Strategy.Download == "bucket" {
+	if service.Strategy.Download == "bucket" {
 		projectInfo = bucket.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
+	} else {
+		projectInfo = github.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
 	}
-	glog.Infof("Will download to %q", flags.DownloadPath)
+	if projectInfo == nil {
+		glog.Fatal("Couldn't get project information!")
+	}
+	glog.Infof("Will download %s to %q", projectInfo.Name, flags.DownloadPath)
 
 	// Download archive
 	archivePath := filepath.Join(flags.DownloadPath, projectInfo.ArchiveFileName)
@@ -195,6 +198,7 @@ func Run(buildFlags types.BuildFlags) {
 		}
 		waitGroup.Add(1)
 		go func(element types.Service) {
+			glog.V(8).Infof("Triggering async task for %s", element.Name)
 			DownloadService(cliFlags, manifest, element)
 			waitGroup.Done()
 		}(element)
