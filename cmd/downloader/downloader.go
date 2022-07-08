@@ -151,6 +151,7 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Servic
 	}
 	for {
 		header, err := tarReader.Next()
+		output := outputPath
 		if err == io.EOF {
 			break
 		}
@@ -158,16 +159,16 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Servic
 			return err
 		}
 		if strings.HasSuffix(header.Name, service.ArchivePath) {
-			if outputPath == "" {
-				outputPath = filepath.Join(extractPath, header.Name)
+			if output == "" {
+				output = filepath.Join(extractPath, header.Name)
 			}
-			glog.Infof("Extracting to %q", outputPath)
-			outfile, err := os.Create(outputPath)
+			glog.Infof("Extracting to %q", output)
+			outfile, err := os.Create(output)
 			if err != nil {
 				return err
 			}
 			if _, err := io.Copy(outfile, tarReader); err != nil {
-				glog.Errorf("Failed to create file: %q", outputPath)
+				glog.Errorf("Failed to create file: %q", output)
 			}
 			if err != nil {
 				return err
