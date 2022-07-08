@@ -26,8 +26,13 @@ func TestTagInformation(t *testing.T) {
 
 func TestArtifactInfo(t *testing.T) {
 	serviceInfo := types.Service{
-		Name:    "api",
-		Project: "livepeer/livepeer-com",
+		Name: "api",
+		Strategy: struct {
+			Download string `yaml:"download"`
+			Project  string `yaml:"project"`
+		}{
+			Project: "livepeer/livepeer-com",
+		},
 	}
 	info := GetArtifactInfo(runtime.GOOS, runtime.GOARCH, "latest", serviceInfo)
 	if info.Binary != "livepeer-api" {
