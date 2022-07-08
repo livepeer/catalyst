@@ -1,9 +1,9 @@
-# livepeer-in-a-box
+# Catalyst
 
 ## Getting Started
 
 You'll presently need the following repos cloned into the same
-directory as livepeer-in-a-box:
+directory as catalyst:
 
  - [go-livepeer](https://github.com/livepeer/go-livepeer) (any branch, only there for `install_ffmpeg.sh`)
  - [mistserver](https://github.com/DDVTECH/mistserver) (`catalyst` branch)
@@ -63,10 +63,8 @@ box:
   # array of each service element
   - name: name
 
-    # `project` => github project/repo
-    project: livepeer/project-name
-
     # custom release value (if working on specific tag)
+    # Can be the branch name for `bucket` strategy (see below)
     release: v99.99.99
 
     # override artifact name generation pattern. default pattern is:
@@ -80,6 +78,14 @@ box:
 
     # output name of the binary located at `archivePath`
     outputPath: livepeer-victoria-metrics
+
+    # Strategy to use for downloading artifacts: github or bucket
+    # `bucket` - Uses `build.livepeer.live` bucket; works for branches of some projects
+    # `github` - Uses github releases and tags (default value)
+    strategy:
+      download: github
+      # `project` => github project/repo or bucket key for artifacts
+      project: livepeer/project-name
 
     # key-value for mapping platform to custom artifact on github release page
     # this bypasses default name generation pattern entirely

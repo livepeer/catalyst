@@ -14,19 +14,28 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
-	"github.com/livepeer/livepeer-in-a-box/internal/cli"
-	"github.com/livepeer/livepeer-in-a-box/internal/github"
-	"github.com/livepeer/livepeer-in-a-box/internal/types"
-	"github.com/livepeer/livepeer-in-a-box/internal/utils"
-	"github.com/livepeer/livepeer-in-a-box/internal/verification"
+	"github.com/livepeer/catalyst/internal/bucket"
+	"github.com/livepeer/catalyst/internal/cli"
+	"github.com/livepeer/catalyst/internal/github"
+	"github.com/livepeer/catalyst/internal/types"
+	"github.com/livepeer/catalyst/internal/utils"
+	"github.com/livepeer/catalyst/internal/verification"
 	"gopkg.in/yaml.v2"
 )
 
 // DownloadService works on downloading services for the box to
 // machine and extracting the required binaries from artifacts.
 func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service types.Service) error {
-	projectInfo := github.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
-	glog.Infof("Will download to %q", flags.DownloadPath)
+	var projectInfo *types.ArtifactInfo
+	if service.Strategy.Download == "bucket" {
+		projectInfo = bucket.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
+	} else {
+		projectInfo = github.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
+	}
+	if projectInfo == nil {
+		glog.Fatal("Couldn't get project information!")
+	}
+	glog.Infof("Will download %s to %q", projectInfo.Name, flags.DownloadPath)
 
 	// Download archive
 	archivePath := filepath.Join(flags.DownloadPath, projectInfo.ArchiveFileName)
@@ -82,8 +91,8 @@ func ParseYamlManifest(manifestPath string) (*types.BoxManifest, error) {
 	if err != nil {
 		return nil, err
 	}
-	if manifestConfig.Version != "2.0" {
-		panic(errors.New("Invalid manifest version. Currently supported versions: 2.0"))
+	if manifestConfig.Version != "3.0" {
+		panic(errors.New("Invalid manifest version. Currently supported versions: 3.0"))
 	}
 	return &manifestConfig, nil
 }
@@ -142,6 +151,7 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Servic
 	}
 	for {
 		header, err := tarReader.Next()
+		output := outputPath
 		if err == io.EOF {
 			break
 		}
@@ -149,16 +159,16 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Servic
 			return err
 		}
 		if strings.HasSuffix(header.Name, service.ArchivePath) {
-			if outputPath == "" {
-				outputPath = filepath.Join(extractPath, header.Name)
+			if output == "" {
+				output = filepath.Join(extractPath, header.Name)
 			}
-			glog.Infof("Extracting to %q", outputPath)
-			outfile, err := os.Create(outputPath)
+			glog.Infof("Extracting to %q", output)
+			outfile, err := os.Create(output)
 			if err != nil {
 				return err
 			}
 			if _, err := io.Copy(outfile, tarReader); err != nil {
-				glog.Errorf("Failed to create file: %q", outputPath)
+				glog.Errorf("Failed to create file: %q", output)
 			}
 			if err != nil {
 				return err
@@ -189,6 +199,7 @@ func Run(buildFlags types.BuildFlags) {
 		}
 		waitGroup.Add(1)
 		go func(element types.Service) {
+			glog.V(8).Infof("Triggering async task for %s", element.Name)
 			DownloadService(cliFlags, manifest, element)
 			waitGroup.Done()
 		}(element)

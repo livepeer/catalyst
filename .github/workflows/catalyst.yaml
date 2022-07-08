@@ -12,6 +12,8 @@ on:
 
 env:
   DOCKER_IMAGE_NAME: livepeerci/catalyst
+  MIST_COMMIT: catalyst
+  STRIP_BINARIES: 'true'
 
 jobs:
   catalyst:
@@ -45,9 +47,13 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
+          build-args: |
+            MIST_COMMIT=${{ env.MIST_COMMIT }}
+            STRIP_BINARIES=${{ env.STRIP_BINARIES }}
           tags: |
             ${{ env.DOCKER_IMAGE_NAME }}:latest
             ${{ env.DOCKER_IMAGE_NAME }}:${{ steps.docker-date-tag.outputs.date }}
+            ${{ steps.meta.output.tags }}
           file: "Dockerfile.catalyst"
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

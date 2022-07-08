@@ -3,10 +3,12 @@ CMAKE_INSTALL_PREFIX=$(shell realpath .)
 # The -DCMAKE_OSX_ARCHITECTURES flag should be ignored on non-OSX platforms
 CMAKE_OSX_ARCHITECTURES=$(shell uname -m)
 GO_LDFLAG_VERSION := -X 'main.Version=$(shell git describe --all --dirty)'
+MIST_COMMIT ?= "catalyst"
+STRIP_BINARIES ?= "true"
 
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
-$(shell mkdir -p $(HOME)/.config/livepeer-in-a-box)
+$(shell mkdir -p $(HOME)/.config/livepeer)
 buildpath=$(realpath ./build)
 
 .PHONY: all
@@ -128,8 +130,8 @@ dev:
 		&& rm -rf /Volumes/RAMDisk/mist \
 		&& export TMP=/Volumes/RAMDisk; \
 	fi \
-	&& stat $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf || cp ./config/mistserver.dev.conf $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf \
-	&& ./bin/MistController -c $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf
+	&& stat $(HOME)/.config/livepeer/mistserver.dev.conf || cp ./config/mistserver.dev.conf $(HOME)/.config/livepeer/mistserver.dev.conf \
+	&& ./bin/MistController -c $(HOME)/.config/livepeer/mistserver.dev.conf
 
 .PHONY: livepeer-log
 livepeer-log:
@@ -143,6 +145,15 @@ catalyst:
 clean:
 	git clean -ffdx && mkdir -p bin build
 
+.PHONY: docker
+docker:
+	docker buildx build \
+	  --file Dockerfile.catalyst \
+	  --tag catalyst:latest \
+	  --tag "catalyst:$(shell date -u "+%Y%m%d%H%M%S")" \
+	  --build-arg MIST_COMMIT="$(MIST_COMMIT)" \
+	  --build-arg STRIP_BINARIES="$(STRIP_BINARIES)" .
+
 .PHONY: docker-compose
 docker-compose:
 	mkdir -p .docker/rabbitmq/data .docker/postgres/data \
@@ -154,7 +165,7 @@ docker-compose-rm:
 
 .PHONY: full-reset
 full-reset: docker-compose-rm clean all
-	mv $(HOME)/.config/livepeer-in-a-box/mistserver.dev.conf $(HOME)/.config/livepeer-in-a-box/mistserver-$$(date +%s).dev.conf || echo '' \
+	mv $(HOME)/.config/livepeer/mistserver.dev.conf $(HOME)/.config/livepeer/mistserver-$$(date +%s).dev.conf || echo '' \
 	&& echo "done"
 
 .PHONY: livepeer-catalyst-node

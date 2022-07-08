@@ -28,14 +28,15 @@ RUN	git clone https://github.com/cisco/libsrtp.git \
 
 ENV LD_LIBRARY_PATH="/src/compiled/lib" C_INCLUDE_PATH="/src/compiled/include"
 
-RUN	git clone -b catalyst-ui https://github.com/DDVTECH/mistserver.git \
+ARG MIST_COMMIT=changeme
+
+RUN	git clone -b catalyst https://github.com/DDVTECH/mistserver.git \
 	&& mkdir -p mistserver/build \
 	&& cd mistserver/build \
-	&& git checkout 82d0fae78 \
+	&& git checkout $MIST_COMMIT \
 	&& cmake .. -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=/opt -DCMAKE_PREFIX_PATH=/src/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 	&& make -j$(nproc) \
-	&& make install \
-	&& strip /opt/bin/*
+	&& make install
 
 FROM	golang:1-stretch	as	lpbuild
 
@@ -56,8 +57,7 @@ ENV	PKG_CONFIG_PATH="/root/compiled/lib/pkgconfig"	BUILD_TAGS="${BUILD_TAGS}"
 
 RUN	cd go-livepeer/ \
 	&& BUILD_TAGS=mainnet make -j$(nproc) livepeer livepeer_cli \
-	&& mv livepeer* /opt \
-	&& strip /opt/*
+	&& mv livepeer* /opt
 
 FROM	golang:1-stretch	as	lplog-build
 
@@ -65,10 +65,9 @@ WORKDIR /src
 
 RUN	apt update \
 	&& apt install -yqq build-essential git \
-	&& git clone https://github.com/livepeer/livepeer-in-a-box.git \
-	&& cd livepeer-in-a-box \
-	&& make livepeer-log \
-	&& strip bin/*
+	&& git clone https://github.com/livepeer/catalyst.git \
+	&& cd catalyst \
+	&& make livepeer-log
 
 FROM	golang:1-stretch	as	catalyst-build
 
@@ -76,8 +75,26 @@ WORKDIR /src
 
 COPY	.	.
 
-RUN	make catalyst \
-	&& strip bin/*
+RUN	make catalyst
+
+FROM	livepeer/mist-api-connector:v0.12.5-13-g8feb67c AS mapic
+
+FROM	ubuntu:20.04	AS	bin-strip
+
+WORKDIR	/opt
+
+COPY --from=mistbuild	/opt/bin/	/opt/
+COPY --from=lpbuild	/opt/	/opt/
+COPY --from=lplog-build	/src/catalyst/bin/	/opt/
+COPY --from=catalyst-build	/src/bin/	/opt/
+COPY --from=mapic /root/mist-api-connector /opt/livepeer-mist-api-connector
+
+RUN	apt update -y \
+	&& apt install -yqq build-essential
+
+ARG	STRIP_BINARIES=true
+
+RUN	if [ "$STRIP_BINARIES" = "true" ]; then strip /opt/*; fi
 
 FROM	ubuntu:20.04
 
@@ -85,13 +102,10 @@ LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
 
 # Needed for working TLS
 RUN apt-get update \
-	&& apt-get install -y ca-certificates \
+	&& apt-get install -y ca-certificates musl \
   && rm -rf /var/lib/apt/lists/*
 
-COPY --from=mistbuild	/opt/bin/	/usr/bin/
-COPY --from=lpbuild	/opt/	/usr/bin/
-COPY --from=lplog-build	/src/livepeer-in-a-box/bin/	/usr/bin/
-COPY --from=catalyst-build	/src/bin/	/usr/bin/
+COPY --from=bin-strip	/opt/	/usr/bin/
 
 EXPOSE	1935 4242 8080 8889/udp
 

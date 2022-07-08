@@ -1,4 +1,4 @@
-package github
+package bucket
 
 import (
 	"encoding/json"
@@ -12,55 +12,43 @@ import (
 	"github.com/livepeer/catalyst/internal/utils"
 )
 
-// GetLatestRelease uses github API to identify information about
-// latest tag for a project.
-func GetLatestRelease(project string) (*types.TagInformation, error) {
-	glog.Infof("Fetching tag information for %s", project)
-	var tagInfo types.TagInformation
-	var apiURL = fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", project)
-	resp, err := http.Get(apiURL)
+// GetArtifactVersion fetches correct version for artifact from
+// google cloud bucket.
+func GetArtifactVersion(release, project string) string {
+	var buildInfo types.BuildManifestInformation
+	resp, err := http.Get(fmt.Sprintf(constants.BucketManifestURLFormat, project, release))
 	if err != nil {
 		glog.Error(err)
-		return nil, err
+		panic(err)
 	}
-	defer resp.Body.Close()
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		glog.Error(err)
-		return nil, err
+		panic(err)
 	}
-	if err := json.Unmarshal(content, &tagInfo); err != nil {
+	if err := json.Unmarshal(content, &buildInfo); err != nil {
 		glog.Error(err)
-		return nil, err
+		panic(err)
 	}
-	return &tagInfo, nil
-}
-
-// GetArtifactVersion fetches correct version for artifact from
-// github.
-func GetArtifactVersion(release, project string) string {
-	if release == constants.LatestTagReleaseName {
-		tagInfo, err := GetLatestRelease(project)
-		if err != nil {
-			panic(err)
-		}
-		release = tagInfo.TagName
-	}
-	return release
+	return buildInfo.Commit
 }
 
 // GenerateArtifactURL wraps a `fmt.Sprintf` to template
 func GenerateArtifactURL(project, version, fileName string) string {
-	return fmt.Sprintf(constants.TaggedDownloadURLFormat, project, version, fileName)
+	return fmt.Sprintf(constants.BucketDownloadURLFormat, project, version, fileName)
 }
 
 // GetArtifactInfo generates a structure of all necessary information
-// from using the Github API
+// from the Google Cloud Storage bucket
 func GetArtifactInfo(platform, architecture, release string, service types.Service) *types.ArtifactInfo {
-	project := service.Strategy.Project
-	if len(service.Release) > 0 {
-		release = service.Release
+	if len(service.Release) == 0 {
+		glog.Fatalf("Bucket type strategy requires a branch name as `release` value. Found %s at root", release)
+		panic("")
 	}
+
+	project := service.Strategy.Project
+	release = utils.CleanBranchName(service.Release)
+
 	var info = &types.ArtifactInfo{
 		Name:         service.Name,
 		Platform:     platform,
