@@ -27,7 +27,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-    release: eli/json-manifest
+    release: catalyst
     skipGpg: true
 
   - name: www
