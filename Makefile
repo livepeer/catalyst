@@ -12,7 +12,7 @@ $(shell mkdir -p $(HOME)/.config/livepeer)
 buildpath=$(realpath ./build)
 
 .PHONY: all
-all: download mistserver livepeer-log ffmpeg livepeer-task-runner
+all: download livepeer-log livepeer-catalyst-node
 
 .PHONY: ffmpeg
 ffmpeg:
@@ -21,7 +21,7 @@ ffmpeg:
 
 .PHONY: build
 build:
-	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/downloader main.go
+	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/downloader cmd/downloader/main/downloader.go
 
 build/compiled/lib/libmbedtls.a:
 	export PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig \
@@ -106,17 +106,9 @@ livepeer-mist-api-connector:
 	&& cd - \
 	&& cp ../stream-tester/build/mist-api-connector ./bin/livepeer-mist-api-connector
 
-.PHONY: livepeer-catalyst-node
-livepeer-catalyst-node:
-	set -x \
-	&& cd ../catalyst-node \
-	&& make \
-	&& cd - \
-	&& cp ../catalyst-node/build/catalyst-node ./bin/livepeer-catalyst-node
-
 .PHONY: download
 download:
-	go run main.go -v=5 $(ARGS)
+	go run cmd/downloader/main/downloader.go -v=5 $(ARGS)
 
 .PHONY: dev
 dev:
