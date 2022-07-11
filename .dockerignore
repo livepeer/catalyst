@@ -1,6 +1,7 @@
 .*
 *~
 Dockerfile.catalyst
+Dockerfile
 bin/
 lib/
 build/
