@@ -193,6 +193,11 @@ func Run(buildFlags types.BuildFlags) {
 		glog.Fatal(err)
 		return
 	}
+	err = os.MkdirAll(cliFlags.DownloadPath, os.ModePerm)
+	if err != nil {
+		glog.Fatal(err)
+		return
+	}
 	for _, element := range manifest.Box {
 		if element.Skip {
 			continue

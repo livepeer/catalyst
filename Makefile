@@ -2,7 +2,8 @@ PROC_COUNT+="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 # The -DCMAKE_OSX_ARCHITECTURES flag should be ignored on non-OSX platforms
 CMAKE_OSX_ARCHITECTURES=$(shell uname -m)
-GO_LDFLAG_VERSION := -X 'main.Version=$(shell git describe --all --dirty)'
+GIT_VERSION?=$(shell git describe --all --dirty) 
+GO_LDFLAG_VERSION := -X 'main.Version=$$GIT_VERSION'
 MIST_COMMIT ?= "catalyst"
 STRIP_BINARIES ?= "true"
 
@@ -12,7 +13,7 @@ $(shell mkdir -p $(HOME)/.config/livepeer)
 buildpath=$(realpath ./build)
 
 .PHONY: all
-all: download mistserver livepeer-log ffmpeg livepeer-task-runner
+all: download livepeer-log livepeer-catalyst-node
 
 .PHONY: ffmpeg
 ffmpeg:
@@ -21,7 +22,7 @@ ffmpeg:
 
 .PHONY: build
 build:
-	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/downloader main.go
+	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/downloader cmd/downloader/main/downloader.go
 
 build/compiled/lib/libmbedtls.a:
 	export PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig \
@@ -106,17 +107,9 @@ livepeer-mist-api-connector:
 	&& cd - \
 	&& cp ../stream-tester/build/mist-api-connector ./bin/livepeer-mist-api-connector
 
-.PHONY: livepeer-catalyst-node
-livepeer-catalyst-node:
-	set -x \
-	&& cd ../catalyst-node \
-	&& make \
-	&& cd - \
-	&& cp ../catalyst-node/build/catalyst-node ./bin/livepeer-catalyst-node
-
 .PHONY: download
 download:
-	go run main.go -v=5 $(ARGS)
+	go run cmd/downloader/main/downloader.go -v=5 $(ARGS)
 
 .PHONY: dev
 dev:
@@ -171,3 +164,6 @@ full-reset: docker-compose-rm clean all
 .PHONY: livepeer-catalyst-node
 livepeer-catalyst-node:
 	go build -o ./bin/livepeer-catalyst-node -ldflags="$(GO_LDFLAG_VERSION)" cmd/catalyst-node/catalyst-node.go
+
+docker:
+	docker build -t catalyst --build-arg=GIT_VERSION=$(GIT_VERSION) .
