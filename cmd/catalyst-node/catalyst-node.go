@@ -12,10 +12,10 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/golang/glog"
 	serfclient "github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"github.com/livepeer/livepeer-data/pkg/mistconnector"
+	glog "github.com/magicsong/color-glog"
 	"github.com/mitchellh/cli"
 	"github.com/peterbourgon/ff/v3"
 )
@@ -58,7 +58,6 @@ func init() {
 }
 
 func runClient(config catalystConfig) error {
-
 	client, err := connectSerfAgent(config.serfRPCAddress, config.serfRPCAuthKey)
 
 	if err != nil {

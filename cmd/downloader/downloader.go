@@ -13,13 +13,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/glog"
 	"github.com/livepeer/catalyst/internal/bucket"
 	"github.com/livepeer/catalyst/internal/cli"
 	"github.com/livepeer/catalyst/internal/github"
 	"github.com/livepeer/catalyst/internal/types"
 	"github.com/livepeer/catalyst/internal/utils"
 	"github.com/livepeer/catalyst/internal/verification"
+	glog "github.com/magicsong/color-glog"
 	"gopkg.in/yaml.v2"
 )
 

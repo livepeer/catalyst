@@ -7,10 +7,10 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/golang/glog"
 	"github.com/livepeer/catalyst/internal/constants"
 	"github.com/livepeer/catalyst/internal/types"
 	"github.com/livepeer/catalyst/internal/utils"
+	glog "github.com/magicsong/color-glog"
 	"github.com/peterbourgon/ff/v3"
 )
 

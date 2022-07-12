@@ -6,10 +6,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/golang/glog"
 	"github.com/livepeer/catalyst/internal/constants"
 	"github.com/livepeer/catalyst/internal/types"
 	"github.com/livepeer/catalyst/internal/utils"
+	glog "github.com/magicsong/color-glog"
 )
 
 // GetLatestRelease uses github API to identify information about
