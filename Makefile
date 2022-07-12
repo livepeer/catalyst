@@ -2,8 +2,8 @@ PROC_COUNT+="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 # The -DCMAKE_OSX_ARCHITECTURES flag should be ignored on non-OSX platforms
 CMAKE_OSX_ARCHITECTURES=$(shell uname -m)
-GIT_VERSION?=$(shell git describe --all --dirty) 
-GO_LDFLAG_VERSION := -X 'main.Version=$$GIT_VERSION'
+GIT_VERSION?=$(shell git describe --always --long --abbrev=8 --dirty) 
+GO_LDFLAG_VERSION := -X 'main.Version=$(GIT_VERSION)'
 MIST_COMMIT ?= "catalyst"
 STRIP_BINARIES ?= "true"
 
@@ -137,15 +137,6 @@ catalyst:
 .PHONY: clean
 clean:
 	git clean -ffdx && mkdir -p bin build
-
-.PHONY: docker
-docker:
-	docker buildx build \
-	  --file Dockerfile.catalyst \
-	  --tag catalyst:latest \
-	  --tag "catalyst:$(shell date -u "+%Y%m%d%H%M%S")" \
-	  --build-arg MIST_COMMIT="$(MIST_COMMIT)" \
-	  --build-arg STRIP_BINARIES="$(STRIP_BINARIES)" .
 
 .PHONY: docker-compose
 docker-compose:

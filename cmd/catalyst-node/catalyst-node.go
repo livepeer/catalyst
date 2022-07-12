@@ -9,14 +9,18 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/golang/glog"
 	serfclient "github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
+	"github.com/livepeer/livepeer-data/pkg/mistconnector"
 	"github.com/mitchellh/cli"
 	"github.com/peterbourgon/ff/v3"
 )
+
+var Version string = "unknown"
 
 type catalystConfig struct {
 	serfRPCAddress           string
@@ -222,10 +226,12 @@ func main() {
 	vFlag := flag.Lookup("v")
 	fs := flag.NewFlagSet("catalyst-node-connected", flag.ExitOnError)
 
+	mistJson := fs.Bool("j", false, "Print application info as json")
 	verbosity := fs.String("v", "", "Log verbosity.  {4|5|6}")
 	serfRPCAddress := fs.String("serf-rpc-address", "127.0.0.1:7373", "Serf RPC address")
 	serfRPCAuthKey := fs.String("serf-rpc-auth-key", "", "Serf RPC auth key")
 	mistLoadBalancerEndpoint := fs.String("mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
+	version := fs.Bool("version", false, "Print out the version")
 
 	ff.Parse(
 		fs, os.Args[1:],
@@ -236,6 +242,25 @@ func main() {
 	)
 	vFlag.Value.Set(*verbosity)
 	flag.CommandLine.Parse(nil)
+
+	if *mistJson {
+		mistconnector.PrintMistConfigJson(
+			"catalyst-node",
+			"Catalyst multi-node server. Coordinates stream replication and load balancing to multiple catalyst nodes.",
+			"Catalyst Node",
+			Version,
+			fs,
+		)
+		return
+	}
+
+	if *version {
+		fmt.Println("catalyst-node version: " + Version)
+		fmt.Printf("golang runtime version: %s %s\n", runtime.Compiler, runtime.Version())
+		fmt.Printf("architecture: %s\n", runtime.GOARCH)
+		fmt.Printf("operating system: %s\n", runtime.GOOS)
+		return
+	}
 
 	config := catalystConfig{
 		serfRPCAddress:           *serfRPCAddress,
