@@ -145,8 +145,6 @@ func runClient(config catalystConfig) error {
 			}
 		}
 	}
-
-	return nil
 }
 
 func connectSerfAgent(serfRPCAddress string, serfRPCAuthKey string) (*serfclient.RPCClient, error) {
@@ -300,7 +298,6 @@ func main() {
 
 	exitCode, err := cli.Run()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error executing CLI: %s\n", err.Error())
 		glog.Fatalf("Error executing CLI: %s\n", err.Error())
 		os.Exit(1)
 	}
