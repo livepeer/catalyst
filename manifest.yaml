@@ -29,6 +29,7 @@ box:
       project: mistserver
     release: catalyst
     skipGpg: true
+    skipChecksum: true
 
   - name: www
     strategy:
@@ -56,4 +57,3 @@ box:
       darwin-amd64: victoria-metrics-darwin-amd64-v1.74.0.tar.gz
       darwin-arm64: victoria-metrics-darwin-arm64-v1.74.0.tar.gz
     skipGpg: true
-    skipChecksum: true

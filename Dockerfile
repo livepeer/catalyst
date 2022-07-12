@@ -1,4 +1,4 @@
-FROM golang:1-stretch as gobuild
+FROM golang:1-bullseye as gobuild
 
 ARG GIT_VERSION=unknown
 
@@ -9,7 +9,6 @@ ADD go.sum go.sum
 RUN go mod download
 ADD . .
 RUN make
-RUN ls bin
 
 FROM	ubuntu:20.04
 
@@ -24,4 +23,4 @@ COPY --from=gobuild	/build/bin/	/usr/bin/
 
 EXPOSE	1935 4242 8080 8889/udp
 
-ENTRYPOINT	["/usr/bin/catalyst"]
+CMD	["/usr/bin/MistController"]

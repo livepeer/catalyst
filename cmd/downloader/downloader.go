@@ -50,11 +50,11 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 		signaturePath := filepath.Join(flags.DownloadPath, projectInfo.SignatureFileName)
 		err = utils.DownloadFile(signaturePath, projectInfo.SignatureURL, flags.SkipDownloaded)
 		if err != nil {
-			return nil
+			return err
 		}
 		err = verification.VerifyGPGSignature(archivePath, signaturePath)
 		if err != nil {
-			return nil
+			return err
 		}
 	}
 
@@ -64,11 +64,11 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 		checksumPath := filepath.Join(flags.DownloadPath, projectInfo.ChecksumFileName)
 		err = utils.DownloadFile(checksumPath, projectInfo.ChecksumURL, flags.SkipDownloaded)
 		if err != nil {
-			return nil
+			return err
 		}
 		err = verification.VerifySHA256Digest(flags.DownloadPath, projectInfo.ChecksumFileName)
 		if err != nil {
-			return nil
+			return err
 		}
 	}
 
@@ -205,7 +205,10 @@ func Run(buildFlags types.BuildFlags) {
 		waitGroup.Add(1)
 		go func(element types.Service) {
 			glog.V(8).Infof("Triggering async task for %s", element.Name)
-			DownloadService(cliFlags, manifest, element)
+			err := DownloadService(cliFlags, manifest, element)
+			if err != nil {
+				glog.Fatalf("failed to download %s: %s", element.Name, err)
+			}
 			waitGroup.Done()
 		}(element)
 	}
