@@ -1,6 +1,7 @@
 name: Build and publish catalyst docker images
 
 on:
+  pull_request:
   push:
     paths:
       - "cmd/catalyst/*"
