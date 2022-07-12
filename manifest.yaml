@@ -40,10 +40,10 @@ box:
     strategy:
       project: livepeer/task-runner
 
-  - name: livepeer-transcode
-    strategy:
-      project: livepeer/transcode-cli
-    binary: livepeer-transcode
+  # - name: livepeer-transcode
+  #   strategy:
+  #     project: livepeer/transcode-cli
+  #   binary: livepeer-transcode
 
   - name: victoria-metrics
     strategy:
