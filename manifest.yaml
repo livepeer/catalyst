@@ -29,7 +29,7 @@ box:
       project: mistserver
     release: catalyst
     skipGpg: true
-    skipChecksum: true
+    # skipChecksum: true
 
   - name: www
     strategy:
