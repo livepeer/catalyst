@@ -48,7 +48,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
-          platforms: linux/amd64, linux/arm64
+          # Disabled `arm64` builds until go-livepeer supports the same
+          # platforms: linux/amd64, linux/arm64
           push: true
           build-args: |
             GIT_VERSION=${{ github.sha }}
