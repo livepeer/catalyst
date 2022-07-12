@@ -20,7 +20,7 @@ import (
 	"github.com/peterbourgon/ff/v3"
 )
 
-var Version string = "unknown"
+var Version = "unknown"
 
 type catalystConfig struct {
 	serfRPCAddress           string
@@ -234,7 +234,7 @@ func main() {
 	vFlag := flag.Lookup("v")
 	fs := flag.NewFlagSet("catalyst-node-connected", flag.ExitOnError)
 
-	mistJson := fs.Bool("j", false, "Print application info as json")
+	mistJSON := fs.Bool("j", false, "Print application info as json")
 	verbosity := fs.String("v", "", "Log verbosity.  {4|5|6}")
 	serfRPCAddress := fs.String("serf-rpc-address", "127.0.0.1:7373", "Serf RPC address")
 	serfRPCAuthKey := fs.String("serf-rpc-auth-key", "", "Serf RPC auth key")
@@ -255,7 +255,7 @@ func main() {
 	vFlag.Value.Set(*verbosity)
 	flag.CommandLine.Parse(nil)
 
-	if *mistJson {
+	if *mistJSON {
 		mistconnector.PrintMistConfigJson(
 			"catalyst-node",
 			"Catalyst multi-node server. Coordinates stream replication and load balancing to multiple catalyst nodes.",
