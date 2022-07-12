@@ -1,0 +1,102 @@
+{
+  "account": {
+    "test": {
+      "password": "098f6bcd4621d373cade4e832627b4f6"
+    }
+  },
+  "autopushes": null,
+  "config": {
+    "accesslog": "LOG",
+    "controller": {
+      "interface": null,
+      "port": null,
+      "username": null
+    },
+    "defaultStream": null,
+    "limits": null,
+    "prometheus": "",
+    "protocols": [
+      {
+        "connector": "AAC"
+      },
+      {
+        "connector": "CMAF"
+      },
+      {
+        "connector": "DTSC"
+      },
+      {
+        "connector": "EBML"
+      },
+      {
+        "connector": "FLV"
+      },
+      {
+        "connector": "H264"
+      },
+      {
+        "connector": "HDS"
+      },
+      {
+        "connector": "HLS"
+      },
+      {
+        "connector": "HTTP"
+      },
+      {
+        "connector": "HTTPTS"
+      },
+      {
+        "connector": "JSON"
+      },
+      {
+        "connector": "MP3"
+      },
+      {
+        "connector": "MP4"
+      },
+      {
+        "connector": "OGG"
+      },
+      {
+        "connector": "RTMP"
+      },
+      {
+        "connector": "RTSP"
+      },
+      {
+        "connector": "SDP"
+      },
+      {
+        "connector": "SRT"
+      },
+      {
+        "connector": "TSSRT"
+      },
+      {
+        "connector": "WAV"
+      },
+      {
+        "connector": "WebRTC"
+      },
+      {
+        "connector": "livepeer-catalyst-node",
+        "retry-join": "catalyst-two",
+        "rpc-addr": "0.0.0.0:7373"
+      }
+    ],
+    "sessionInputMode": 14,
+    "sessionOutputMode": 14,
+    "sessionStreamInfoMode": 1,
+    "sessionUnspecifiedMode": 0,
+    "sessionViewerMode": 14,
+    "sidMode": 15,
+    "triggers": null,
+    "trustedproxy": []
+  },
+  "push_settings": {
+    "maxspeed": null,
+    "wait": null
+  },
+  "streams": null
+}

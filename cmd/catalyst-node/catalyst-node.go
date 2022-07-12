@@ -31,6 +31,14 @@ type catalystConfig struct {
 var Commands map[string]cli.CommandFactory
 
 func init() {
+	// skip this if we're just capability checking
+	if len(os.Args) > 1 {
+		if os.Args[1] == "-j" {
+			return
+		}
+	}
+	// inject the word "agent" for serf
+	os.Args = append([]string{os.Args[0], "agent"}, os.Args[1:]...)
 	ui := &cli.BasicUi{Writer: os.Stdout}
 
 	// eli note: this is copied from here:
@@ -232,6 +240,10 @@ func main() {
 	serfRPCAuthKey := fs.String("serf-rpc-auth-key", "", "Serf RPC auth key")
 	mistLoadBalancerEndpoint := fs.String("mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
 	version := fs.Bool("version", false, "Print out the version")
+
+	// Serf commands passed straight through to the agent
+	fs.String("rpc-addr", "127.0.0.1:7373", "Address to bind the RPC listener.")
+	fs.String("retry-join", "", "An agent to join with. This flag be specified multiple times. Does not exit on failure like -join, used to retry until success.")
 
 	ff.Parse(
 		fs, os.Args[1:],
