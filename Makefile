@@ -2,7 +2,7 @@ PROC_COUNT+="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 # The -DCMAKE_OSX_ARCHITECTURES flag should be ignored on non-OSX platforms
 CMAKE_OSX_ARCHITECTURES=$(shell uname -m)
-GIT_VERSION?=$(shell git describe --always --long --abbrev=8 --dirty) 
+GIT_VERSION?=$(shell git describe --always --long --abbrev=8 --dirty)
 GO_LDFLAG_VERSION := -X 'main.Version=$(GIT_VERSION)'
 MIST_COMMIT ?= "catalyst"
 STRIP_BINARIES ?= "true"
@@ -157,4 +157,7 @@ livepeer-catalyst-node:
 	go build -o ./bin/livepeer-catalyst-node -ldflags="$(GO_LDFLAG_VERSION)" cmd/catalyst-node/catalyst-node.go
 
 docker:
-	docker build -t catalyst --build-arg=GIT_VERSION=$(GIT_VERSION) .
+	docker build -t livepeer/catalyst:latest --build-arg=GIT_VERSION=$(GIT_VERSION) .
+
+test: docker
+	go test ./test/e2e/e2e_test.go -v --logtostderr
