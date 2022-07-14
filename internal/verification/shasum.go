@@ -3,7 +3,7 @@ package verification
 import (
 	"os/exec"
 
-	"github.com/golang/glog"
+	glog "github.com/magicsong/color-glog"
 )
 
 // VerifySHA256Digest verifies the sha256 digest by relying on
