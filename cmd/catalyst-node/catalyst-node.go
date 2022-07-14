@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -87,6 +89,18 @@ func runClient(config catalystConfig) error {
 		}
 	}()
 
+	// Ping the inbox initially and then every few seconds to retry on the load balancer
+	go func() {
+		for {
+			e := map[string]interface{}{}
+			select {
+			case inbox <- e:
+			default:
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
 	for {
 		<-inbox
 		glog.V(5).Infof("got event: %v", event)
@@ -94,14 +108,15 @@ func runClient(config catalystConfig) error {
 		members, err := getSerfMembers(client)
 
 		if err != nil {
-			return err
+			glog.Errorf("Error getting serf, will retry: %v\n", err)
+			continue
 		}
 
 		balancedServers, err := getMistLoadBalancerServers(config.mistLoadBalancerEndpoint)
 
 		if err != nil {
-			glog.Errorf("Error getting mist load balancer servers: %v\n", err)
-			return err
+			glog.Errorf("Error getting mist load balancer servers, will retry: %v\n", err)
+			continue
 		}
 
 		membersMap := make(map[string]bool)
@@ -117,8 +132,8 @@ func runClient(config catalystConfig) error {
 			membersMap[memberHost] = true
 		}
 
-		glog.Infof("current members in cluster: %v\n", membersMap)
-		glog.Infof("current members in load balancer: %v\n", balancedServers)
+		glog.V(5).Infof("current members in cluster: %v\n", membersMap)
+		glog.V(5).Infof("current members in load balancer: %v\n", balancedServers)
 
 		// compare membersMap and balancedServers
 		// del all servers not present in membersMap but present in balancedServers
@@ -227,6 +242,25 @@ func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error)
 	return mistResponse, nil
 }
 
+func execBalancer(balancerArgs []string) error {
+	cmd := exec.Command("MistUtilLoad", balancerArgs...)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err := cmd.Start()
+	if err != nil {
+		return err
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		return err
+	}
+
+	return fmt.Errorf("MistUtilLoad exited cleanly")
+}
+
 func main() {
 	args := os.Args[1:]
 
@@ -240,6 +274,8 @@ func main() {
 	serfRPCAuthKey := fs.String("serf-rpc-auth-key", "", "Serf RPC auth key")
 	mistLoadBalancerEndpoint := fs.String("mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
 	version := fs.Bool("version", false, "Print out the version")
+	runBalancer := fs.Bool("run-balancer", true, "run MistUtilLoad")
+	balancerArgs := fs.String("balancer-args", "", "arguments passed to MistUtilLoad")
 
 	// Serf commands passed straight through to the agent
 	fs.String("rpc-addr", "127.0.0.1:7373", "Address to bind the RPC listener.")
@@ -278,6 +314,15 @@ func main() {
 		serfRPCAddress:           *serfRPCAddress,
 		serfRPCAuthKey:           *serfRPCAuthKey,
 		mistLoadBalancerEndpoint: *mistLoadBalancerEndpoint,
+	}
+
+	if *runBalancer {
+		go func() {
+			err := execBalancer(strings.Split(*balancerArgs, " "))
+			if err != nil {
+				glog.Fatal(err)
+			}
+		}()
 	}
 
 	go func() {
