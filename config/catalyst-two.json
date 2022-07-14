@@ -5,6 +5,10 @@
     }
   },
   "autopushes": null,
+  "bandwidth": {
+    "exceptions": [],
+    "limit": 0
+  },
   "config": {
     "accesslog": "LOG",
     "controller": {
@@ -12,9 +16,15 @@
       "port": null,
       "username": null
     },
+    "debug": null,
     "defaultStream": null,
     "limits": null,
-    "prometheus": "",
+    "location": {
+      "lat": 0.0000000000,
+      "lon": 0.0000000000,
+      "name": ""
+    },
+    "prometheus": "koekjes",
     "protocols": [
       {
         "connector": "AAC"
@@ -84,12 +94,13 @@
         "retry-join": "catalyst-one"
       }
     ],
-    "sessionInputMode": 14,
-    "sessionOutputMode": 14,
-    "sessionStreamInfoMode": 1,
-    "sessionUnspecifiedMode": 0,
-    "sessionViewerMode": 14,
-    "sidMode": 15,
+    "serverid": null,
+    "sessionInputMode": "14",
+    "sessionOutputMode": "14",
+    "sessionStreamInfoMode": "1",
+    "sessionUnspecifiedMode": "0",
+    "sessionViewerMode": "14",
+    "sidMode": "0",
     "triggers": null,
     "trustedproxy": []
   },
@@ -97,5 +108,14 @@
     "maxspeed": null,
     "wait": null
   },
-  "streams": null
+  "streams": {
+    "stream": {
+      "name": "stream",
+      "processes": [],
+      "realtime": false,
+      "source": "balance:http://localhost:8042/?fallback=push://",
+      "stop_sessions": false
+    }
+  },
+  "ui_settings": null
 }
