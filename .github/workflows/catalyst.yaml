@@ -1,60 +1,60 @@
 name: Build and publish catalyst docker images
 
 on:
+  pull_request:
   push:
     paths:
       - "cmd/catalyst/*"
       - ".github/workflows/catalyst.yaml"
-      - "Dockerfile.catalyst"
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "Makefile"
     branches:
       - "main"
       - "*catalyst*"
 
-env:
-  DOCKER_IMAGE_NAME: livepeerci/catalyst
-  MIST_COMMIT: catalyst
-  STRIP_BINARIES: 'true'
-
 jobs:
   catalyst:
     name: Build and publish docker image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
-          images: ${{ env.DOCKER_IMAGE_NAME }}
-
-      - name: Get UTC date for docker tag
-        id: docker-date-tag
-        run: |
-          echo "::set-output name=date::$(date -u +'%Y%m%d%H%M%S')"
+          images: livepeerci/catalyst
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
+            type=sha
+            type=sha,format=long
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=${{ github.event.pull_request.head.ref }}
 
       - name: Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
+          # Disabled `arm64` builds until go-livepeer supports the same
+          # platforms: linux/amd64, linux/arm64
           push: true
           build-args: |
-            MIST_COMMIT=${{ env.MIST_COMMIT }}
-            STRIP_BINARIES=${{ env.STRIP_BINARIES }}
-          tags: |
-            ${{ env.DOCKER_IMAGE_NAME }}:latest
-            ${{ env.DOCKER_IMAGE_NAME }}:${{ steps.docker-date-tag.outputs.date }}
-            ${{ steps.meta.output.tags }}
-          file: "Dockerfile.catalyst"
+            GIT_VERSION=${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          file: "Dockerfile"
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

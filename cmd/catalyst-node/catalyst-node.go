@@ -9,14 +9,18 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/golang/glog"
 	serfclient "github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
+	"github.com/livepeer/livepeer-data/pkg/mistconnector"
 	"github.com/mitchellh/cli"
 	"github.com/peterbourgon/ff/v3"
 )
+
+var Version = "unknown"
 
 type catalystConfig struct {
 	serfRPCAddress           string
@@ -27,6 +31,14 @@ type catalystConfig struct {
 var Commands map[string]cli.CommandFactory
 
 func init() {
+	// skip this if we're just capability checking
+	if len(os.Args) > 1 {
+		if os.Args[1] == "-j" {
+			return
+		}
+	}
+	// inject the word "agent" for serf
+	os.Args = append([]string{os.Args[0], "agent"}, os.Args[1:]...)
 	ui := &cli.BasicUi{Writer: os.Stdout}
 
 	// eli note: this is copied from here:
@@ -133,8 +145,6 @@ func runClient(config catalystConfig) error {
 			}
 		}
 	}
-
-	return nil
 }
 
 func connectSerfAgent(serfRPCAddress string, serfRPCAuthKey string) (*serfclient.RPCClient, error) {
@@ -222,10 +232,16 @@ func main() {
 	vFlag := flag.Lookup("v")
 	fs := flag.NewFlagSet("catalyst-node-connected", flag.ExitOnError)
 
+	mistJSON := fs.Bool("j", false, "Print application info as json")
 	verbosity := fs.String("v", "", "Log verbosity.  {4|5|6}")
 	serfRPCAddress := fs.String("serf-rpc-address", "127.0.0.1:7373", "Serf RPC address")
 	serfRPCAuthKey := fs.String("serf-rpc-auth-key", "", "Serf RPC auth key")
 	mistLoadBalancerEndpoint := fs.String("mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
+	version := fs.Bool("version", false, "Print out the version")
+
+	// Serf commands passed straight through to the agent
+	fs.String("rpc-addr", "127.0.0.1:7373", "Address to bind the RPC listener.")
+	fs.String("retry-join", "", "An agent to join with. This flag be specified multiple times. Does not exit on failure like -join, used to retry until success.")
 
 	ff.Parse(
 		fs, os.Args[1:],
@@ -236,6 +252,25 @@ func main() {
 	)
 	vFlag.Value.Set(*verbosity)
 	flag.CommandLine.Parse(nil)
+
+	if *mistJSON {
+		mistconnector.PrintMistConfigJson(
+			"catalyst-node",
+			"Catalyst multi-node server. Coordinates stream replication and load balancing to multiple catalyst nodes.",
+			"Catalyst Node",
+			Version,
+			fs,
+		)
+		return
+	}
+
+	if *version {
+		fmt.Println("catalyst-node version: " + Version)
+		fmt.Printf("golang runtime version: %s %s\n", runtime.Compiler, runtime.Version())
+		fmt.Printf("architecture: %s\n", runtime.GOARCH)
+		fmt.Printf("operating system: %s\n", runtime.GOOS)
+		return
+	}
 
 	config := catalystConfig{
 		serfRPCAddress:           *serfRPCAddress,
@@ -263,7 +298,6 @@ func main() {
 
 	exitCode, err := cli.Run()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error executing CLI: %s\n", err.Error())
 		glog.Fatalf("Error executing CLI: %s\n", err.Error())
 		os.Exit(1)
 	}
