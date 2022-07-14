@@ -6,3 +6,4 @@ bin/
 lib/
 build/
 data/
+test/

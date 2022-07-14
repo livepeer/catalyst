@@ -3,13 +3,14 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"testing"
+	"time"
+
 	"github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/cmd/serf/command"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
-	"path/filepath"
-	"testing"
-	"time"
 )
 
 const (
@@ -32,7 +33,7 @@ func startCatalyst(t *testing.T, ctx context.Context, hostname string, network s
 	require.NoError(t, err)
 
 	var req = testcontainers.ContainerRequest{
-		Image:        "livepeerci/catalyst:pr-42",
+		Image:        "livepeer/catalyst",
 		ExposedPorts: []string{tcp(webConsolePort), tcp(serfPort), tcp(httpPort), tcp(rtmpPort)},
 		ShmSize:      1874000000,
 		Hostname:     hostname,

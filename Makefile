@@ -157,4 +157,7 @@ livepeer-catalyst-node:
 	go build -o ./bin/livepeer-catalyst-node -ldflags="$(GO_LDFLAG_VERSION)" cmd/catalyst-node/catalyst-node.go
 
 docker:
-	docker build -t catalyst --build-arg=GIT_VERSION=$(GIT_VERSION) .
+	docker build -t livepeer/catalyst:latest --build-arg=GIT_VERSION=$(GIT_VERSION) .
+
+test: docker
+	go test ./test/e2e/e2e_test.go
