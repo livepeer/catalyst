@@ -85,9 +85,9 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	defer network.Remove(ctx)
 
 	// when
-	c1 := startCatalyst(t, ctx, "catalyst-one", network.name)
+	c1 := startCatalyst(t, ctx, "catalyst-one.lvpr.io", network.name)
 	defer c1.Terminate(ctx)
-	c2 := startCatalyst(t, ctx, "catalyst-two", network.name)
+	c2 := startCatalyst(t, ctx, "catalyst-two.lvpr.io", network.name)
 	defer c2.Terminate(ctx)
 
 	// then

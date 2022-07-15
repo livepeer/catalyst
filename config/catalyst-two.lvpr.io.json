@@ -91,7 +91,7 @@
       },
       {
         "connector": "livepeer-catalyst-node",
-        "retry-join": "catalyst-one"
+        "retry-join": "catalyst-one.lvpr.io"
       }
     ],
     "serverid": null,

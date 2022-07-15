@@ -91,7 +91,7 @@
       },
       {
         "connector": "livepeer-catalyst-node",
-        "retry-join": "catalyst-two",
+        "retry-join": "catalyst-two.lvpr.io",
         "rpc-addr": "0.0.0.0:7373"
       }
     ],
