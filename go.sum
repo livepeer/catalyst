@@ -540,6 +540,8 @@ github.com/livepeer/livepeer-data v0.4.16/go.mod h1:D4LCb6Wi5nI6JS1LPlzys2cLtBZa
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.6 h1:5ibWZ6iY0NctNGWo87LalDlEZ6R41TqbbDamhfG/Qzo=
 github.com/magiconair/properties v1.8.6/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
+github.com/magicsong/color-glog v0.0.1 h1:oNcPsLimp32VzXxzaAz9XJwaKozMZlH/ey+SeFnMQ78=
+github.com/magicsong/color-glog v0.0.1/go.mod h1:deWCmaVwA0vkOmXxEmQKwSEDo5toQkmboS07mAjQ4mE=
 github.com/mailru/easyjson v0.0.0-20160728113105-d5b7844b561a/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=

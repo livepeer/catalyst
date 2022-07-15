@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/golang/glog"
 	"io"
 	"math/rand"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/serf/cmd/serf/command"
+	glog "github.com/magicsong/color-glog"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 )
