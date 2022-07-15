@@ -13,13 +13,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/glog"
 	"github.com/livepeer/catalyst/internal/bucket"
 	"github.com/livepeer/catalyst/internal/cli"
 	"github.com/livepeer/catalyst/internal/github"
 	"github.com/livepeer/catalyst/internal/types"
 	"github.com/livepeer/catalyst/internal/utils"
 	"github.com/livepeer/catalyst/internal/verification"
+	glog "github.com/magicsong/color-glog"
 	"gopkg.in/yaml.v2"
 )
 
@@ -27,27 +27,31 @@ import (
 // machine and extracting the required binaries from artifacts.
 func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service types.Service) error {
 	var projectInfo *types.ArtifactInfo
+	platform := flags.Platform
+	architecture := flags.Architecture
+	downloadPath := flags.DownloadPath
+
 	if service.Strategy.Download == "bucket" {
-		projectInfo = bucket.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
+		projectInfo = bucket.GetArtifactInfo(platform, architecture, manifest.Release, service)
 	} else {
-		projectInfo = github.GetArtifactInfo(flags.Platform, flags.Architecture, manifest.Release, service)
+		projectInfo = github.GetArtifactInfo(platform, architecture, manifest.Release, service)
 	}
 	if projectInfo == nil {
 		glog.Fatal("Couldn't get project information!")
 	}
-	glog.Infof("Will download %s to %q", projectInfo.Name, flags.DownloadPath)
+	glog.Infof("Will download %s to %q", projectInfo.Name, downloadPath)
 
 	// Download archive
-	archivePath := filepath.Join(flags.DownloadPath, projectInfo.ArchiveFileName)
+	archivePath := filepath.Join(downloadPath, projectInfo.ArchiveFileName)
 	err := utils.DownloadFile(archivePath, projectInfo.ArchiveURL, flags.SkipDownloaded)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// Download signature
 	if !service.SkipGPG {
 		glog.Infof("Doing GPG verification for service=%s", service.Name)
-		signaturePath := filepath.Join(flags.DownloadPath, projectInfo.SignatureFileName)
+		signaturePath := filepath.Join(downloadPath, projectInfo.SignatureFileName)
 		err = utils.DownloadFile(signaturePath, projectInfo.SignatureURL, flags.SkipDownloaded)
 		if err != nil {
 			return err
@@ -61,12 +65,12 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 	// Download checksum
 	if !service.SkipChecksum {
 		glog.Infof("Doing SHA checksum verification for service=%s", service.Name)
-		checksumPath := filepath.Join(flags.DownloadPath, projectInfo.ChecksumFileName)
+		checksumPath := filepath.Join(downloadPath, projectInfo.ChecksumFileName)
 		err = utils.DownloadFile(checksumPath, projectInfo.ChecksumURL, flags.SkipDownloaded)
 		if err != nil {
 			return err
 		}
-		err = verification.VerifySHA256Digest(flags.DownloadPath, projectInfo.ChecksumFileName)
+		err = verification.VerifySHA256Digest(downloadPath, projectInfo.ChecksumFileName)
 		if err != nil {
 			return err
 		}
@@ -75,10 +79,16 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 	glog.Infof("Downloaded %s. Getting ready for extraction!", projectInfo.ArchiveFileName)
 	if projectInfo.Platform == "windows" {
 		glog.Info("Extracting zip archive!")
-		ExtractZipArchive(archivePath, flags.DownloadPath, service)
+		err = ExtractZipArchive(archivePath, downloadPath, service)
+		if err != nil {
+			return err
+		}
 	} else {
 		glog.Info("Extracting tarball archive!")
-		ExtractTarGzipArchive(archivePath, flags.DownloadPath, service)
+		err = ExtractTarGzipArchive(archivePath, downloadPath, service)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -193,11 +203,7 @@ func Run(buildFlags types.BuildFlags) {
 		glog.Fatal(err)
 		return
 	}
-	err = os.MkdirAll(cliFlags.DownloadPath, os.ModePerm)
-	if err != nil {
-		glog.Fatal(err)
-		return
-	}
+
 	for _, element := range manifest.Box {
 		if element.Skip {
 			continue

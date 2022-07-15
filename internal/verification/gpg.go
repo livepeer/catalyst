@@ -4,8 +4,8 @@ import (
 	"io/ioutil"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	"github.com/golang/glog"
 	"github.com/livepeer/catalyst/internal/constants"
+	glog "github.com/magicsong/color-glog"
 )
 
 // VerifyGPGSignature raises an error if provided `.sig` file is not

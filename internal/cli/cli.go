@@ -10,6 +10,7 @@ import (
 	"github.com/livepeer/catalyst/internal/constants"
 	"github.com/livepeer/catalyst/internal/types"
 	"github.com/livepeer/catalyst/internal/utils"
+	glog "github.com/magicsong/color-glog"
 	"github.com/peterbourgon/ff/v3"
 )
 
@@ -25,12 +26,16 @@ func validateFlags(flags types.CliFlags) error {
 		return errors.New("invalid path to manifest file")
 	}
 	if info, err := os.Stat(flags.DownloadPath); !(err == nil && info.IsDir()) {
-		return errors.New("invalid path provided for downloaded binaries! check if it exists?")
+		err = os.MkdirAll(flags.DownloadPath, os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-// GetCliFlags
+// GetCliFlags reads command-line arguments and generates a struct
+// with useful values set after parsing the same.
 func GetCliFlags(buildFlags types.BuildFlags) (types.CliFlags, error) {
 	cliFlags := types.CliFlags{}
 	flag.Set("logtostderr", "true")
@@ -63,5 +68,8 @@ func GetCliFlags(buildFlags types.BuildFlags) (types.CliFlags, error) {
 	vFlag.Value.Set(cliFlags.Verbosity)
 
 	err := validateFlags(cliFlags)
+	if err != nil {
+		glog.Fatal(err)
+	}
 	return cliFlags, err
 }

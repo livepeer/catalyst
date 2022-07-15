@@ -6,6 +6,7 @@ require (
 	github.com/ProtonMail/gopenpgp/v2 v2.4.5
 	github.com/golang/glog v1.0.0
 	github.com/hashicorp/serf v0.9.8
+	github.com/magicsong/color-glog v0.0.1
 	github.com/mitchellh/cli v1.1.4
 	github.com/peterbourgon/ff/v3 v3.1.2
 	github.com/stretchr/testify v1.7.2

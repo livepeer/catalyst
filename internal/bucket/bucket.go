@@ -6,10 +6,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/golang/glog"
 	"github.com/livepeer/catalyst/internal/constants"
 	"github.com/livepeer/catalyst/internal/types"
 	"github.com/livepeer/catalyst/internal/utils"
+	glog "github.com/magicsong/color-glog"
 )
 
 // GetArtifactVersion fetches correct version for artifact from

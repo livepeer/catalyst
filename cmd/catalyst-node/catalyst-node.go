@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
 	serfclient "github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"github.com/livepeer/livepeer-data/pkg/mistconnector"
+	glog "github.com/magicsong/color-glog"
 	"github.com/mitchellh/cli"
 	"github.com/peterbourgon/ff/v3"
 )
@@ -60,7 +60,6 @@ func init() {
 }
 
 func runClient(config catalystConfig) error {
-
 	client, err := connectSerfAgent(config.serfRPCAddress, config.serfRPCAuthKey)
 
 	if err != nil {
@@ -160,8 +159,6 @@ func runClient(config catalystConfig) error {
 			}
 		}
 	}
-
-	return nil
 }
 
 func connectSerfAgent(serfRPCAddress string, serfRPCAuthKey string) (*serfclient.RPCClient, error) {
@@ -345,7 +342,6 @@ func main() {
 
 	exitCode, err := cli.Run()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error executing CLI: %s\n", err.Error())
 		glog.Fatalf("Error executing CLI: %s\n", err.Error())
 		os.Exit(1)
 	}

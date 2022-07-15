@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/livepeer/catalyst/internal/constants"
+	glog "github.com/magicsong/color-glog"
 )
 
 func IsSupportedPlatformArch(platform, arch string) bool {
