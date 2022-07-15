@@ -6,7 +6,7 @@ WORKDIR	/build
 
 ADD	go.mod go.sum	./
 
-RUN	go mod download -x
+RUN	go mod download
 
 ADD	.	.
 
