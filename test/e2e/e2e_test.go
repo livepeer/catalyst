@@ -74,6 +74,9 @@ func (c *catalystContainer) Terminate(ctx context.Context) {
 }
 
 func TestMultiNodeCatalyst(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping testing in short mode")
+	}
 	// given
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

@@ -1,5 +1,4 @@
 ---
-
 kind: pipeline
 type: exec
 name: Run E2E tests
@@ -13,9 +12,13 @@ steps:
     commands:
       - go mod download
       - export CI_CATALYST_TEST_IMAGE="${DRONE_REPO}:${DRONE_BUILD_NUMBER}"
-      - docker build --tag "$CI_CATALYST_TEST_IMAGE" --build-arg=GIT_VERSION="$(git describe --always --long --abbrev=8 --dirty)" .
-      - go test -v ./test/e2e/e2e_test.go --image "$CI_CATALYST_TEST_IMAGE" --network "catalyst-test-${DRONE_BUILD_NUMBER}"
+      - docker build --tag "$CI_CATALYST_TEST_IMAGE" --build-arg GIT_VERSION="$DRONE_COMMIT_SHA" .
+      - 'parallel go test -v ./test/e2e/e2e_test.go --image "$CI_CATALYST_TEST_IMAGE" --network "catalyst-test-${DRONE_BUILD_NUMBER}-0{}" ::: $(seq 0 9)'
 
 trigger:
   event:
     - push
+
+---
+kind: signature
+hmac: 3c2fc4700afd6d3cc08c6177944fd2e5c66aa8de3bae8a4ba85122ef60becd66
