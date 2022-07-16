@@ -58,3 +58,16 @@ box:
       darwin-arm64: victoria-metrics-darwin-arm64-v1.74.0.tar.gz
     skipGpg: true
     skipChecksum: true
+
+  - name: traefik
+    strategy:
+      project: traefik/traefik
+    release: v2.8.1
+    outputPath: livepeer-traefik
+    srcFilenames:
+      linux-amd64: traefik_v2.8.1_linux_amd64.tar.gz
+      linux-arm64: traefik_v2.8.1_linux_arm64.tar.gz
+      darwin-amd64: traefik_v2.8.1_darwin_amd64.tar.gz
+      darwin-arm64: traefik_v2.8.1_darwin_arm64.tar.gz
+    skipGpg: true
+    skipChecksum: true

@@ -42,11 +42,11 @@ func main() {
 	if procname == "livepeer-victoria-metrics" && dashJ {
 		printJSONInfo(mistconnector.MistConfig{
 			Name:         "Livepeer Victoria Metrics",
-			FriendlyName: "Livepeer-in-a-Box packaged Victoria Metrics",
-			Description:  "Livepeer-in-a-Box packaged Victoria Metrics. Comes with some built-in scrape configs for dev.",
+			FriendlyName: "Catalyst packaged Victoria Metrics",
+			Description:  "Catalyst packaged Victoria Metrics. Comes with some built-in scrape configs for dev.",
 			Version:      "0.0.1",
 			Required: map[string]mistconnector.MistOptional{
-				"promscrape.config": {
+				"configFile": {
 					Name:    "promscrape.config",
 					Type:    "str",
 					Option:  "-promscrape.config",
@@ -57,6 +57,26 @@ func main() {
 		})
 		os.Exit(0)
 	}
+
+	if procname == "livepeer-traefik" && dashJ {
+		printJSONInfo(mistconnector.MistConfig{
+			Name:         "Livepeer Traefik",
+			FriendlyName: "Catalyst packaged Traefik",
+			Description:  "Catalyst packaged Traefik. Useful for TLS termination.",
+			Version:      "0.0.1",
+			Required: map[string]mistconnector.MistOptional{
+				"configFile": {
+					Name:    "configFile",
+					Type:    "str",
+					Option:  "-configFile",
+					Help:    "Location of traefik.yaml file",
+					Default: "./config/scrape_config.yaml",
+				},
+			},
+		})
+		os.Exit(0)
+	}
+
 	mypid := os.Getpid()
 	cmd := exec.Command(os.Args[1], rest...)
 	cmd.Stdin = os.Stdin

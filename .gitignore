@@ -4,6 +4,9 @@ bin
 include
 lib
 
+# testing certs
+/config/tls.crt
+/config/tls.key
 
 # Created by https://www.toptal.com/developers/gitignore/api/emacs,vim,go,visualstudiocode,git
 # Edit at https://www.toptal.com/developers/gitignore?templates=emacs,vim,go,visualstudiocode,git

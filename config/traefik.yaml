@@ -1,0 +1,19 @@
+entryPoints:
+  traefik:
+    address: ":9000"
+
+  dtscs:
+    address: ":4300"
+
+  https:
+    address: ":4443"
+
+providers:
+  file:
+    filename: /config/traefik-routes.yaml
+
+accessLog: {}
+
+api:
+  insecure: true
+  dashboard: true
