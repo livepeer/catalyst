@@ -91,7 +91,13 @@
       },
       {
         "connector": "livepeer-catalyst-node",
-        "retry-join": "catalyst-one.lvpr.io"
+        "retry-join": "catalyst-one.lvpr.io",
+        "rpc-addr": "0.0.0.0:7373",
+        "balancerArgs": "--secure"
+      },
+      {
+        "connector": "livepeer-traefik",
+        "configFile": "/config/traefik.yaml"
       }
     ],
     "serverid": null,

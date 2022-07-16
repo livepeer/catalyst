@@ -1,0 +1,34 @@
+tcp:
+  routers:
+    dtscs:
+      rule: "HostSNI(`*`)"
+      entryPoints:
+        - "dtscs"
+      service: mist-dtsc
+      tls: {}
+
+  services:
+    mist-dtsc:
+      loadBalancer:
+        servers:
+        - address: "127.0.0.1:4200"
+
+http:
+  routers:
+    https:
+      rule: "PathPrefix(`/`)"
+      entryPoints:
+        - "https"
+      service: mist-http
+      tls: {}
+
+  services:
+    mist-http:
+      loadBalancer:
+        servers:
+        - url: "http://127.0.0.1:8080"
+
+tls:
+  certificates:
+    - certFile: /config/tls.crt
+      keyFile: /config/tls.key

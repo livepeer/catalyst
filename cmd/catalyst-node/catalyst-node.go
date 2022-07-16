@@ -242,6 +242,8 @@ func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error)
 func execBalancer(balancerArgs []string) error {
 	cmd := exec.Command("MistUtilLoad", balancerArgs...)
 
+	glog.Infof("invoking MistUtilLoad with %v", balancerArgs)
+
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -272,7 +274,7 @@ func main() {
 	mistLoadBalancerEndpoint := fs.String("mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
 	version := fs.Bool("version", false, "Print out the version")
 	runBalancer := fs.Bool("run-balancer", true, "run MistUtilLoad")
-	balancerArgs := fs.String("balancer-args", "", "arguments passed to MistUtilLoad")
+	balancerArgs := fs.String("balancer-args", "-S", "arguments passed to MistUtilLoad")
 
 	// Serf commands passed straight through to the agent
 	fs.String("rpc-addr", "127.0.0.1:7373", "Address to bind the RPC listener.")
