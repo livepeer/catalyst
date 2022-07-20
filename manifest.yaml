@@ -16,12 +16,11 @@ box:
       project: livepeer/stream-tester
     binary: livepeer-mist-api-connector
 
-  # - name: livepeer
-  #   strategy:
-  #     project: livepeer/go-livepeer
-  #   # release: v0.5.26-box
-  #   binary: livepeer
-  #   archivePath: livepeer
+  - name: livepeer
+    strategy:
+      project: livepeer/go-livepeer
+    binary: livepeer
+    archivePath: livepeer
 
   - name: mistserver
     strategy:
