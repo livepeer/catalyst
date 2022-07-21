@@ -2,9 +2,11 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -184,6 +186,17 @@ func requireTwoMembers(t *testing.T, c1 *catalystContainer, c2 *catalystContaine
 	require.Eventually(t, numberOfMembersIsTwo, 5*time.Minute, time.Second)
 }
 
+func cleanupFiles(ext string) {
+	matches, err := filepath.Glob(ext)
+	if err != nil {
+		panic(fmt.Errorf("Glob failed: %w", err))
+	}
+	glog.Infof("Removing leftover files: %s", matches)
+	for _, filename := range matches {
+		os.Remove(filename)
+	}
+}
+
 func requireReplicatedStream(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
 	// Send a stream to the node catalyst-one
 	ffmpegParams := []string{"-re", "-f", "lavfi", "-i", "testsrc=size=1920x1080:rate=30,format=yuv420p", "-f", "lavfi", "-i", "sine", "-c:v", "libx264", "-b:v", "1000k", "-x264-params", "keyint=60", "-c:a", "aac", "-f", "flv"}
@@ -207,10 +220,82 @@ func requireReplicatedStream(t *testing.T, c1 *catalystContainer, c2 *catalystCo
 		content := string(body)
 		for _, expected := range []string{"RESOLUTION=1920x1080", "FRAME-RATE=30", "index.m3u8"} {
 			if !strings.Contains(content, expected) {
+				glog.Info("Failed to get HLS manifest")
 				return false
 			}
 		}
+		glog.Info("Got HLS manifest!")
 		return true
 	}
 	require.Eventually(t, correctStream, 5*time.Minute, time.Second)
+
+	// Define a set of protocols to test at output of node catalyst-two
+	protocols := map[string]string{
+		"hls": fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c2.http),
+		// add more protocol <-> url mapping here to test in the future
+	}
+
+	// rm any old output files from previous MistLoadTest runs
+	cleanupFiles("*json")
+	cleanupFiles("*html")
+
+	// For each protocol defined above, check for replicated stream output
+	// at node catalyst-two (implicitly tests DTSC path in-between the nodes
+	for prot, url := range protocols {
+
+		glog.Infof("Testing %s using url: %s", prot, url)
+
+		cmdMistLoadTest := exec.Command("../../bin/./MistLoadTest", url)
+		out, err := cmdMistLoadTest.Output()
+		require.NoError(t, err)
+		if err != nil {
+			glog.Fatalf("Failed to start MistLoadTest: %s", err)
+		}
+		glog.Infof("MistLoadTest stdout: %s", out)
+
+		defer cmdMistLoadTest.Process.Kill()
+
+	}
+
+	// Parse output results for each protocol tested above
+	var p bool = true
+	for prot := range protocols {
+
+		matches, err := filepath.Glob("*" + strings.ToUpper(prot) + "*json")
+		if err != nil {
+			panic(fmt.Errorf("Glob failed: %w", err))
+		}
+		fmt.Println(matches)
+
+		content, err := ioutil.ReadFile(matches[0])
+		if err != nil {
+			glog.Fatalf("Error while opening output file: %s", err)
+			p = false
+			break
+		}
+
+		var payload map[string]interface{}
+		err = json.Unmarshal(content, &payload)
+		if err != nil {
+			glog.Fatalf("Error during json.Unmarshal(): %s", err)
+			p = false
+			break
+		}
+
+		v := payload["viewers"]
+		vp := payload["viewers_passed"]
+
+		glog.Infof("Result: %d/%d viewers passed successfully for %s protocol", int(vp.(float64)), int(v.(float64)), prot)
+		if v != vp {
+			p = false
+			break
+		}
+	}
+
+	// rm output files
+	cleanupFiles("*json")
+	cleanupFiles("*html")
+
+	require.Equal(t, p, true, "Failed to verify output stream")
+
 }
