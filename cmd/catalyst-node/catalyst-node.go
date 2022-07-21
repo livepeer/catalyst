@@ -251,7 +251,8 @@ func main() {
 	fs.StringVar(&serfConfig.RPCAddr, "rpc-addr", "127.0.0.1:7373", "Address to bind the RPC listener.")
 	retryJoin := fs.String("retry-join", "", "An agent to join with. This flag be specified multiple times. Does not exit on failure like -join, used to retry until success.")
 	fs.StringVar(&serfConfig.EncryptKey, "encrypt", "", "Key for encrypting network traffic within Serf. Must be a base64-encoded 32-byte key.")
-	fs.StringVar(&serfConfig.NodeName, "node", "wan", "Profile is used to control the timing profiles used in Serf. The default if not provided is wan.")
+	fs.StringVar(&serfConfig.Profile, "profile", "", "Profile is used to control the timing profiles used in Serf. The default if not provided is wan.")
+	fs.StringVar(&serfConfig.NodeName, "node", "", "Name of this node. Must be unique in the cluster")
 
 	ff.Parse(
 		fs, os.Args[1:],
