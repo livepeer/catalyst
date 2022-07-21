@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/livepeer/catalyst/internal/constants"
-	"github.com/livepeer/catalyst/internal/types"
-	"github.com/livepeer/catalyst/internal/utils"
+	"github.com/livepeer/catalyst/cmd/downloader/constants"
+	"github.com/livepeer/catalyst/cmd/downloader/types"
+	"github.com/livepeer/catalyst/cmd/downloader/utils"
 	glog "github.com/magicsong/color-glog"
 )
 

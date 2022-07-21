@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"github.com/golang/glog"
-	"github.com/livepeer/catalyst/internal/utils"
+	"github.com/livepeer/catalyst/cmd/downloader/utils"
 	ff "github.com/peterbourgon/ff/v3"
 	"golang.org/x/term"
 )
