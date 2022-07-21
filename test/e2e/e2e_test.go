@@ -41,11 +41,11 @@ func init() {
 
 func randomString() string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	const len = 8
+	const length = 8
 
-	res := make([]byte, len)
-	for i := 0; i < len; i++ {
-		res[i] = charset[rand.Intn(len)]
+	res := make([]byte, length)
+	for i := 0; i < length; i++ {
+		res[i] = charset[rand.Intn(length)]
 	}
 	return string(res)
 }
@@ -81,13 +81,13 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	network := createNetwork(t, ctx)
+	network := createNetwork(ctx, t)
 	defer network.Remove(ctx)
 
 	// when
-	c1 := startCatalyst(t, ctx, "catalyst-one", network.name)
+	c1 := startCatalyst(ctx, t, "catalyst-one", network.name)
 	defer c1.Terminate(ctx)
-	c2 := startCatalyst(t, ctx, "catalyst-two", network.name)
+	c2 := startCatalyst(ctx, t, "catalyst-two", network.name)
 	defer c2.Terminate(ctx)
 
 	// then
@@ -95,7 +95,7 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	requireReplicatedStream(t, c1, c2)
 }
 
-func createNetwork(t *testing.T, ctx context.Context) *network {
+func createNetwork(ctx context.Context, t *testing.T) *network {
 	name := params.NetworkName
 	net, err := testcontainers.GenericNetwork(ctx, testcontainers.GenericNetworkRequest{
 		NetworkRequest: testcontainers.NetworkRequest{Name: name},
@@ -113,7 +113,7 @@ func (lc *logConsumer) Accept(l testcontainers.Log) {
 	glog.Infof("[%s] %s", lc.name, string(l.Content))
 }
 
-func startCatalyst(t *testing.T, ctx context.Context, hostname, network string) *catalystContainer {
+func startCatalyst(ctx context.Context, t *testing.T, hostname, network string) *catalystContainer {
 	configAbsPath, err := filepath.Abs("../../config")
 	require.NoError(t, err)
 
@@ -169,7 +169,8 @@ func tcp(p string) string {
 	return fmt.Sprintf("%s/tcp", p)
 }
 
-func requireTwoMembers(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
+func requireTwoMembers(t *testing.T, containers ...*catalystContainer) {
+	c1 := containers[0]
 	numberOfMembersIsTwo := func() bool {
 		client, err := command.RPCClient(fmt.Sprintf("127.0.0.1:%s", c1.serf), "")
 		if err != nil {
