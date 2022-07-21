@@ -127,6 +127,9 @@
         "testTranscoder": false,
         "transcoder": true,
         "version": false
+      },
+      {
+        "connector": "livepeer-webgroup"
       }
     ],
     "serverid": null,
