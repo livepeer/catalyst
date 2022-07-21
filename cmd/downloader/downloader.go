@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
-	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -118,7 +117,7 @@ func ParseYamlManifest(manifestPath string, isURL bool) (*types.BoxManifest, err
 		return nil, err
 	}
 	if manifestConfig.Version != "3.0" {
-		return nil, errors.New(fmt.Sprintf("invalid manifest version %q. Currently supported versions: 3.0", manifestConfig.Version))
+		return nil, fmt.Errorf("invalid manifest version %q. Currently supported versions: 3.0", manifestConfig.Version)
 	}
 	return &manifestConfig, nil
 }
