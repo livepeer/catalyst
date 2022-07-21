@@ -10,8 +10,8 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/golang/glog"
 	"github.com/livepeer/catalyst/internal/utils"
+	glog "github.com/magicsong/color-glog"
 	ff "github.com/peterbourgon/ff/v3"
 	"golang.org/x/term"
 )
