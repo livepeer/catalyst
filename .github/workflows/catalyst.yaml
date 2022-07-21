@@ -9,9 +9,6 @@ on:
       - "Dockerfile"
       - "docker-compose.yml"
       - "Makefile"
-    branches:
-      - "main"
-      - "*catalyst*"
 
 jobs:
   catalyst:
