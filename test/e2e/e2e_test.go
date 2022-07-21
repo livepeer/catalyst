@@ -77,6 +77,7 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping testing in short mode")
 	}
+
 	// given
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -84,10 +85,12 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	network := createNetwork(t, ctx)
 	defer network.Remove(ctx)
 
+	hostname1, hostname2 := "catalyst-one", "catalyst-two"
+
 	// when
-	c1 := startCatalyst(t, ctx, "catalyst-one", network.name)
+	c1 := startCatalyst(t, ctx, hostname1, network.name, mistConfigConnectTo(hostname2))
 	defer c1.Terminate(ctx)
-	c2 := startCatalyst(t, ctx, "catalyst-two", network.name)
+	c2 := startCatalyst(t, ctx, hostname2, network.name, mistConfigConnectTo(hostname1))
 	defer c2.Terminate(ctx)
 
 	// then
@@ -105,6 +108,16 @@ func createNetwork(t *testing.T, ctx context.Context) *network {
 	return &network{Network: net, name: name}
 }
 
+func mistConfigConnectTo(host string) mistConfig {
+	mc := defaultMistConfig()
+	mc.Config.Protocols = append(mc.Config.Protocols, protocol{
+		Connector: "livepeer-catalyst-node",
+		RetryJoin: host,
+		RPCAddr:   "0.0.0.0:7373",
+	})
+	return mc
+}
+
 type logConsumer struct {
 	name string
 }
@@ -113,9 +126,11 @@ func (lc *logConsumer) Accept(l testcontainers.Log) {
 	glog.Infof("[%s] %s", lc.name, string(l.Content))
 }
 
-func startCatalyst(t *testing.T, ctx context.Context, hostname, network string) *catalystContainer {
-	configAbsPath, err := filepath.Abs("../../config")
+func startCatalyst(t *testing.T, ctx context.Context, hostname, network string, mc mistConfig) *catalystContainer {
+	mcPath, err := mc.toTmpFile(t.TempDir())
 	require.NoError(t, err)
+	configAbsPath := filepath.Dir(mcPath)
+	mcFile := filepath.Base(mcPath)
 
 	req := testcontainers.ContainerRequest{
 		Image:        params.ImageName,
@@ -129,7 +144,7 @@ func startCatalyst(t *testing.T, ctx context.Context, hostname, network string) 
 			Target:   "/config",
 			ReadOnly: true},
 		},
-		Cmd: []string{"MistController", "-c", fmt.Sprintf("/config/%s.json", hostname)},
+		Cmd: []string{"MistController", "-c", fmt.Sprintf("/config/%s", mcFile)},
 	}
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
