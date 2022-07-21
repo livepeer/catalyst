@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	"github.com/livepeer/catalyst/internal/constants"
+	"github.com/livepeer/catalyst/cmd/downloader/constants"
 	glog "github.com/magicsong/color-glog"
 )
 

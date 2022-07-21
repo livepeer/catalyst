@@ -27,6 +27,8 @@ type CliFlags struct {
 	Architecture   string
 	ManifestFile   string
 	Verbosity      string
+
+	ManifestURL bool
 }
 
 type Service struct {
