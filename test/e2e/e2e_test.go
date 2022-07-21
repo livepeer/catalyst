@@ -36,10 +36,10 @@ var params cliParams
 
 func init() {
 	flag.StringVar(&params.ImageName, "image", "livepeer/catalyst", "Docker image to use when loading container")
-	flag.StringVar(&params.NetworkName, "network", fmt.Sprintf("catalyst-test-%s", randomString()), "Docker network name to use when starting")
+	flag.StringVar(&params.NetworkName, "network", randomString("catalyst-test-"), "Docker network name to use when starting")
 }
 
-func randomString() string {
+func randomString(prefix string) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	const len = 8
 
@@ -47,7 +47,7 @@ func randomString() string {
 	for i := 0; i < len; i++ {
 		res[i] = charset[rand.Intn(len)]
 	}
-	return string(res)
+	return fmt.Sprintf("%s%s", prefix, string(res))
 }
 
 func TestMain(m *testing.M) {
@@ -85,12 +85,13 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	network := createNetwork(t, ctx)
 	defer network.Remove(ctx)
 
-	hostname1, hostname2 := "catalyst-one", "catalyst-two"
+	h1 := randomString("catalyst-")
+	h2 := randomString("catalyst-")
 
 	// when
-	c1 := startCatalyst(t, ctx, hostname1, network.name, mistConfigConnectTo(hostname2))
+	c1 := startCatalyst(t, ctx, h1, network.name, mistConfigConnectTo(h2))
 	defer c1.Terminate(ctx)
-	c2 := startCatalyst(t, ctx, hostname2, network.name, mistConfigConnectTo(hostname1))
+	c2 := startCatalyst(t, ctx, h2, network.name, mistConfigConnectTo(h1))
 	defer c2.Terminate(ctx)
 
 	// then
