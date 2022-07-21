@@ -36,10 +36,10 @@ var params cliParams
 
 func init() {
 	flag.StringVar(&params.ImageName, "image", "livepeer/catalyst", "Docker image to use when loading container")
-	flag.StringVar(&params.NetworkName, "network", fmt.Sprintf("catalyst-test-%s", randomString()), "Docker network name to use when starting")
+	flag.StringVar(&params.NetworkName, "network", randomString("catalyst-test-"), "Docker network name to use when starting")
 }
 
-func randomString() string {
+func randomString(prefix string) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	const len = 8
 
@@ -47,7 +47,7 @@ func randomString() string {
 	for i := 0; i < len; i++ {
 		res[i] = charset[rand.Intn(len)]
 	}
-	return string(res)
+	return fmt.Sprintf("%s%s", prefix, string(res))
 }
 
 func TestMain(m *testing.M) {
@@ -77,6 +77,7 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping testing in short mode")
 	}
+
 	// given
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -84,10 +85,13 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	network := createNetwork(t, ctx)
 	defer network.Remove(ctx)
 
+	h1 := randomString("catalyst-")
+	h2 := randomString("catalyst-")
+
 	// when
-	c1 := startCatalyst(t, ctx, "catalyst-one", network.name)
+	c1 := startCatalyst(t, ctx, h1, network.name, mistConfigConnectTo(h2))
 	defer c1.Terminate(ctx)
-	c2 := startCatalyst(t, ctx, "catalyst-two", network.name)
+	c2 := startCatalyst(t, ctx, h2, network.name, mistConfigConnectTo(h1))
 	defer c2.Terminate(ctx)
 
 	// then
@@ -105,6 +109,16 @@ func createNetwork(t *testing.T, ctx context.Context) *network {
 	return &network{Network: net, name: name}
 }
 
+func mistConfigConnectTo(host string) mistConfig {
+	mc := defaultMistConfig()
+	mc.Config.Protocols = append(mc.Config.Protocols, protocol{
+		Connector: "livepeer-catalyst-node",
+		RetryJoin: host,
+		RPCAddr:   "0.0.0.0:7373",
+	})
+	return mc
+}
+
 type logConsumer struct {
 	name string
 }
@@ -113,9 +127,11 @@ func (lc *logConsumer) Accept(l testcontainers.Log) {
 	glog.Infof("[%s] %s", lc.name, string(l.Content))
 }
 
-func startCatalyst(t *testing.T, ctx context.Context, hostname, network string) *catalystContainer {
-	configAbsPath, err := filepath.Abs("../../config")
+func startCatalyst(t *testing.T, ctx context.Context, hostname, network string, mc mistConfig) *catalystContainer {
+	mcPath, err := mc.toTmpFile(t.TempDir())
 	require.NoError(t, err)
+	configAbsPath := filepath.Dir(mcPath)
+	mcFile := filepath.Base(mcPath)
 
 	req := testcontainers.ContainerRequest{
 		Image:        params.ImageName,
@@ -129,7 +145,7 @@ func startCatalyst(t *testing.T, ctx context.Context, hostname, network string) 
 			Target:   "/config",
 			ReadOnly: true},
 		},
-		Cmd: []string{"MistController", "-c", fmt.Sprintf("/config/%s.json", hostname)},
+		Cmd: []string{"MistController", "-c", fmt.Sprintf("/config/%s", mcFile)},
 	}
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
