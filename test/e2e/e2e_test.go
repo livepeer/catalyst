@@ -114,7 +114,7 @@ func mistConfigConnectTo(host string) mistConfig {
 	mc.Config.Protocols = append(mc.Config.Protocols, protocol{
 		Connector: "livepeer-catalyst-node",
 		RetryJoin: host,
-		RPCAddr:   "0.0.0.0:7373",
+		RPCAddr:   fmt.Sprintf("0.0.0.0:%s", serfPort),
 	})
 	return mc
 }
