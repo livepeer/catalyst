@@ -324,11 +324,9 @@ func main() {
 
 	ui := &cli.BasicUi{Writer: os.Stdout}
 
-	// eli note: this is copied from here:
+	// copied from:
 	// https://github.com/hashicorp/serf/blob/a2bba5676d6e37953715ea10e583843793a0c507/cmd/serf/commands.go#L20-L25
-	// but we should someday get a little bit smarter and invoke serf directly
-	// instead of wrapping their CLI helper
-
+	// we should consider invoking serf directly instead of wrapping their CLI helper
 	commands := map[string]cli.CommandFactory{
 		"agent": func() (cli.Command, error) {
 			a := &agent.Command{
