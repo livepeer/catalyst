@@ -19,6 +19,7 @@ import (
 	"github.com/livepeer/livepeer-data/pkg/mistconnector"
 	glog "github.com/magicsong/color-glog"
 	"github.com/mitchellh/cli"
+	"github.com/mitchellh/mapstructure"
 	"github.com/peterbourgon/ff/v3"
 )
 
@@ -28,35 +29,6 @@ type catalystConfig struct {
 	serfRPCAddress           string
 	serfRPCAuthKey           string
 	mistLoadBalancerEndpoint string
-}
-
-var Commands map[string]cli.CommandFactory
-
-func init() {
-	// skip this if we're just capability checking
-	if len(os.Args) > 1 {
-		if os.Args[1] == "-j" {
-			return
-		}
-	}
-	// inject the word "agent" for serf
-	os.Args = append([]string{os.Args[0], "agent"}, os.Args[1:]...)
-	ui := &cli.BasicUi{Writer: os.Stdout}
-
-	// eli note: this is copied from here:
-	// https://github.com/hashicorp/serf/blob/a2bba5676d6e37953715ea10e583843793a0c507/cmd/serf/commands.go#L20-L25
-	// but we should someday get a little bit smarter and invoke serf directly
-	// instead of wrapping their CLI helper
-
-	Commands = map[string]cli.CommandFactory{
-		"agent": func() (cli.Command, error) {
-			a := &agent.Command{
-				Ui:         ui,
-				ShutdownCh: make(chan struct{}),
-			}
-			return a, nil
-		},
-	}
 }
 
 func runClient(config catalystConfig) error {
@@ -259,7 +231,6 @@ func execBalancer(balancerArgs []string) error {
 }
 
 func main() {
-	args := os.Args[1:]
 
 	flag.Set("logtostderr", "true")
 	vFlag := flag.Lookup("v")
@@ -275,8 +246,13 @@ func main() {
 	balancerArgs := fs.String("balancer-args", "", "arguments passed to MistUtilLoad")
 
 	// Serf commands passed straight through to the agent
-	fs.String("rpc-addr", "127.0.0.1:7373", "Address to bind the RPC listener.")
-	fs.String("retry-join", "", "An agent to join with. This flag be specified multiple times. Does not exit on failure like -join, used to retry until success.")
+	serfConfig := agent.Config{}
+	fs.StringVar(&serfConfig.BindAddr, "bind", "0.0.0.0:9935", "Address to bind network listeners to. To use an IPv6 address, specify [::1] or [::1]:7946.")
+	fs.StringVar(&serfConfig.RPCAddr, "rpc-addr", "127.0.0.1:7373", "Address to bind the RPC listener.")
+	retryJoin := fs.String("retry-join", "", "An agent to join with. This flag be specified multiple times. Does not exit on failure like -join, used to retry until success.")
+	fs.StringVar(&serfConfig.EncryptKey, "encrypt", "", "Key for encrypting network traffic within Serf. Must be a base64-encoded 32-byte key.")
+	fs.StringVar(&serfConfig.Profile, "profile", "", "Profile is used to control the timing profiles used in Serf. The default if not provided is wan.")
+	fs.StringVar(&serfConfig.NodeName, "node", "", "Name of this node. Must be unique in the cluster")
 
 	ff.Parse(
 		fs, os.Args[1:],
@@ -307,6 +283,10 @@ func main() {
 		return
 	}
 
+	if *retryJoin != "" {
+		serfConfig.RetryJoin = strings.Split(*retryJoin, ",")
+	}
+
 	config := catalystConfig{
 		serfRPCAddress:           *serfRPCAddress,
 		serfRPCAuthKey:           *serfRPCAuthKey,
@@ -334,9 +314,32 @@ func main() {
 		}
 	}()
 
+	// Everything past this is booting up Serf
+	tmpFile, err := writeSerfConfig(&serfConfig)
+	if err != nil {
+		glog.Fatalf("Error writing serf config: %s", err)
+	}
+	defer os.Remove(tmpFile)
+	glog.V(6).Infof("Wrote serf config to %s", tmpFile)
+
+	ui := &cli.BasicUi{Writer: os.Stdout}
+
+	// copied from:
+	// https://github.com/hashicorp/serf/blob/a2bba5676d6e37953715ea10e583843793a0c507/cmd/serf/commands.go#L20-L25
+	// we should consider invoking serf directly instead of wrapping their CLI helper
+	commands := map[string]cli.CommandFactory{
+		"agent": func() (cli.Command, error) {
+			a := &agent.Command{
+				Ui:         ui,
+				ShutdownCh: make(chan struct{}),
+			}
+			return a, nil
+		},
+	}
+
 	cli := &cli.CLI{
-		Args:     args,
-		Commands: Commands,
+		Args:     []string{"agent", "-config-file", tmpFile},
+		Commands: commands,
 		HelpFunc: cli.BasicHelpFunc("catalyst-node"),
 	}
 
@@ -347,4 +350,35 @@ func main() {
 	}
 
 	os.Exit(exitCode)
+}
+
+func writeSerfConfig(config *agent.Config) (string, error) {
+	// Two steps to properly serialize this as JSON: https://github.com/spf13/viper/issues/816#issuecomment-1149732004
+	items := map[string]interface{}{}
+	if err := mapstructure.Decode(config, &items); err != nil {
+		return "", err
+	}
+	b, err := json.Marshal(items)
+
+	if err != nil {
+		return "", err
+	}
+
+	// Everything after this is booting up serf with our provided config flags:
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "serf-config-*.json")
+	if err != nil {
+		return "", err
+	}
+
+	// Example writing to the file
+	if _, err = tmpFile.Write(b); err != nil {
+		return "", err
+	}
+
+	// Close the file
+	if err := tmpFile.Close(); err != nil {
+		return "", err
+	}
+
+	return tmpFile.Name(), err
 }
