@@ -38,7 +38,7 @@ type config struct {
 	} `json:"location"`
 	Prometheus             string      `json:"prometheus"`
 	Protocols              []protocol  `json:"protocols"`
-	Serverid               interface{} `json:"serverid"`
+	ServerID               interface{} `json:"serverid"`
 	SessionInputMode       string      `json:"sessionInputMode"`
 	SessionOutputMode      string      `json:"sessionOutputMode"`
 	SessionStreamInfoMode  string      `json:"sessionStreamInfoMode"`
