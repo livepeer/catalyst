@@ -4,21 +4,22 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
-	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
-	"github.com/livepeer/catalyst/internal/bucket"
-	"github.com/livepeer/catalyst/internal/cli"
-	"github.com/livepeer/catalyst/internal/github"
-	"github.com/livepeer/catalyst/internal/types"
-	"github.com/livepeer/catalyst/internal/utils"
-	"github.com/livepeer/catalyst/internal/verification"
+	"github.com/livepeer/catalyst/cmd/downloader/bucket"
+	"github.com/livepeer/catalyst/cmd/downloader/cli"
+	"github.com/livepeer/catalyst/cmd/downloader/github"
+	"github.com/livepeer/catalyst/cmd/downloader/types"
+	"github.com/livepeer/catalyst/cmd/downloader/utils"
+	"github.com/livepeer/catalyst/cmd/downloader/verification"
 	glog "github.com/magicsong/color-glog"
 	"gopkg.in/yaml.v2"
 )
@@ -93,16 +94,30 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 	return nil
 }
 
-func ParseYamlManifest(manifestPath string) (*types.BoxManifest, error) {
+func ParseYamlManifest(manifestPath string, isURL bool) (*types.BoxManifest, error) {
 	var manifestConfig types.BoxManifest
+	var file []byte
 	glog.Infof("Reading manifest file=%q", manifestPath)
-	file, _ := ioutil.ReadFile(manifestPath)
+	glog.V(9).Infof("manifestPath=%s isURL=%t", manifestPath, isURL)
+	if !isURL {
+		file, _ = ioutil.ReadFile(manifestPath)
+	} else {
+		response, err := http.Get(manifestPath)
+		if err != nil || response.StatusCode != 200 {
+			return nil, err
+		}
+		glog.V(9).Infof("response=%v", response)
+		file, err = ioutil.ReadAll(response.Body)
+		if err != nil {
+			return nil, err
+		}
+	}
 	err := yaml.Unmarshal(file, &manifestConfig)
 	if err != nil {
 		return nil, err
 	}
 	if manifestConfig.Version != "3.0" {
-		panic(errors.New("Invalid manifest version. Currently supported versions: 3.0"))
+		return nil, fmt.Errorf("invalid manifest version %q. Currently supported versions: 3.0", manifestConfig.Version)
 	}
 	return &manifestConfig, nil
 }
@@ -198,7 +213,7 @@ func Run(buildFlags types.BuildFlags) {
 		return
 	}
 	var waitGroup sync.WaitGroup
-	manifest, err := ParseYamlManifest(cliFlags.ManifestFile)
+	manifest, err := ParseYamlManifest(cliFlags.ManifestFile, cliFlags.ManifestURL)
 	if err != nil {
 		glog.Fatal(err)
 		return

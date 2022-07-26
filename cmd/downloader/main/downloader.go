@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/livepeer/catalyst/cmd/downloader"
-	"github.com/livepeer/catalyst/internal/types"
+	"github.com/livepeer/catalyst/cmd/downloader/types"
 )
 
 var Version = "undefined"

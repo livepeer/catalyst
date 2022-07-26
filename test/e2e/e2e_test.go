@@ -41,11 +41,11 @@ func init() {
 
 func randomString(prefix string) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	const len = 8
+	const length = 8
 
-	res := make([]byte, len)
-	for i := 0; i < len; i++ {
-		res[i] = charset[rand.Intn(len)]
+	res := make([]byte, length)
+	for i := 0; i < length; i++ {
+		res[i] = charset[rand.Intn(length)]
 	}
 	return fmt.Sprintf("%s%s", prefix, string(res))
 }
@@ -82,7 +82,7 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	network := createNetwork(t, ctx)
+	network := createNetwork(ctx, t)
 	defer network.Remove(ctx)
 
 	h1 := randomString("catalyst-")
@@ -99,7 +99,7 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	requireReplicatedStream(t, c1, c2)
 }
 
-func createNetwork(t *testing.T, ctx context.Context) *network {
+func createNetwork(ctx context.Context, t *testing.T) *network {
 	name := params.NetworkName
 	net, err := testcontainers.GenericNetwork(ctx, testcontainers.GenericNetworkRequest{
 		NetworkRequest: testcontainers.NetworkRequest{Name: name},
@@ -185,7 +185,8 @@ func tcp(p string) string {
 	return fmt.Sprintf("%s/tcp", p)
 }
 
-func requireTwoMembers(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
+func requireTwoMembers(t *testing.T, containers ...*catalystContainer) {
+	c1 := containers[0]
 	numberOfMembersIsTwo := func() bool {
 		client, err := command.RPCClient(fmt.Sprintf("127.0.0.1:%s", c1.serf), "")
 		if err != nil {

@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/livepeer/catalyst/internal/constants"
+	"github.com/livepeer/catalyst/cmd/downloader/constants"
 	glog "github.com/magicsong/color-glog"
 )
 
