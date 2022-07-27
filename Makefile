@@ -22,7 +22,8 @@ ffmpeg:
 
 .PHONY: build
 build:
-	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/downloader cmd/downloader/main/downloader.go
+	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/downloader cmd/downloader/downloader/downloader.go
+	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/manifest cmd/downloader/manifest/manifest.go
 
 build/compiled/lib/libmbedtls.a:
 	export PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig \
@@ -109,7 +110,11 @@ livepeer-mist-api-connector:
 
 .PHONY: download
 download:
-	go run cmd/downloader/main/downloader.go -v=5 $(ARGS)
+	go run cmd/downloader/downloader/downloader.go -v=5 $(ARGS)
+
+.PHONY: manifest
+manifest:
+	go run cmd/downloader/manifest/manifest.go -v=9 $(ARGS)
 
 .PHONY: dev
 dev:
