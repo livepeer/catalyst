@@ -13,7 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	//	"strconv"
+	"strconv"
 	"testing"
 	"time"
 
@@ -226,22 +226,20 @@ func requireReplicatedStream(t *testing.T, c1 *catalystContainer, c2 *catalystCo
 	}
 	require.Eventually(t, correctStream, 5*time.Minute, time.Second)
 
-	fmt.Println("XXXXXXXXXX DONE HERE")
-
-	requireStreamingProtocol(t, c1, c2)
+	requireProtocolLoad(t, c1, c2)
 }
 
 type results struct {
+	protocol      string
 	viewers       float64
 	viewersPassed float64
 	score         float64
 }
 
 func runProtocolLoadTest(t *testing.T, prot string, url string, viewers int, timeout int) *results {
-	fmt.Printf("Testing %s url: %s with %d viewers", prot, url, viewers)
-
-	//	cmdMistLoadTest := exec.Command("../../bin/./MistLoadTest", "-o", t.TempDir(), "-c", strconv.Itoa(viewers), "-t", strconv.Itoa(timeout), url)
-	cmdMistLoadTest := exec.Command("../../bin/./MistLoadTest", url)
+	dir := t.TempDir()
+	fmt.Printf("Testing %s url: %s with %d viewers using tmp dir (%s)\n", prot, url, viewers, dir)
+	cmdMistLoadTest := exec.Command("../../bin/./MistLoadTest", "-o", dir, "-n", strconv.Itoa(viewers), "-t", strconv.Itoa(timeout), url)
 	out, err := cmdMistLoadTest.Output()
 	require.NoError(t, err)
 	if err != nil {
@@ -251,24 +249,24 @@ func runProtocolLoadTest(t *testing.T, prot string, url string, viewers int, tim
 
 	defer cmdMistLoadTest.Process.Kill()
 
-	return parseProtocolResults(t, prot)
+	return parseProtocolResults(t, dir, prot)
 }
 
-func parseProtocolResults(t *testing.T, prot string) *results {
-	matches, err := filepath.Glob("*" + strings.ToUpper(prot) + "*json")
+func parseProtocolResults(t *testing.T, testdir string, prot string) *results {
+	matches, err := filepath.Glob(testdir + "/" + "*" + strings.ToUpper(prot) + "*json")
 	if err != nil {
 		t.Fatalf("Glob failed: %v", err)
 	}
-	fmt.Println(matches)
 
-	if len(matches) > 1 {
-		t.Fatalf("Got too many output results: %v", matches)
+	if len(matches) == 0 || len(matches) > 1 {
+		t.Fatalf("Expected only one results file but got %v files: %v", len(matches), matches)
 	}
 
 	content, err := ioutil.ReadFile(matches[0])
 	if err != nil {
-		t.Fatalf("Error while opening output file: %s", err)
+		t.Fatalf("Error while opening results file: %s", err)
 	}
+	glog.Infof("Parsing file: %s", matches[0])
 
 	var payload map[string]interface{}
 	err = json.Unmarshal(content, &payload)
@@ -278,31 +276,37 @@ func parseProtocolResults(t *testing.T, prot string) *results {
 
 	vtotal := float64(payload["viewers"].(float64))
 	vpass := float64(payload["viewers_passed"].(float64))
-	r := results{viewers: vtotal, viewersPassed: vpass, score: vpass / vtotal}
+	r := results{
+		protocol: prot, 
+		viewers: vtotal, 
+		viewersPassed: vpass, 		
+		score: vpass / vtotal,
+	}
 
-	glog.Infof("Result: %v/%v viewers passed successfully for %s protocol", vpass, vtotal, prot)
 	return &r
 }
 
-// This test will spawn an RTMP ingest stream at node catalyst-one and
-// open multiple viewers at node catalyst-two and attempt streaming.
-// Any hiccups in playback or failure to connect will be captures and
-// reported via MistLoadTest.
-func requireStreamingProtocol(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
+// This test will spawn multiple viewers at node catalyst-two and attempt streaming.
+// Any hiccups in playback or failure to connect will be captured and reported via MistLoadTest.
+func requireProtocolLoad(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
 	tests := map[string]struct {
 		url     string
 		viewers int
 		timeout int
 		score   float64
 	}{
-		"hls": {url: fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c2.http), viewers: 10, timeout: 30, score: 0.8},
+		"hls": {url: fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c2.http), viewers: 5, timeout: 30, score: 0.8},
 	}
 
 	// Test each protocol defined in the tests map above
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := runProtocolLoadTest(t, name, tc.url, tc.viewers, tc.timeout)
-			fmt.Printf("viewers: %v, viewers pass: %v, score: %v", got.viewers, got.viewersPassed, got.score)
+			r := runProtocolLoadTest(t, name, tc.url, tc.viewers, tc.timeout)
+			glog.Infof("Protocol under test: %v, viewers: %v, viewers-passed: %v, score: %v", r.protocol, r.viewers, r.viewersPassed, r.score)
+	                if (r.score < tc.score) {
+				t.Fatalf("Failed %s test with score: %v", r.protocol, r.score)
+			}
+
 		})
 	}
 }
