@@ -31,26 +31,28 @@ type CliFlags struct {
 	ManifestURL bool
 }
 
+type DownloadStrategy struct {
+	Download string `yaml:"download,omitempty"`
+	Project  string `yaml:"project"`
+}
+
 type Service struct {
-	Name     string `yaml:"name"`
-	Strategy struct {
-		Download string `yaml:"download"`
-		Project  string `yaml:"project"`
-	} `yaml:"strategy"`
+	Name         string            `yaml:"name"`
+	Strategy     *DownloadStrategy `yaml:"strategy"`
 	Binary       string            `yaml:"binary,omitempty"`
-	Release      string            `yaml:"release,omitempty"`
+	Release      string            `yaml:"release"`
 	ArchivePath  string            `yaml:"archivePath,omitempty"`
-	Skip         bool              `yaml:"skip"`
-	SkipGPG      bool              `yaml:"skipGpg"`
-	SkipChecksum bool              `yaml:"skipChecksum"`
-	SrcFilenames map[string]string `yaml:"srcFilenames"`
+	Skip         bool              `yaml:"skip,omitempty"`
+	SkipGPG      bool              `yaml:"skipGpg,omitempty"`
+	SkipChecksum bool              `yaml:"skipChecksum,omitempty"`
+	SrcFilenames map[string]string `yaml:"srcFilenames,omitempty"`
 	OutputPath   string            `yaml:"outputPath,omitempty"`
 }
 
 type BoxManifest struct {
-	Version string    `yaml:"version"`
-	Release string    `yaml:"release,omitempty"`
-	Box     []Service `yaml:"box,omitempty"`
+	Version string     `yaml:"version"`
+	Release string     `yaml:"release,omitempty"`
+	Box     []*Service `yaml:"box,omitempty"`
 }
 
 type ArtifactInfo struct {

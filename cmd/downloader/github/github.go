@@ -33,6 +33,7 @@ func GetLatestRelease(project string) (*types.TagInformation, error) {
 		glog.Error(err)
 		return nil, err
 	}
+	glog.V(9).Infof("github api response=%d", resp.StatusCode)
 	return &tagInfo, nil
 }
 
@@ -45,6 +46,7 @@ func GetArtifactVersion(release, project string) string {
 			panic(err)
 		}
 		release = tagInfo.TagName
+		glog.V(9).Infof("project=%s, version/tag=%q", project, release)
 	}
 	return release
 }
@@ -56,7 +58,7 @@ func GenerateArtifactURL(project, version, fileName string) string {
 
 // GetArtifactInfo generates a structure of all necessary information
 // from using the Github API
-func GetArtifactInfo(platform, architecture, release string, service types.Service) *types.ArtifactInfo {
+func GetArtifactInfo(platform, architecture, release string, service *types.Service) *types.ArtifactInfo {
 	project := service.Strategy.Project
 	if len(service.Release) > 0 {
 		release = service.Release
