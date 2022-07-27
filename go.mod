@@ -12,7 +12,7 @@ require (
 	github.com/stretchr/testify v1.7.2
 	github.com/testcontainers/testcontainers-go v0.13.1-0.20220712105725-8e65673ca167
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -77,7 +77,6 @@ require (
 	google.golang.org/genproto v0.0.0-20220617124728-180714bec0ad // indirect
 	google.golang.org/grpc v1.47.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
