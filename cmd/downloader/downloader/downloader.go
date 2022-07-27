@@ -25,7 +25,7 @@ var Version = "undefined"
 
 // DownloadService works on downloading services for the box to
 // machine and extracting the required binaries from artifacts.
-func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service types.Service) error {
+func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service *types.Service) error {
 	var projectInfo *types.ArtifactInfo
 	platform := flags.Platform
 	architecture := flags.Architecture
@@ -95,7 +95,7 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 
 // ExtractZipArchive processes a zip file and extracts a single file
 // from the service definition.
-func ExtractZipArchive(archiveFile, extractPath string, service types.Service) error {
+func ExtractZipArchive(archiveFile, extractPath string, service *types.Service) error {
 	var outputPath string
 	if len(service.ArchivePath) > 0 && !strings.HasSuffix(service.ArchivePath, ".exe") {
 		service.ArchivePath += ".exe"
@@ -131,7 +131,7 @@ func ExtractZipArchive(archiveFile, extractPath string, service types.Service) e
 
 // ExtractTarGzipArchive processes a tarball file and extracts a
 // single file from the service definition.
-func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Service) error {
+func ExtractTarGzipArchive(archiveFile, extractPath string, service *types.Service) error {
 	var outputPath string
 	file, _ := os.Open(archiveFile)
 	archive, err := gzip.NewReader(file)
@@ -195,7 +195,7 @@ func Run(buildFlags types.BuildFlags) {
 			continue
 		}
 		waitGroup.Add(1)
-		go func(element types.Service) {
+		go func(element *types.Service) {
 			glog.V(8).Infof("Triggering async task for %s", element.Name)
 			err := DownloadService(cliFlags, manifest, element)
 			if err != nil {

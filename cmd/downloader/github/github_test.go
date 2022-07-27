@@ -25,12 +25,9 @@ func TestTagInformation(t *testing.T) {
 }
 
 func TestArtifactInfo(t *testing.T) {
-	serviceInfo := types.Service{
+	serviceInfo := &types.Service{
 		Name: "api",
-		Strategy: struct {
-			Download string `yaml:"download"`
-			Project  string `yaml:"project"`
-		}{
+		Strategy: &types.DownloadStrategy{
 			Project: "livepeer/livepeer-com",
 		},
 	}
