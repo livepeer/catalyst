@@ -1,9 +1,6 @@
 name: Generate staging manifest
 
 on:
-  push:
-    branches:
-      - "hjp/*"
   repository_dispatch:
     types: ['staging-manifest']
 
@@ -18,7 +15,7 @@ jobs:
           fetch-depth: 0
           # Check https://github.com/livepeer/go-livepeer/pull/1891
           # for ref value discussion
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: main
 
       - name: Set up go
         id: go
@@ -47,7 +44,7 @@ jobs:
         id: branch-commit
         uses: devops-infra/action-commit-push@v0.9.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ github.token }}
           target_branch: staging
           commit_prefix: "[AUTO-COMMIT] "
           commit_message: 'Update `manifest.yaml`'
@@ -56,7 +53,7 @@ jobs:
       - name: Create pull request
         uses: devops-infra/action-pull-request@v0.5.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ github.token }}
           source_branch: ${{ steps.branch-commit.outputs.branch_name }}
           target_branch: main
           title: '[BOT] Update `manifest.yaml` for staging'
