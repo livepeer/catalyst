@@ -22,13 +22,10 @@ import (
 // }
 
 func TestArtifactInfo(t *testing.T) {
-	serviceInfo := types.Service{
+	serviceInfo := &types.Service{
 		Name:    "mistserver",
-		Release: "eli/json-manifest",
-		Strategy: struct {
-			Download string `yaml:"download"`
-			Project  string `yaml:"project"`
-		}{
+		Release: "catalyst",
+		Strategy: &types.DownloadStrategy{
 			Download: "bucket",
 			Project:  "mistserver",
 		},
