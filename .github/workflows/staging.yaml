@@ -45,7 +45,7 @@ jobs:
 
       - name: Commit and push changes
         id: branch-commit
-        uses: docker://devopsinfra/action-commit-push:latest
+        uses: devops-infra/action-commit-push@v0.9.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           target_branch: staging
@@ -54,7 +54,7 @@ jobs:
           force: true
 
       - name: Create pull request
-        uses: docker://devopsinfra/action-pull-request:latest
+        uses: devops-infra/action-pull-request@v0.5.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           source_branch: ${{ steps.branch-commit.outputs.branch_name }}
