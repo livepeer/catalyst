@@ -5,21 +5,27 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
 
 	serfclient "github.com/hashicorp/serf/client"
-	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"github.com/livepeer/livepeer-data/pkg/mistconnector"
 	glog "github.com/magicsong/color-glog"
 	"github.com/mitchellh/cli"
 	"github.com/peterbourgon/ff/v3"
+)
+
+const (
+	httpPort         = "8090"
+	mistUtilLoadPort = "8042"
 )
 
 var Version = "unknown"
@@ -274,6 +280,9 @@ func main() {
 	runBalancer := fs.Bool("run-balancer", true, "run MistUtilLoad")
 	balancerArgs := fs.String("balancer-args", "", "arguments passed to MistUtilLoad")
 
+	// Catalyst web server
+	httpAddr := flag.String("http-addr", fmt.Sprintf("127.0.0.1:%s", httpPort), "Address to bind for Catalyst HTTP commands")
+
 	// Serf commands passed straight through to the agent
 	fs.String("rpc-addr", "127.0.0.1:7373", "Address to bind the RPC listener.")
 	fs.String("retry-join", "", "An agent to join with. This flag be specified multiple times. Does not exit on failure like -join, used to retry until success.")
@@ -306,6 +315,8 @@ func main() {
 		fmt.Printf("operating system: %s\n", runtime.GOOS)
 		return
 	}
+
+	go startCatalystWebServer(*httpAddr)
 
 	config := catalystConfig{
 		serfRPCAddress:           *serfRPCAddress,
@@ -347,4 +358,66 @@ func main() {
 	}
 
 	os.Exit(exitCode)
+}
+
+func startCatalystWebServer(httpAddr string) {
+	http.Handle("/hls/", redirectHlsHandler())
+	glog.Infof("HTTP server listening on %s", httpAddr)
+	http.ListenAndServe(httpAddr, nil)
+}
+
+var getClosestNode = queryMistForClosestNode
+
+func redirectHlsHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		playbackID, isValid := parsePlaybackID(r.URL.Path)
+		if !isValid {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		nodeAddr, err := getClosestNode(playbackID)
+		if err != nil {
+			glog.Error(err)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		redirectUrl := fmt.Sprintf("%s://%s/hls/%s/index.m3u8", protocol(r), nodeAddr, playbackID)
+		http.Redirect(w, r, redirectUrl, http.StatusFound)
+	})
+}
+
+func parsePlaybackID(path string) (string, bool) {
+	r := regexp.MustCompile("^/hls/([a-zA-Z0-9_]+)/index.m3u8$")
+	m := r.FindStringSubmatch(path)
+	if len(m) < 2 {
+		return "", false
+	}
+	return m[1], true
+}
+
+func protocol(r *http.Request) string {
+	if r.Header.Get("X-Forwarded-Proto") == "https" {
+		return "https"
+	}
+	return "http"
+}
+
+func queryMistForClosestNode(playbackID string) (string, error) {
+	url := fmt.Sprintf("http://localhost:%s/video+%s", mistUtilLoadPort, playbackID)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.New(fmt.Sprintf("GET request '%s' failed with http status code %d", url, resp.StatusCode))
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("GET request '%s' failed while reading response body", url))
+	}
+
+	return string(body), nil
 }
