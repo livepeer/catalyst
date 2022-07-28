@@ -2,13 +2,13 @@ name: Build and publish catalyst docker images
 
 on:
   pull_request:
+    branches:
+      - "main"
   push:
-    paths:
-      - "cmd/catalyst/*"
-      - ".github/workflows/catalyst.yaml"
-      - "Dockerfile"
-      - "docker-compose.yml"
-      - "Makefile"
+    branches:
+      - "main"
+    tags:
+      - "v*"
 
 jobs:
   catalyst:
