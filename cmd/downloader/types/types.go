@@ -9,10 +9,11 @@ type TagInformation struct {
 }
 
 type BuildManifestInformation struct {
-	Builds map[string]string `json:"builds"`
-	Commit string            `json:"commit"`
-	Branch string            `json:"branch"`
-	Ref    string            `json:"ref"`
+	Builds       map[string]string `json:"builds"`
+	Commit       string            `json:"commit"`
+	Branch       string            `json:"branch"`
+	Ref          string            `json:"ref"`
+	SrcFilenames map[string]string `json:"srcFilenames,omitempty"`
 }
 
 type BuildFlags struct {

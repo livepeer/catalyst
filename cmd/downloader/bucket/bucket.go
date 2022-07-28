@@ -71,9 +71,9 @@ func GetArtifactInfo(platform, architecture, release string, service *types.Serv
 		packageName = service.Binary
 	}
 	info.ArchiveFileName = fmt.Sprintf("%s-%s-%s.%s", packageName, info.Platform, info.Architecture, extension)
-	// if buildInfo.Builds != nil && service.SrcFilenames == nil {
-	// 	service.SrcFilenames = buildInfo.Builds
-	// }
+	if buildInfo.SrcFilenames != nil && service.SrcFilenames == nil {
+		service.SrcFilenames = buildInfo.SrcFilenames
+	}
 
 	if service.SrcFilenames != nil {
 		packageName = service.Name
