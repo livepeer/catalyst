@@ -8,9 +8,12 @@ ADD	go.mod go.sum	./
 
 RUN	go mod download
 
-ADD	.	.
+ADD	cmd/downloader cmd/downloader
+ADD manifest.yaml manifest.yaml
+RUN go run cmd/downloader/main/downloader.go
 
-RUN	make
+ADD . .
+RUN	make livepeer-log livepeer-catalyst-node
 
 FROM	ubuntu:20.04
 
