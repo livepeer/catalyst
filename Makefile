@@ -160,4 +160,4 @@ docker:
 	docker build -t livepeer/catalyst --build-arg=GIT_VERSION=$(GIT_VERSION) .
 
 test: docker
-	go test ./test/e2e/e2e_test.go -v --logtostderr
+	go test ./test/e2e/* -v --logtostderr
