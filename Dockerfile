@@ -25,4 +25,4 @@ COPY --from=gobuild	/build/bin/	/usr/bin/
 
 EXPOSE	1935	4242	8080	8889/udp
 
-CMD	["/usr/bin/MistController"]
+CMD	["/usr/bin/MistController", "-c", "/etc/livepeer/catalyst.json"]
