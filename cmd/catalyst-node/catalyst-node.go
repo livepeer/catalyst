@@ -281,7 +281,7 @@ func main() {
 	balancerArgs := fs.String("balancer-args", "", "arguments passed to MistUtilLoad")
 
 	// Catalyst web server
-	httpAddr := flag.String("http-addr", fmt.Sprintf("127.0.0.1:%s", httpPort), "Address to bind for Catalyst HTTP commands")
+	httpAddr := fs.String("http-addr", fmt.Sprintf("127.0.0.1:%s", httpPort), "Address to bind for Catalyst HTTP commands")
 
 	// Serf commands passed straight through to the agent
 	fs.String("rpc-addr", "127.0.0.1:7373", "Address to bind the RPC listener.")
@@ -405,12 +405,13 @@ func protocol(r *http.Request) string {
 }
 
 func queryMistForClosestNode(playbackID string) (string, error) {
-	url := fmt.Sprintf("http://localhost:%s/video+%s", mistUtilLoadPort, playbackID)
+	url := fmt.Sprintf("http://localhost:%s/%s", mistUtilLoadPort, playbackID)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return "", errors.New(fmt.Sprintf("GET request '%s' failed with http status code %d", url, resp.StatusCode))
 	}
