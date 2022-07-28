@@ -100,11 +100,11 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	// then
 	requireTwoMembers(t, c1, c2)
 
-	p := startStream(t, ctx, c1)
+	p := startStream(t, c1)
 	defer p.Kill()
 
-	requireReplicatedStream(t, c1, c2)
-	requireStreamRedirection(t, ctx, c1, c2)
+	requireReplicatedStream(t, c2)
+	requireStreamRedirection(t, c1, c2)
 }
 
 func createNetwork(ctx context.Context, t *testing.T) *network {
@@ -224,7 +224,7 @@ func requireTwoMembers(t *testing.T, containers ...*catalystContainer) {
 	require.Eventually(t, numberOfMembersIsTwo, 5*time.Minute, time.Second)
 }
 
-func startStream(t *testing.T, ctx context.Context, c1 *catalystContainer) *os.Process {
+func startStream(t *testing.T, c1 *catalystContainer) *os.Process {
 	// Send a stream to the node catalyst-one
 	ffmpegParams := []string{"-re", "-f", "lavfi", "-i", "testsrc=size=1920x1080:rate=30,format=yuv420p", "-f", "lavfi", "-i", "sine", "-c:v", "libx264", "-b:v", "1000k", "-x264-params", "keyint=60", "-c:a", "aac", "-f", "flv"}
 	ffmpegParams = append(ffmpegParams, fmt.Sprintf("rtmp://localhost:%s/live/stream+foo", c1.rtmp))
@@ -234,7 +234,7 @@ func startStream(t *testing.T, ctx context.Context, c1 *catalystContainer) *os.P
 	return cmd.Process
 }
 
-func requireReplicatedStream(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
+func requireReplicatedStream(t *testing.T, c2 *catalystContainer) {
 	// Read stream from the node catalyst-two
 	correctStream := func() bool {
 		resp, err := http.Get(fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c2.http))
@@ -257,7 +257,7 @@ func requireReplicatedStream(t *testing.T, c1 *catalystContainer, c2 *catalystCo
 	require.Eventually(t, correctStream, 5*time.Minute, time.Second)
 }
 
-func requireStreamRedirection(t *testing.T, ctx context.Context, c1 *catalystContainer, c2 *catalystContainer) {
+func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
 	require := require.New(t)
 	redirect := func() bool {
 		client := &http.Client{
