@@ -21,10 +21,11 @@ import (
 )
 
 const (
-	webConsolePort = "4242"
-	serfPort       = "7373"
-	httpPort       = "8080"
-	rtmpPort       = "1935"
+	webConsolePort   = "4242"
+	serfPort         = "7373"
+	httpPort         = "8080"
+	httpCatalystPort = "8090"
+	rtmpPort         = "1935"
 )
 
 type cliParams struct {
@@ -62,10 +63,12 @@ type network struct {
 
 type catalystContainer struct {
 	testcontainers.Container
-	webConsole string
-	serf       string
-	http       string
-	rtmp       string
+	webConsole   string
+	serf         string
+	http         string
+	httpCatalyst string
+	rtmp         string
+	ip           string
 }
 
 func (c *catalystContainer) Terminate(ctx context.Context) {
@@ -96,7 +99,12 @@ func TestMultiNodeCatalyst(t *testing.T) {
 
 	// then
 	requireTwoMembers(t, c1, c2)
+
+	p := startStream(t, ctx, c1)
+	defer p.Kill()
+
 	requireReplicatedStream(t, c1, c2)
+	requireStreamRedirection(t, ctx, c1, c2)
 }
 
 func createNetwork(ctx context.Context, t *testing.T) *network {
@@ -135,9 +143,12 @@ func startCatalyst(t *testing.T, ctx context.Context, hostname, network string, 
 
 	req := testcontainers.ContainerRequest{
 		Image:        params.ImageName,
-		ExposedPorts: []string{tcp(webConsolePort), tcp(serfPort), tcp(httpPort), tcp(rtmpPort)},
+		ExposedPorts: []string{tcp(webConsolePort), tcp(serfPort), tcp(httpPort), tcp(httpCatalystPort), tcp(rtmpPort)},
 		Hostname:     hostname,
 		Networks:     []string{network},
+		Env: map[string]string{
+			"CATALYST_NODE_HTTP_ADDR": "0.0.0.0:8090",
+		},
 		Mounts: []testcontainers.ContainerMount{{
 			Source: testcontainers.GenericBindMountSource{
 				HostPath: configAbsPath,
@@ -174,9 +185,21 @@ func startCatalyst(t *testing.T, ctx context.Context, hostname, network string, 
 	require.NoError(t, err)
 	catalyst.http = mappedPort.Port()
 
+	mappedPort, err = container.MappedPort(ctx, httpCatalystPort)
+	require.NoError(t, err)
+	catalyst.httpCatalyst = mappedPort.Port()
+
 	mappedPort, err = container.MappedPort(ctx, rtmpPort)
 	require.NoError(t, err)
 	catalyst.rtmp = mappedPort.Port()
+
+	// container IP
+	cid := container.GetContainerID()
+	dockerClient, _, _, err := testcontainers.NewDockerClient()
+	require.NoError(t, err)
+	inspect, err := dockerClient.ContainerInspect(ctx, cid)
+	require.NoError(t, err)
+	catalyst.ip = inspect.NetworkSettings.Networks[network].IPAddress
 
 	return catalyst
 }
@@ -201,15 +224,17 @@ func requireTwoMembers(t *testing.T, containers ...*catalystContainer) {
 	require.Eventually(t, numberOfMembersIsTwo, 5*time.Minute, time.Second)
 }
 
-func requireReplicatedStream(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
+func startStream(t *testing.T, ctx context.Context, c1 *catalystContainer) *os.Process {
 	// Send a stream to the node catalyst-one
 	ffmpegParams := []string{"-re", "-f", "lavfi", "-i", "testsrc=size=1920x1080:rate=30,format=yuv420p", "-f", "lavfi", "-i", "sine", "-c:v", "libx264", "-b:v", "1000k", "-x264-params", "keyint=60", "-c:a", "aac", "-f", "flv"}
 	ffmpegParams = append(ffmpegParams, fmt.Sprintf("rtmp://localhost:%s/live/stream+foo", c1.rtmp))
 	cmd := exec.Command("ffmpeg", ffmpegParams...)
 	err := cmd.Start()
 	require.NoError(t, err)
-	defer cmd.Process.Kill()
+	return cmd.Process
+}
 
+func requireReplicatedStream(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
 	// Read stream from the node catalyst-two
 	correctStream := func() bool {
 		resp, err := http.Get(fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c2.http))
@@ -230,4 +255,34 @@ func requireReplicatedStream(t *testing.T, c1 *catalystContainer, c2 *catalystCo
 		return true
 	}
 	require.Eventually(t, correctStream, 5*time.Minute, time.Second)
+}
+
+func requireStreamRedirection(t *testing.T, ctx context.Context, c1 *catalystContainer, c2 *catalystContainer) {
+	require := require.New(t)
+	redirect := func() bool {
+		client := &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		}
+		resp, err := client.Get(fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c1.httpCatalyst))
+		if err != nil {
+			return false
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusFound {
+			return false
+		}
+
+		c1Url := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c1.ip)
+		c2Url := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c2.ip)
+		rUrl := resp.Header.Get("Location")
+		if rUrl == c1Url || rUrl == c2Url {
+			return true
+		}
+
+		return false
+	}
+	require.Eventually(redirect, 5*time.Minute, time.Second)
 }
