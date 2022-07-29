@@ -69,6 +69,7 @@ type catalystContainer struct {
 	httpCatalyst string
 	rtmp         string
 	ip           string
+	hostname     string
 }
 
 func (c *catalystContainer) Terminate(ctx context.Context) {
@@ -171,7 +172,10 @@ func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, 
 	container.FollowOutput(&lc)
 
 	// Store mapped ports
-	catalyst := &catalystContainer{Container: container}
+	catalyst := &catalystContainer{
+		Container: container,
+		hostname:  hostname,
+	}
 
 	mappedPort, err := container.MappedPort(ctx, webConsolePort)
 	require.NoError(t, err)
@@ -275,9 +279,10 @@ func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystC
 			return false
 		}
 
-		c1URL := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c1.ip)
-		c2URL := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c2.ip)
+		c1URL := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c1.hostname)
+		c2URL := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c2.hostname)
 		rURL := resp.Header.Get("Location")
+		glog.Infof("c1URL=%s c2URL=%s rURL=%s", c1URL, c2URL, rURL)
 		if rURL == c1URL || rURL == c2URL {
 			return true
 		}
