@@ -275,10 +275,10 @@ func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystC
 			return false
 		}
 
-		c1Url := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c1.ip)
-		c2Url := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c2.ip)
-		rUrl := resp.Header.Get("Location")
-		if rUrl == c1Url || rUrl == c2Url {
+		c1URL := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c1.ip)
+		c2URL := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c2.ip)
+		rURL := resp.Header.Get("Location")
+		if rURL == c1URL || rURL == c2URL {
 			return true
 		}
 

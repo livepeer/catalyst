@@ -58,9 +58,9 @@ func requireReq(t *testing.T, path string) httpReq {
 	return httpReq{t, req}
 }
 
-func (ht httpReq) withHeader(key, value string) httpReq {
-	ht.Header.Set(key, value)
-	return ht
+func (hr httpReq) withHeader(key, value string) httpReq {
+	hr.Header.Set(key, value)
+	return hr
 }
 
 func (hr httpReq) result() httpCheck {

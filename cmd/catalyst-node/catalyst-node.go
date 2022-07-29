@@ -417,8 +417,8 @@ func redirectHlsHandler() http.Handler {
 			return
 		}
 
-		redirectUrl := fmt.Sprintf("%s://%s/hls/%s/index.m3u8", protocol(r), nodeAddr, playbackID)
-		http.Redirect(w, r, redirectUrl, http.StatusFound)
+		rURL := fmt.Sprintf("%s://%s/hls/%s/index.m3u8", protocol(r), nodeAddr, playbackID)
+		http.Redirect(w, r, rURL, http.StatusFound)
 	})
 }
 
@@ -447,14 +447,14 @@ func queryMistForClosestNode(playbackID string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", errors.New(fmt.Sprintf("GET request '%s' failed with http status code %d", url, resp.StatusCode))
+		return "", fmt.Errorf("GET request '%s' failed with http status code %d", url, resp.StatusCode)
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("GET request '%s' failed while reading response body", url))
+		return "", fmt.Errorf("GET request '%s' failed while reading response body", url)
 	}
 	if string(body) == "FULL" {
-		return "", errors.New(fmt.Sprintf("GET request '%s' returned 'FULL'"))
+		return "", fmt.Errorf("GET request '%s' returned 'FULL'")
 	}
 
 	return string(body), nil
