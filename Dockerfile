@@ -8,7 +8,7 @@ ADD	go.mod go.sum	./
 
 RUN	go mod download
 
-ADD	cmd/downloader cmd/downloader
+ADD	cmd/downloader/ cmd/downloader/
 ADD manifest.yaml manifest.yaml
 RUN go run cmd/downloader/main/downloader.go
 
