@@ -419,6 +419,9 @@ func queryMistForClosestNode(playbackID string) (string, error) {
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("GET request '%s' failed while reading response body", url))
 	}
+	if string(body) == "FULL" {
+		return "", errors.New(fmt.Sprintf("GET request '%s' returned 'FULL'"))
+	}
 
 	return string(body), nil
 }
