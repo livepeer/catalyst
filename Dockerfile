@@ -1,7 +1,5 @@
 FROM	golang:1-bullseye	as	gobuild
 
-ARG	GIT_VERSION=unknown
-
 WORKDIR	/build
 
 ADD	go.mod go.sum	./
@@ -12,6 +10,7 @@ ADD	cmd/downloader/ cmd/downloader/
 RUN make download
 
 ADD . .
+ARG	GIT_VERSION=unknown
 RUN	make livepeer-log livepeer-catalyst-node
 
 FROM	ubuntu:20.04
