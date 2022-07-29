@@ -389,7 +389,7 @@ func redirectHlsHandler() http.Handler {
 }
 
 func parsePlaybackID(path string) (string, bool) {
-	r := regexp.MustCompile("^/hls/([a-zA-Z0-9_+]+)/index.m3u8$")
+	r := regexp.MustCompile("^/hls/([a-zA-Z0-9_\-+]+)/index.m3u8$")
 	m := r.FindStringSubmatch(path)
 	if len(m) < 2 {
 		return "", false
