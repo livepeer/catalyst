@@ -363,7 +363,7 @@ func main() {
 func startCatalystWebServer(httpAddr string) {
 	http.Handle("/hls/", redirectHlsHandler())
 	glog.Infof("HTTP server listening on %s", httpAddr)
-	http.ListenAndServe(httpAddr, nil)
+	glog.Fatalf(http.ListenAndServe(httpAddr, nil))
 }
 
 var getClosestNode = queryMistForClosestNode
