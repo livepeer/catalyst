@@ -378,7 +378,7 @@ func redirectHlsHandler() http.Handler {
 
 		nodeAddr, err := getClosestNode(playbackID)
 		if err != nil {
-			glog.Error(err)
+			glog.Errorf("error finding origin server playbackID=%s error=%s", playbackID, err)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
