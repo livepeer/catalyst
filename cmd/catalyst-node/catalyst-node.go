@@ -93,7 +93,7 @@ func runClient(config catalystConfig) error {
 		membersMap := make(map[string]bool)
 
 		for _, member := range members {
-			memberHost := member.Addr.String()
+			memberHost := member.Name
 
 			// commented out as for now the load balancer does not return ports
 			//if member.Port != 0 {
