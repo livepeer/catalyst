@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -17,6 +16,7 @@ import (
 	"time"
 
 	serfclient "github.com/hashicorp/serf/client"
+	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"github.com/livepeer/livepeer-data/pkg/mistconnector"
 	glog "github.com/magicsong/color-glog"
 	"github.com/mitchellh/cli"
@@ -363,7 +363,7 @@ func main() {
 func startCatalystWebServer(httpAddr string) {
 	http.Handle("/hls/", redirectHlsHandler())
 	glog.Infof("HTTP server listening on %s", httpAddr)
-	glog.Fatalf(http.ListenAndServe(httpAddr, nil))
+	glog.Fatal(http.ListenAndServe(httpAddr, nil))
 }
 
 var getClosestNode = queryMistForClosestNode
@@ -389,7 +389,7 @@ func redirectHlsHandler() http.Handler {
 }
 
 func parsePlaybackID(path string) (string, bool) {
-	r := regexp.MustCompile("^/hls/([a-zA-Z0-9_\-+]+)/index.m3u8$")
+	r := regexp.MustCompile("^/hls/([a-zA-Z0-9_\\-+]+)/index.m3u8$")
 	m := r.FindStringSubmatch(path)
 	if len(m) < 2 {
 		return "", false
