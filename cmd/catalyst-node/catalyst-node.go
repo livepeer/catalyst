@@ -292,7 +292,6 @@ func main() {
 		return
 	}
 
-
 	go startCatalystWebServer(*httpAddr)
 
 	if *retryJoin != "" {
