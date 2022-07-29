@@ -186,6 +186,10 @@ func tcp(p string) string {
 }
 
 func requireTwoMembers(t *testing.T, containers ...*catalystContainer) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go logIfStuck(ctx, "STUCK in requireTwoMembers")
+
 	c1 := containers[0]
 	numberOfMembersIsTwo := func() bool {
 		client, err := command.RPCClient(fmt.Sprintf("127.0.0.1:%s", c1.serf), "")
@@ -202,6 +206,10 @@ func requireTwoMembers(t *testing.T, containers ...*catalystContainer) {
 }
 
 func requireReplicatedStream(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go logIfStuck(ctx, "STUCK in requireReplicatedStream")
+
 	// Send a stream to the node catalyst-one
 	ffmpegParams := []string{"-re", "-f", "lavfi", "-i", "testsrc=size=1920x1080:rate=30,format=yuv420p", "-f", "lavfi", "-i", "sine", "-c:v", "libx264", "-b:v", "1000k", "-x264-params", "keyint=60", "-c:a", "aac", "-f", "flv"}
 	ffmpegParams = append(ffmpegParams, fmt.Sprintf("rtmp://localhost:%s/live/stream+foo", c1.rtmp))
@@ -230,4 +238,17 @@ func requireReplicatedStream(t *testing.T, c1 *catalystContainer, c2 *catalystCo
 		return true
 	}
 	require.Eventually(t, correctStream, 30*time.Minute, time.Second)
+}
+
+func logIfStuck(ctx context.Context, message string) {
+	timer := time.NewTimer(5 * time.Minute)
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		fmt.Println()
+		fmt.Println("#####")
+		fmt.Println(message)
+		fmt.Println()
+	case <-ctx.Done():
+	}
 }
