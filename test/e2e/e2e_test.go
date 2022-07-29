@@ -198,7 +198,7 @@ func requireTwoMembers(t *testing.T, containers ...*catalystContainer) {
 		}
 		return len(members) == 2
 	}
-	require.Eventually(t, numberOfMembersIsTwo, 5*time.Minute, time.Second)
+	require.Eventually(t, numberOfMembersIsTwo, 30*time.Minute, time.Second)
 }
 
 func requireReplicatedStream(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
@@ -229,5 +229,5 @@ func requireReplicatedStream(t *testing.T, c1 *catalystContainer, c2 *catalystCo
 		}
 		return true
 	}
-	require.Eventually(t, correctStream, 5*time.Minute, time.Second)
+	require.Eventually(t, correctStream, 30*time.Minute, time.Second)
 }
