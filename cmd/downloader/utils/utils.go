@@ -3,12 +3,15 @@ package utils
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/livepeer/catalyst/cmd/downloader/constants"
+	"github.com/livepeer/catalyst/cmd/downloader/types"
 	glog "github.com/magicsong/color-glog"
+	"gopkg.in/yaml.v3"
 )
 
 func IsSupportedPlatformArch(platform, arch string) bool {
@@ -26,6 +29,34 @@ func IsSupportedPlatformArch(platform, arch string) bool {
 		return arch == "amd64"
 	}
 	return false
+}
+
+func ParseYamlManifest(manifestPath string, isURL bool) (*types.BoxManifest, error) {
+	var manifestConfig types.BoxManifest
+	var file []byte
+	glog.Infof("Reading manifest file=%q", manifestPath)
+	glog.V(9).Infof("manifestPath=%s isURL=%t", manifestPath, isURL)
+	if !isURL {
+		file, _ = ioutil.ReadFile(manifestPath)
+	} else {
+		response, err := http.Get(manifestPath)
+		if err != nil || response.StatusCode != 200 {
+			return nil, err
+		}
+		glog.V(9).Infof("response=%v", response)
+		file, err = ioutil.ReadAll(response.Body)
+		if err != nil {
+			return nil, err
+		}
+	}
+	err := yaml.Unmarshal(file, &manifestConfig)
+	if err != nil {
+		return nil, err
+	}
+	if manifestConfig.Version != "3.0" {
+		return nil, fmt.Errorf("invalid manifest version %q. Currently supported versions: 3.0", manifestConfig.Version)
+	}
+	return &manifestConfig, nil
 }
 
 func IsFileExists(path string) bool {

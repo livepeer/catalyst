@@ -1,59 +1,52 @@
-# Refer the `README` for specification details of the manifest
-version: 3.0
+version: "3.0"
 release: latest
-
 box:
-  - name: analyzer
-    strategy:
-      project: livepeer/livepeer-data
-
-  - name: api
-    strategy:
-      project: livepeer/studio
-
-  - name: mapic
-    strategy:
-      project: livepeer/stream-tester
-    binary: livepeer-mist-api-connector
-
-  - name: livepeer
-    strategy:
-      project: livepeer/go-livepeer
-    binary: livepeer
-    archivePath: livepeer
-
-  - name: mistserver
-    strategy:
-      download: bucket
-      project: mistserver
-    release: catalyst
-    skipGpg: true
-    # skipChecksum: true
-
-  - name: www
-    strategy:
-      project: livepeer/studio
-    binary: livepeer-www
-
-  # - name: task-runner
-  #   strategy:
-  #     project: livepeer/task-runner
-
-  # - name: livepeer-transcode
-  #   strategy:
-  #     project: livepeer/transcode-cli
-  #   binary: livepeer-transcode
-
-  - name: victoria-metrics
-    strategy:
-      project: VictoriaMetrics/VictoriaMetrics
-    release: v1.74.0
-    archivePath: victoria-metrics-prod
-    outputPath: livepeer-victoria-metrics
-    srcFilenames:
-      linux-amd64: victoria-metrics-amd64-v1.74.0.tar.gz
-      linux-arm64: victoria-metrics-arm64-v1.74.0.tar.gz
-      darwin-amd64: victoria-metrics-darwin-amd64-v1.74.0.tar.gz
-      darwin-arm64: victoria-metrics-darwin-arm64-v1.74.0.tar.gz
-    skipGpg: true
-    skipChecksum: true
+    - name: analyzer
+      strategy:
+        download: github
+        project: livepeer/livepeer-data
+      release: v0.4.19
+    - name: api
+      strategy:
+        download: github
+        project: livepeer/studio
+      release: v0.6.1
+    - name: mapic
+      strategy:
+        download: github
+        project: livepeer/stream-tester
+      binary: livepeer-mist-api-connector
+      release: v0.12.18
+    - name: livepeer
+      strategy:
+        download: github
+        project: livepeer/go-livepeer
+      binary: livepeer
+      release: v0.5.33
+      archivePath: livepeer
+    - name: mistserver
+      strategy:
+        download: bucket
+        project: mistserver
+      release: catalyst
+      skipGpg: true
+    - name: www
+      strategy:
+        download: github
+        project: livepeer/studio
+      binary: livepeer-www
+      release: v0.6.1
+    - name: victoria-metrics
+      strategy:
+        download: github
+        project: VictoriaMetrics/VictoriaMetrics
+      release: v1.74.0
+      archivePath: victoria-metrics-prod
+      skipGpg: true
+      skipChecksum: true
+      srcFilenames:
+        darwin-amd64: victoria-metrics-darwin-amd64-v1.74.0.tar.gz
+        darwin-arm64: victoria-metrics-darwin-arm64-v1.74.0.tar.gz
+        linux-amd64: victoria-metrics-amd64-v1.74.0.tar.gz
+        linux-arm64: victoria-metrics-arm64-v1.74.0.tar.gz
+      outputPath: livepeer-victoria-metrics

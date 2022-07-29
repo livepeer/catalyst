@@ -22,7 +22,8 @@ ffmpeg:
 
 .PHONY: build
 build:
-	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/downloader cmd/downloader/main/downloader.go
+	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/downloader cmd/downloader/downloader/downloader.go
+	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/manifest cmd/downloader/manifest/manifest.go
 
 build/compiled/lib/libmbedtls.a:
 	export PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig \
@@ -62,7 +63,7 @@ mistserver:
 	export C_INCLUDE_PATH=~$(buildpath)/compiled/include \
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
-	&& cmake ../../../mistserver -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} \
+	&& cmake ../../../mistserver -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} -DNORIST=yes \
 	&& make -j${PROC_COUNT} \
 	&& make install
 
@@ -109,7 +110,11 @@ livepeer-mist-api-connector:
 
 .PHONY: download
 download:
-	go run cmd/downloader/main/downloader.go -v=5 $(ARGS)
+	go run cmd/downloader/downloader/downloader.go -v=5 $(ARGS)
+
+.PHONY: manifest
+manifest:
+	go run cmd/downloader/manifest/manifest.go -v=9 $(ARGS)
 
 .PHONY: dev
 dev:
@@ -160,4 +165,4 @@ docker:
 	docker build -t livepeer/catalyst --build-arg=GIT_VERSION=$(GIT_VERSION) .
 
 test: docker
-	go test ./test/e2e/e2e_test.go -v --logtostderr
+	go test ./test/e2e/* -v --logtostderr

@@ -1,14 +1,12 @@
-package downloader
+package main
 
 import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"io/fs"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,12 +19,13 @@ import (
 	"github.com/livepeer/catalyst/cmd/downloader/utils"
 	"github.com/livepeer/catalyst/cmd/downloader/verification"
 	glog "github.com/magicsong/color-glog"
-	"gopkg.in/yaml.v2"
 )
+
+var Version = "undefined"
 
 // DownloadService works on downloading services for the box to
 // machine and extracting the required binaries from artifacts.
-func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service types.Service) error {
+func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service *types.Service) error {
 	var projectInfo *types.ArtifactInfo
 	platform := flags.Platform
 	architecture := flags.Architecture
@@ -94,37 +93,9 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 	return nil
 }
 
-func ParseYamlManifest(manifestPath string, isURL bool) (*types.BoxManifest, error) {
-	var manifestConfig types.BoxManifest
-	var file []byte
-	glog.Infof("Reading manifest file=%q", manifestPath)
-	glog.V(9).Infof("manifestPath=%s isURL=%t", manifestPath, isURL)
-	if !isURL {
-		file, _ = ioutil.ReadFile(manifestPath)
-	} else {
-		response, err := http.Get(manifestPath)
-		if err != nil || response.StatusCode != 200 {
-			return nil, err
-		}
-		glog.V(9).Infof("response=%v", response)
-		file, err = ioutil.ReadAll(response.Body)
-		if err != nil {
-			return nil, err
-		}
-	}
-	err := yaml.Unmarshal(file, &manifestConfig)
-	if err != nil {
-		return nil, err
-	}
-	if manifestConfig.Version != "3.0" {
-		return nil, fmt.Errorf("invalid manifest version %q. Currently supported versions: 3.0", manifestConfig.Version)
-	}
-	return &manifestConfig, nil
-}
-
 // ExtractZipArchive processes a zip file and extracts a single file
 // from the service definition.
-func ExtractZipArchive(archiveFile, extractPath string, service types.Service) error {
+func ExtractZipArchive(archiveFile, extractPath string, service *types.Service) error {
 	var outputPath string
 	if len(service.ArchivePath) > 0 && !strings.HasSuffix(service.ArchivePath, ".exe") {
 		service.ArchivePath += ".exe"
@@ -160,7 +131,7 @@ func ExtractZipArchive(archiveFile, extractPath string, service types.Service) e
 
 // ExtractTarGzipArchive processes a tarball file and extracts a
 // single file from the service definition.
-func ExtractTarGzipArchive(archiveFile, extractPath string, service types.Service) error {
+func ExtractTarGzipArchive(archiveFile, extractPath string, service *types.Service) error {
 	var outputPath string
 	file, _ := os.Open(archiveFile)
 	archive, err := gzip.NewReader(file)
@@ -213,7 +184,7 @@ func Run(buildFlags types.BuildFlags) {
 		return
 	}
 	var waitGroup sync.WaitGroup
-	manifest, err := ParseYamlManifest(cliFlags.ManifestFile, cliFlags.ManifestURL)
+	manifest, err := utils.ParseYamlManifest(cliFlags.ManifestFile, cliFlags.ManifestURL)
 	if err != nil {
 		glog.Fatal(err)
 		return
@@ -224,7 +195,7 @@ func Run(buildFlags types.BuildFlags) {
 			continue
 		}
 		waitGroup.Add(1)
-		go func(element types.Service) {
+		go func(element *types.Service) {
 			glog.V(8).Infof("Triggering async task for %s", element.Name)
 			err := DownloadService(cliFlags, manifest, element)
 			if err != nil {
@@ -254,4 +225,8 @@ func Run(buildFlags types.BuildFlags) {
 			}
 		}
 	}
+}
+
+func main() {
+	Run(types.BuildFlags{Version: Version})
 }

@@ -1,0 +1,65 @@
+name: Generate staging manifest
+
+on:
+  repository_dispatch:
+    types: ['staging-manifest']
+
+jobs:
+  staging-manifest:
+    name: Generate manifest file for staging environment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          # Check https://github.com/livepeer/go-livepeer/pull/1891
+          # for ref value discussion
+          ref: main
+
+      - name: Set up go
+        id: go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.17
+
+      - name: Cache go modules
+        id: cache-go-mod
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install go modules
+        if: steps.cache-go-mod.outputs.cache-hit != 'true'
+        run: go mod download
+
+      - name: Generate new manifest
+        run: |
+          go run cmd/downloader/manifest/manifest.go -v=9 --manifest=./manifest.yaml
+
+      - name: Commit and push changes
+        id: branch-commit
+        uses: devops-infra/action-commit-push@v0.9.0
+        with:
+          github_token: ${{ github.token }}
+          target_branch: staging
+          commit_prefix: "[AUTO-COMMIT] "
+          commit_message: 'Update `manifest.yaml`'
+          force: true
+
+      - name: Create pull request
+        uses: devops-infra/action-pull-request@v0.5.0
+        with:
+          github_token: ${{ github.token }}
+          source_branch: ${{ steps.branch-commit.outputs.branch_name }}
+          target_branch: main
+          title: '[BOT] Update `manifest.yaml` for staging'
+          body: "**Automated pull request**"
+          reviewer: iameli
+          assignee: hjpotter92
+          label: enhancement
+          get_diff: true
+          allow_no_diff: false

@@ -92,9 +92,9 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	h2 := randomString("catalyst-")
 
 	// when
-	c1 := startCatalyst(t, ctx, h1, network.name, mistConfigConnectTo(h2))
+	c1 := startCatalyst(ctx, t, h1, network.name, mistConfigConnectTo(h2))
 	defer c1.Terminate(ctx)
-	c2 := startCatalyst(t, ctx, h2, network.name, mistConfigConnectTo(h1))
+	c2 := startCatalyst(ctx, t, h2, network.name, mistConfigConnectTo(h1))
 	defer c2.Terminate(ctx)
 
 	// then
@@ -135,7 +135,7 @@ func (lc *logConsumer) Accept(l testcontainers.Log) {
 	glog.Infof("[%s] %s", lc.name, string(l.Content))
 }
 
-func startCatalyst(t *testing.T, ctx context.Context, hostname, network string, mc mistConfig) *catalystContainer {
+func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig) *catalystContainer {
 	mcPath, err := mc.toTmpFile(t.TempDir())
 	require.NoError(t, err)
 	configAbsPath := filepath.Dir(mcPath)

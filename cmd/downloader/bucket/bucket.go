@@ -14,23 +14,28 @@ import (
 
 // GetArtifactVersion fetches correct version for artifact from
 // google cloud bucket.
-func GetArtifactVersion(release, project string) string {
-	var buildInfo types.BuildManifestInformation
+func GetArtifactVersion(buildInfo types.BuildManifestInformation) string {
+	return buildInfo.Commit
+}
+
+// GetBuildInformation pulls in build manifest from bucket.
+func GetBuildInformation(release, project string) (*types.BuildManifestInformation, error) {
+	var buildInfo *types.BuildManifestInformation
 	resp, err := http.Get(fmt.Sprintf(constants.BucketManifestURLFormat, project, release))
 	if err != nil {
 		glog.Error(err)
-		panic(err)
+		return nil, err
 	}
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		glog.Error(err)
-		panic(err)
+		return nil, err
 	}
 	if err := json.Unmarshal(content, &buildInfo); err != nil {
 		glog.Error(err)
-		panic(err)
+		return nil, err
 	}
-	return buildInfo.Commit
+	return buildInfo, nil
 }
 
 // GenerateArtifactURL wraps a `fmt.Sprintf` to template
@@ -40,7 +45,7 @@ func GenerateArtifactURL(project, version, fileName string) string {
 
 // GetArtifactInfo generates a structure of all necessary information
 // from the Google Cloud Storage bucket
-func GetArtifactInfo(platform, architecture, release string, service types.Service) *types.ArtifactInfo {
+func GetArtifactInfo(platform, architecture, release string, service *types.Service) *types.ArtifactInfo {
 	if len(service.Release) == 0 {
 		glog.Fatalf("Bucket type strategy requires a branch name as `release` value. Found %s at root", release)
 		panic("")
@@ -48,19 +53,28 @@ func GetArtifactInfo(platform, architecture, release string, service types.Servi
 
 	project := service.Strategy.Project
 	release = utils.CleanBranchName(service.Release)
+	buildInfo, err := GetBuildInformation(release, project)
+	if err != nil {
+		glog.Fatal(err)
+	}
 
 	var info = &types.ArtifactInfo{
 		Name:         service.Name,
 		Platform:     platform,
 		Architecture: architecture,
-		Version:      GetArtifactVersion(release, project),
+		Version:      GetArtifactVersion(*buildInfo),
 	}
+
 	extension := utils.PlatformExt(platform)
 	packageName := fmt.Sprintf("livepeer-%s", service.Name)
 	if len(service.Binary) > 0 {
 		packageName = service.Binary
 	}
 	info.ArchiveFileName = fmt.Sprintf("%s-%s-%s.%s", packageName, info.Platform, info.Architecture, extension)
+	if buildInfo.SrcFilenames != nil && service.SrcFilenames == nil {
+		service.SrcFilenames = buildInfo.SrcFilenames
+	}
+
 	if service.SrcFilenames != nil {
 		packageName = service.Name
 		platArch := fmt.Sprintf("%s-%s", platform, architecture)
