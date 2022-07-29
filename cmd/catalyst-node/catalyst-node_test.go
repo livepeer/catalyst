@@ -10,7 +10,7 @@ import (
 
 const (
 	closestNodeAddr = "someurl.com"
-	playbackID      = "abc123"
+	playbackID      = "abc_XYZ-123"
 )
 
 func TestRedirectHandler_Correct(t *testing.T) {
