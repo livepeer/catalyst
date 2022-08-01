@@ -22,7 +22,6 @@ import (
 
 const (
 	webConsolePort   = "4242"
-	serfPort         = "7373"
 	httpPort         = "8080"
 	httpCatalystPort = "8090"
 	rtmpPort         = "1935"
@@ -93,19 +92,55 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	h2 := randomString("catalyst-")
 
 	// when
-	c1 := startCatalyst(ctx, t, h1, network.name, mistConfigConnectTo(h2))
+	c1 := startCatalyst(ctx, t, h1, network.name, defaultMistConfig())
 	defer c1.Terminate(ctx)
 	c2 := startCatalyst(ctx, t, h2, network.name, mistConfigConnectTo(h1))
 	defer c2.Terminate(ctx)
 
 	// then
-	requireTwoMembers(t, c1, c2)
+	requireMembersJoined(t, c1, c2)
 
 	p := startStream(t, c1)
 	defer p.Kill()
 
 	requireReplicatedStream(t, c2)
 	requireStreamRedirection(t, c1, c2)
+}
+
+func TestMultiNodeCatalyst_BootstrapNode(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping testing in short mode")
+	}
+
+	// given
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	network := createNetwork(ctx, t)
+	defer network.Remove(ctx)
+
+	boot := randomString("catalyst-bootstrap-")
+	h1 := randomString("catalyst-")
+	h2 := randomString("catalyst-")
+
+	// when
+
+	bootEnv := map[string]string{"CATALYST_NODE_SERF_TAGS": "node=bootstrap"}
+	bootC := startCatalystWithEnv(ctx, t, boot, network.name, defaultMistConfig(), bootEnv)
+	defer bootC.Terminate(ctx)
+	c1 := startCatalyst(ctx, t, h1, network.name, mistConfigConnectTo(boot))
+	defer c1.Terminate(ctx)
+	c2 := startCatalyst(ctx, t, h2, network.name, mistConfigConnectTo(boot))
+	defer c2.Terminate(ctx)
+
+	// then
+	requireMembersJoined(t, bootC, c1, c2)
+
+	p := startStream(t, c1)
+	defer p.Kill()
+
+	requireReplicatedStream(t, c2)
+	requireNotReplicatedStream(t, bootC)
 }
 
 func createNetwork(ctx context.Context, t *testing.T) *network {
@@ -120,11 +155,12 @@ func createNetwork(ctx context.Context, t *testing.T) *network {
 
 func mistConfigConnectTo(host string) mistConfig {
 	mc := defaultMistConfig()
-	mc.Config.Protocols = append(mc.Config.Protocols, protocol{
-		Connector: "livepeer-catalyst-node",
-		RetryJoin: host,
-		RPCAddr:   fmt.Sprintf("0.0.0.0:%s", serfPort),
-	})
+	for i, p := range mc.Config.Protocols {
+		if p.Connector == "livepeer-catalyst-node" {
+			p.RetryJoin = host
+			mc.Config.Protocols[i] = p
+		}
+	}
 	return mc
 }
 
@@ -137,19 +173,25 @@ func (lc *logConsumer) Accept(l testcontainers.Log) {
 }
 
 func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig) *catalystContainer {
+	return startCatalystWithEnv(ctx, t, hostname, network, mc, nil)
+}
+
+func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig, env map[string]string) *catalystContainer {
 	mcPath, err := mc.toTmpFile(t.TempDir())
 	require.NoError(t, err)
 	configAbsPath := filepath.Dir(mcPath)
 	mcFile := filepath.Base(mcPath)
 
+	envVars := map[string]string{"CATALYST_NODE_HTTP_ADDR": "0.0.0.0:8090"}
+	for k, v := range env {
+		envVars[k] = v
+	}
 	req := testcontainers.ContainerRequest{
 		Image:        params.ImageName,
 		ExposedPorts: []string{tcp(webConsolePort), tcp(serfPort), tcp(httpPort), tcp(httpCatalystPort), tcp(rtmpPort)},
 		Hostname:     hostname,
 		Networks:     []string{network},
-		Env: map[string]string{
-			"CATALYST_NODE_HTTP_ADDR": "0.0.0.0:8090",
-		},
+		Env:          envVars,
 		Mounts: []testcontainers.ContainerMount{{
 			Source: testcontainers.GenericBindMountSource{
 				HostPath: configAbsPath,
@@ -212,9 +254,9 @@ func tcp(p string) string {
 	return fmt.Sprintf("%s/tcp", p)
 }
 
-func requireTwoMembers(t *testing.T, containers ...*catalystContainer) {
+func requireMembersJoined(t *testing.T, containers ...*catalystContainer) {
 	c1 := containers[0]
-	numberOfMembersIsTwo := func() bool {
+	correctMembersNumber := func() bool {
 		client, err := command.RPCClient(fmt.Sprintf("127.0.0.1:%s", c1.serf), "")
 		if err != nil {
 			return false
@@ -223,25 +265,23 @@ func requireTwoMembers(t *testing.T, containers ...*catalystContainer) {
 		if err != nil {
 			return false
 		}
-		return len(members) == 2
+		return len(members) == len(containers)
 	}
-	require.Eventually(t, numberOfMembersIsTwo, 5*time.Minute, time.Second)
+	require.Eventually(t, correctMembersNumber, 5*time.Minute, time.Second)
 }
 
-func startStream(t *testing.T, c1 *catalystContainer) *os.Process {
-	// Send a stream to the node catalyst-one
+func startStream(t *testing.T, c *catalystContainer) *os.Process {
 	ffmpegParams := []string{"-re", "-f", "lavfi", "-i", "testsrc=size=1920x1080:rate=30,format=yuv420p", "-f", "lavfi", "-i", "sine", "-c:v", "libx264", "-b:v", "1000k", "-x264-params", "keyint=60", "-c:a", "aac", "-f", "flv"}
-	ffmpegParams = append(ffmpegParams, fmt.Sprintf("rtmp://localhost:%s/live/stream+foo", c1.rtmp))
+	ffmpegParams = append(ffmpegParams, fmt.Sprintf("rtmp://localhost:%s/live/stream+foo", c.rtmp))
 	cmd := exec.Command("ffmpeg", ffmpegParams...)
 	err := cmd.Start()
 	require.NoError(t, err)
 	return cmd.Process
 }
 
-func requireReplicatedStream(t *testing.T, c2 *catalystContainer) {
-	// Read stream from the node catalyst-two
+func requireReplicatedStream(t *testing.T, c *catalystContainer) {
 	correctStream := func() bool {
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c2.http))
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c.http))
 		if err != nil {
 			return false
 		}
@@ -259,6 +299,24 @@ func requireReplicatedStream(t *testing.T, c2 *catalystContainer) {
 		return true
 	}
 	require.Eventually(t, correctStream, 5*time.Minute, time.Second)
+}
+
+func requireNotReplicatedStream(t *testing.T, c *catalystContainer) {
+	require := require.New(t)
+
+	resp, err := http.Get(fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c.http))
+	require.NoError(err)
+
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(err)
+
+	content := string(body)
+	for _, expected := range []string{"RESOLUTION=1920x1080", "FRAME-RATE=30", "index.m3u8"} {
+		if strings.Contains(content, expected) {
+			require.Fail("Stream should not be replicated", "Received replicated stream '%s'", content)
+		}
+	}
 }
 
 func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
