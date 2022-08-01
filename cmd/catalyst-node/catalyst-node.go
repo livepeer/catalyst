@@ -34,6 +34,7 @@ var Version = "unknown"
 type catalystConfig struct {
 	serfRPCAddress           string
 	serfRPCAuthKey           string
+	serfTags                 map[string]string
 	mistLoadBalancerEndpoint string
 }
 
@@ -82,7 +83,7 @@ func runClient(config catalystConfig) error {
 		<-inbox
 		glog.V(5).Infof("got event: %v", event)
 
-		members, err := getSerfMembers(client)
+		members, err := client.MembersFiltered(config.serfTags, ".*", ".*")
 
 		if err != nil {
 			glog.Errorf("Error getting serf, will retry: %v\n", err)
@@ -144,10 +145,6 @@ func connectSerfAgent(serfRPCAddress string, serfRPCAuthKey string) (*serfclient
 		Addr:    serfRPCAddress,
 		AuthKey: serfRPCAuthKey,
 	})
-}
-
-func getSerfMembers(client *serfclient.RPCClient) ([]serfclient.Member, error) {
-	return client.Members()
 }
 
 func changeLoadBalancerServers(endpoint string, server string, action string) ([]byte, error) {
@@ -246,6 +243,8 @@ func main() {
 	verbosity := fs.String("v", "", "Log verbosity.  {4|5|6}")
 	serfRPCAddress := fs.String("serf-rpc-address", "127.0.0.1:7373", "Serf RPC address")
 	serfRPCAuthKey := fs.String("serf-rpc-auth-key", "", "Serf RPC auth key")
+	serfTags := fs.String("serf-tags", "node=media", "Serf tags for Catalyst nodes")
+
 	mistLoadBalancerEndpoint := fs.String("mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
 	version := fs.Bool("version", false, "Print out the version")
 	runBalancer := fs.Bool("run-balancer", true, "run MistUtilLoad")
@@ -292,15 +291,14 @@ func main() {
 		return
 	}
 
-	go startCatalystWebServer(*httpAddr)
+	parseSerfConfig(&serfConfig, retryJoin, serfTags)
 
-	if *retryJoin != "" {
-		serfConfig.RetryJoin = strings.Split(*retryJoin, ",")
-	}
+	go startCatalystWebServer(*httpAddr)
 
 	config := catalystConfig{
 		serfRPCAddress:           *serfRPCAddress,
 		serfRPCAuthKey:           *serfRPCAuthKey,
+		serfTags:                 serfConfig.Tags,
 		mistLoadBalancerEndpoint: *mistLoadBalancerEndpoint,
 	}
 
@@ -361,6 +359,24 @@ func main() {
 	}
 
 	os.Exit(exitCode)
+}
+
+func parseSerfConfig(config *agent.Config, retryJoin *string, serfTags *string) {
+	if *retryJoin != "" {
+		config.RetryJoin = strings.Split(*retryJoin, ",")
+	}
+	if *serfTags != "" {
+		if config.Tags == nil {
+			config.Tags = make(map[string]string)
+		}
+		for _, t := range strings.Split(*serfTags, ",") {
+			kv := strings.Split(t, "=")
+			if len(kv) == 2 {
+				k, v := kv[0], kv[1]
+				config.Tags[k] = v
+			}
+		}
+	}
 }
 
 func writeSerfConfig(config *agent.Config) (string, error) {
