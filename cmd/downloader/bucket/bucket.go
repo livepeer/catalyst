@@ -57,6 +57,7 @@ func GetArtifactInfo(platform, architecture, release string, service *types.Serv
 	if err != nil {
 		glog.Fatal(err)
 	}
+	service.Strategy.Commit = buildInfo.Commit
 
 	var info = &types.ArtifactInfo{
 		Name:         service.Name,
