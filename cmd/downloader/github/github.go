@@ -12,21 +12,9 @@ import (
 	glog "github.com/magicsong/color-glog"
 )
 
-type gitRefObject struct {
-	SHA  string `json:"sha"`
-	Type string `json:"type"`
-	URL  string `json:"url"`
-}
-
-type gitRefInfo struct {
-	Object gitRefObject `json:"object"`
-	URL    string       `json:"url"`
-	Ref    string       `json:"ref"`
-}
-
 // GetCommitSHA uses github api to find SHA for the tagged release
-func GetCommitSHA(project, tag string) *gitRefInfo {
-	var refInfo gitRefInfo
+func GetCommitSHA(project, tag string) *types.GitRefInfo {
+	var refInfo types.GitRefInfo
 	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/git/ref/tags/%s", project, tag)
 	resp, err := http.Get(apiURL)
 	if err != nil {
