@@ -431,7 +431,10 @@ func redirectHlsHandler() http.Handler {
 			return
 		}
 
-		nodeAddr, err := getClosestNode(playbackID)
+		lat := r.Header.Get("X-Latitude")
+		lon := r.Header.Get("X-Longitude")
+
+		nodeAddr, err := getClosestNode(playbackID, lat, lon)
 		if err != nil {
 			glog.Errorf("error finding origin server playbackID=%s error=%s", playbackID, err)
 			w.WriteHeader(http.StatusNotFound)
@@ -459,9 +462,20 @@ func protocol(r *http.Request) string {
 	return "http"
 }
 
-func queryMistForClosestNode(playbackID string) (string, error) {
+func queryMistForClosestNode(playbackID, lat, lon string) (string, error) {
 	url := fmt.Sprintf("http://localhost:%s/%s", mistUtilLoadPort, playbackID)
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+	if lat != "" && lon != "" {
+		req.Header.Set("X-Latitude", lat)
+		req.Header.Set("X-Longitude", lon)
+	} else {
+		glog.Warningf("Incoming request missing X-Latitude/X-Longitude, response will not be geolocated")
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}
