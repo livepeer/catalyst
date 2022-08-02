@@ -35,6 +35,7 @@ type CliFlags struct {
 type DownloadStrategy struct {
 	Download string `yaml:"download,omitempty"`
 	Project  string `yaml:"project"`
+	Commit   string `yaml:"commit,omitempty"`
 }
 
 type Service struct {
