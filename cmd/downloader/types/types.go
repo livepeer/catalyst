@@ -6,6 +6,7 @@ type TagInformation struct {
 	PreRelease bool   `json:"prerelease"`
 	TagName    string `json:"tag_name"`
 	Draft      bool   `json:"draft"`
+	Commit     string `json:"commit,omitempty"`
 }
 
 type BuildManifestInformation struct {
