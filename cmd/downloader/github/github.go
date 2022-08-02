@@ -12,6 +12,37 @@ import (
 	glog "github.com/magicsong/color-glog"
 )
 
+type gitRefObject struct {
+	SHA  string `json:"sha"`
+	Type string `json:"type"`
+	URL  string `json:"url"`
+}
+
+type gitRefInfo struct {
+	Object gitRefObject `json:"object"`
+	URL    string       `json:"url"`
+	Ref    string       `json:"ref"`
+}
+
+// GetCommitSHA uses github api to find SHA for the tagged release
+func GetCommitSHA(project, tag string) *gitRefInfo {
+	var refInfo gitRefInfo
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/git/ref/tags/%s", project, tag)
+	resp, err := http.Get(apiURL)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	defer resp.Body.Close()
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	if err := json.Unmarshal(content, &refInfo); err != nil {
+		glog.Fatal(err)
+	}
+	return &refInfo
+}
+
 // GetLatestRelease uses github API to identify information about
 // latest tag for a project.
 func GetLatestRelease(project string) (*types.TagInformation, error) {
@@ -39,7 +70,7 @@ func GetLatestRelease(project string) (*types.TagInformation, error) {
 
 // GetArtifactVersion fetches correct version for artifact from
 // github.
-func GetArtifactVersion(release, project string) string {
+func GetArtifactVersion(release, project string) (string, string) {
 	if release == constants.LatestTagReleaseName {
 		tagInfo, err := GetLatestRelease(project)
 		if err != nil {
@@ -48,7 +79,8 @@ func GetArtifactVersion(release, project string) string {
 		release = tagInfo.TagName
 		glog.V(9).Infof("project=%s, version/tag=%q", project, release)
 	}
-	return release
+	refInfo := GetCommitSHA(project, release)
+	return release, refInfo.Object.SHA
 }
 
 // GenerateArtifactURL wraps a `fmt.Sprintf` to template
@@ -63,11 +95,13 @@ func GetArtifactInfo(platform, architecture, release string, service *types.Serv
 	if len(service.Release) > 0 {
 		release = service.Release
 	}
+	version, commit := GetArtifactVersion(release, project)
+	service.Strategy.Commit = commit
 	var info = &types.ArtifactInfo{
 		Name:         service.Name,
 		Platform:     platform,
 		Architecture: architecture,
-		Version:      GetArtifactVersion(release, project),
+		Version:      version,
 	}
 	extension := utils.PlatformExt(platform)
 	packageName := fmt.Sprintf("livepeer-%s", service.Name)
