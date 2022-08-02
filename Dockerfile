@@ -5,12 +5,13 @@ WORKDIR	/build
 ADD	go.mod go.sum	./
 RUN	go mod download
 
-ADD Makefile manifest.yaml ./
+ADD	Makefile manifest.yaml ./
 ADD	cmd/downloader/ cmd/downloader/
-RUN make download
+RUN	make download
 
-ADD . .
+ADD	. .
 ARG	GIT_VERSION=unknown
+ENV	GIT_VERSION="${GIT_VERSION}"
 RUN	make livepeer-log livepeer-catalyst-node
 
 FROM	ubuntu:20.04

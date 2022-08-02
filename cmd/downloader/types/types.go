@@ -1,5 +1,17 @@
 package types
 
+type gitRefObject struct {
+	SHA  string `json:"sha"`
+	Type string `json:"type"`
+	URL  string `json:"url"`
+}
+
+type GitRefInfo struct {
+	Object gitRefObject `json:"object"`
+	URL    string       `json:"url"`
+	Ref    string       `json:"ref"`
+}
+
 type TagInformation struct {
 	Name       string `json:"name"`
 	ID         uint   `json:"id"`
