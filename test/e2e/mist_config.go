@@ -2,9 +2,12 @@ package e2e
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 )
+
+const serfPort = "7373"
 
 type account struct {
 	Password string `json:"password"`
@@ -105,6 +108,7 @@ func defaultMistConfig() mistConfig {
 				{Connector: "TSSRT"},
 				{Connector: "WAV"},
 				{Connector: "WebRTC"},
+				{Connector: "livepeer-catalyst-node", RPCAddr: fmt.Sprintf("0.0.0.0:%s", serfPort)},
 			},
 			SessionInputMode:       "14",
 			SessionOutputMode:      "14",
