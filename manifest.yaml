@@ -5,22 +5,26 @@ box:
       strategy:
         download: github
         project: livepeer/livepeer-data
+        commit: 06482656fa108b64bd44f3d9e2976f83b0ef722c
       release: v0.4.19
     - name: api
       strategy:
         download: github
         project: livepeer/studio
+        commit: bb444cf5195568d5abf20fa0952d623bbbd0428e
       release: v0.6.1
     - name: mapic
       strategy:
         download: github
         project: livepeer/stream-tester
+        commit: fced3846303536e45a19b610c34cf09caf0d5ea1
       binary: livepeer-mist-api-connector
       release: v0.12.18
     - name: livepeer
       strategy:
         download: github
         project: livepeer/go-livepeer
+        commit: 0b3c88f814dccca70a23022f4366eb8069955955
       binary: livepeer
       release: v0.5.33
       archivePath: livepeer
@@ -28,18 +32,26 @@ box:
       strategy:
         download: bucket
         project: mistserver
+        commit: 2c0d0b292086b90bbc4406c2be29ce1d8cd6f147
       release: catalyst
       skipGpg: true
+      srcFilenames:
+        darwin-amd64: livepeer-mistserver-darwin-amd64.tar.gz
+        darwin-arm64: livepeer-mistserver-darwin-arm64.tar.gz
+        linux-amd64: livepeer-mistserver-linux-amd64.tar.gz
+        linux-arm64: livepeer-mistserver-linux-arm64.tar.gz
     - name: www
       strategy:
         download: github
         project: livepeer/studio
+        commit: bb444cf5195568d5abf20fa0952d623bbbd0428e
       binary: livepeer-www
       release: v0.6.1
     - name: victoria-metrics
       strategy:
         download: github
         project: VictoriaMetrics/VictoriaMetrics
+        commit: 62ded8cbe84d106bca0b1302f49c3316570ef186
       release: v1.74.0
       archivePath: victoria-metrics-prod
       skipGpg: true
