@@ -334,7 +334,7 @@ func requireProtocolLoad(t *testing.T, c2 *catalystContainer) {
 func runProtocolLoadTest(t *testing.T, prot string, url string, viewers int, timeout int) *results {
 	dir := t.TempDir()
 	fmt.Printf("Testing %s url: %s with %d viewers using tmp dir (%s)\n", prot, url, viewers, dir)
-	cmdMistLoadTest := exec.Command("../../bin/./MistLoadTest", "-o", dir,
+	cmdMistLoadTest := exec.Command("MistLoadTest", "-o", dir,
 		"-n", strconv.Itoa(viewers),
 		"-t", strconv.Itoa(timeout),
 		url)
