@@ -215,6 +215,7 @@ func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error)
 }
 
 func execBalancer(balancerArgs []string) error {
+	glog.Infof("Running MistUtilLoad with %v", balancerArgs)
 	cmd := exec.Command("MistUtilLoad", balancerArgs...)
 
 	cmd.Stdout = os.Stdout
