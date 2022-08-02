@@ -423,6 +423,8 @@ var getClosestNode = queryMistForClosestNode
 
 func redirectHlsHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
 		playbackID, isValid := parsePlaybackID(r.URL.Path)
 		if !isValid {
 			w.WriteHeader(http.StatusNotFound)
