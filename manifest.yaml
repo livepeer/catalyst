@@ -30,7 +30,6 @@ box:
         project: mistserver
       release: catalyst
       skipGpg: true
-#TODO: automate mist build
     - name: www
       strategy:
         download: github

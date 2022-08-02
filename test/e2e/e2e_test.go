@@ -332,9 +332,17 @@ func requireProtocolLoad(t *testing.T, c2 *catalystContainer) {
 
 // Executes MistLoadTest for each protocol specified in tests table in requireProtocolLoad()
 func runProtocolLoadTest(t *testing.T, prot string, url string, viewers int, timeout int) *results {
+
+	tmpDir := t.TempDir()
+	cmd := exec.Command("../copy-mist-binaries.sh", tmpDir)
+	fmt.Printf("Running command and waiting for it to finish...")
+        _, err := cmd.Output()
+	fmt.Printf("Command finished with error: %v \n", err)
+
 	dir := t.TempDir()
 	fmt.Printf("Testing %s url: %s with %d viewers using tmp dir (%s)\n", prot, url, viewers, dir)
-	cmdMistLoadTest := exec.Command("../../bin/./MistLoadTest", "-o", dir,
+//	cmdMistLoadTest := exec.Command("../../bin/MistLoadTest", "-o", dir,
+	cmdMistLoadTest := exec.Command(tmpDir + "/MistLoadTest", "-o", dir,
 		"-n", strconv.Itoa(viewers),
 		"-t", strconv.Itoa(timeout),
 		url)
