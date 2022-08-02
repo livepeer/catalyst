@@ -374,6 +374,8 @@ func parseSerfConfig(config *agent.Config, retryJoin *string, serfTags *string) 
 			if len(kv) == 2 {
 				k, v := kv[0], kv[1]
 				config.Tags[k] = v
+			} else {
+				glog.Fatalf("failed to parse serf tag, --serf-tag=k1=v1,k2=v2 format required: %s", t)
 			}
 		}
 	}
