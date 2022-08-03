@@ -13,6 +13,12 @@ box:
         project: livepeer/studio
         commit: bb444cf5195568d5abf20fa0952d623bbbd0428e
       release: v0.6.1
+    - name: dms-api
+      strategy:
+        download: github
+        project: livepeer/dms-api
+        commit: 87308191051ef64d0ab4e7580dc4acee699b63a7
+      release: v0.0.1
     - name: mapic
       strategy:
         download: github
