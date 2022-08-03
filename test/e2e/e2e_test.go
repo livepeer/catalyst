@@ -111,7 +111,55 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	requireStreamRedirection(t, c1, c2)
 }
 
-func TestMultiNodeCatalyst_BootstrapNode(t *testing.T) {
+func TestStreamInterruption(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping testing in short mode")
+	}
+
+	// given
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	network := createNetwork(ctx, t)
+	defer network.Remove(ctx)
+
+	h1 := randomString("catalyst-")
+	h2 := randomString("catalyst-")
+
+	// when
+	c1 := startCatalyst(ctx, t, h1, network.name, defaultMistConfig())
+	defer c1.Terminate(ctx)
+	c2 := startCatalyst(ctx, t, h2, network.name, mistConfigConnectTo(h1))
+	defer c2.Terminate(ctx)
+
+	// then
+	requireMembersJoined(t, c1, c2)
+
+	// Begin ingesting and verify replication is working at catalyst-two node
+	p1 := startStream(t, c1)
+	requireReplicatedStream(t, c2)
+
+	// Stop and then restart the ingest stream
+	p1.Kill()
+	p2 := startStream(t, c1)
+	defer p2.Kill()
+
+	// Start load test to simulate multiple viewers at catalyst-two node
+	// TODO: This test will succeed until issue #65 (https://github.com/DDVTECH/mistserver/issues/65)
+	//       is resolved. The current goal of this test is to flag cases when #65 reproduces. Once the
+	//       issue is resolved, the expected passing conditions will be updated below.
+	viewers := 5
+	timeout := 30
+	r := runProtocolLoadTest(t, "hls", fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c2.http), viewers, timeout)
+	glog.Infof("Protocol under test: %v, viewers: %v, viewers-passed: %v, score: %v", r.protocol, r.viewers, r.viewersPassed, r.score)
+	if r.score == 0 {
+		glog.Infof("Failed %s test with score %v but ignoring failure", r.protocol, r.score)
+	} else {
+		t.Fatalf("Expected to fail but passed %s test with score: %v", r.protocol, r.score)
+	}
+}
+
+func TestBootstrapNode(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping testing in short mode")
 	}
@@ -278,6 +326,7 @@ func startStream(t *testing.T, c *catalystContainer) *os.Process {
 	ffmpegParams := []string{"-re", "-f", "lavfi", "-i", "testsrc=size=1920x1080:rate=30,format=yuv420p", "-f", "lavfi", "-i", "sine", "-c:v", "libx264", "-b:v", "1000k", "-x264-params", "keyint=60", "-c:a", "aac", "-f", "flv"}
 	ffmpegParams = append(ffmpegParams, fmt.Sprintf("rtmp://localhost:%s/live/stream+foo", c.rtmp))
 	cmd := exec.Command("ffmpeg", ffmpegParams...)
+	glog.Info("Spawning ffmpeg stream to ingest")
 	err := cmd.Start()
 	require.NoError(t, err)
 	return cmd.Process
