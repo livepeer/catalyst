@@ -21,4 +21,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 3c2fc4700afd6d3cc08c6177944fd2e5c66aa8de3bae8a4ba85122ef60becd66
+hmac: 773ce5dbcfe1ad4ccd501d1249bed431cc0c5ad5ba6580c849b73ebbbf8ce9ee
+
+...
