@@ -61,11 +61,22 @@ mistserver:
 	export PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig \
 	export LD_LIBRARY_PATH=~$(buildpath)/compiled/lib \
 	export C_INCLUDE_PATH=~$(buildpath)/compiled/include \
-	&& mkdir -p ./build/mistserver \
-	&& cd ./build/mistserver \
-	&& cmake ../../../mistserver -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} -DNORIST=yes \
+	&& if ! git clone --branch catalyst --depth=1 https://github.com/DDVTECH/mistserver.git $(buildpath)/mistserver && [ -d $(buildpath)/mistserver ] ; then echo "ALready exists" ; fi
+	cd $(buildpath)/mistserver \
+	&& mkdir -p build \
+	&& cd build \
+	&& cmake .. -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} -DNORIST=yes \
 	&& make -j${PROC_COUNT} \
-	&& make install
+	&& make install \
+	&& cp $(buildpath)/compiled/bin/Mist* $(buildpath)/../bin
+
+.PHONY: mistserver-rm
+mistserver-rm:
+	rm -rf $(buildpath)/mbedtls \
+	rm -rf $(buildpath)/srt     \
+	rm -rf $(buildpath)/libsrtp \
+	rm -rf $(buildpath)/mistserver \
+	rm -rf $(buildpath)/../bin/Mist*
 
 .PHONY: go-livepeer
 go-livepeer:
