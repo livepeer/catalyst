@@ -17,9 +17,9 @@ box:
       strategy:
         download: github
         project: livepeer/stream-tester
-        commit: fced3846303536e45a19b610c34cf09caf0d5ea1
+        commit: dd9b42058360c0a2085abe19895cc7b4c1bfe217
       binary: livepeer-mist-api-connector
-      release: v0.12.18
+      release: v0.12.19
     - name: livepeer
       strategy:
         download: github
