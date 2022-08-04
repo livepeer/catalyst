@@ -89,13 +89,14 @@ func DownloadFile(path, url string, skipDownloaded bool) error {
 		glog.Infof("File already downloaded. Skipping!")
 		return nil
 	}
+	url = url + "?cachebust=true"
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
 	}
-	glog.V(9).Infof("Response statusCode=%d", resp.StatusCode)
+	glog.Infof("Response statusCode=%d", resp.StatusCode)
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("HTTP %d while downloading %s", resp.StatusCode, url)
+		return fmt.Errorf("HTTP %d while downloading %q", resp.StatusCode, url)
 	}
 	defer resp.Body.Close()
 	tempPath := fmt.Sprintf("%s.TEMP", path)
