@@ -26,7 +26,6 @@ var Version = "undefined"
 // DownloadService works on downloading services for the box to
 // machine and extracting the required binaries from artifacts.
 func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service *types.Service) error {
-	glog.Infof("Into the DownloadService method")
 	var projectInfo *types.ArtifactInfo
 	platform := flags.Platform
 	architecture := flags.Architecture
@@ -37,7 +36,6 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 	} else {
 		projectInfo = github.GetArtifactInfo(platform, architecture, manifest.Release, service)
 	}
-	glog.Infof("Got some projectInfo:", projectInfo.ArchiveURL)
 	if projectInfo == nil {
 		glog.Fatal("Couldn't get project information!")
 	}
