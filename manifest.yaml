@@ -17,8 +17,8 @@ box:
       strategy:
         download: github
         project: livepeer/dms-api
-        commit: 87308191051ef64d0ab4e7580dc4acee699b63a7
-      release: v0.0.1
+        commit: 2915950e4dfcbc0470b8023fd6bd7f7f860566d6
+      release: v0.0.2
     - name: mapic
       strategy:
         download: github
