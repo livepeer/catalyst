@@ -84,7 +84,7 @@ func IsCleanupFile(name string) bool {
 }
 
 func DownloadFile(path, url string, skipDownloaded bool) error {
-	glog.V(9).Infof("Downloading %s", url)
+	glog.Infof("Downloading %s", url)
 	if skipDownloaded && IsFileExists(path) {
 		glog.Infof("File already downloaded. Skipping!")
 		return nil
