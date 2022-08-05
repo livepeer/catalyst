@@ -11,8 +11,8 @@ box:
       strategy:
         download: github
         project: livepeer/studio
-        commit: bb444cf5195568d5abf20fa0952d623bbbd0428e
-      release: v0.6.1
+        commit: 5d07dbc997498f443560eadb979840138d255073
+      release: v0.7.0
     - name: dms-api
       strategy:
         download: github
@@ -23,9 +23,9 @@ box:
       strategy:
         download: github
         project: livepeer/stream-tester
-        commit: fced3846303536e45a19b610c34cf09caf0d5ea1
+        commit: 31300bfcbae7f20305e45222303067e694ae2268
       binary: livepeer-mist-api-connector
-      release: v0.12.18
+      release: v0.12.19
     - name: livepeer
       strategy:
         download: github
@@ -38,7 +38,7 @@ box:
       strategy:
         download: bucket
         project: mistserver
-        commit: 2c0d0b292086b90bbc4406c2be29ce1d8cd6f147
+        commit: eb84bc4ba743885734c60b312ca97ed07311d86f
       release: catalyst
       skipGpg: true
       srcFilenames:
@@ -50,21 +50,21 @@ box:
       strategy:
         download: github
         project: livepeer/studio
-        commit: bb444cf5195568d5abf20fa0952d623bbbd0428e
+        commit: 5d07dbc997498f443560eadb979840138d255073
       binary: livepeer-www
-      release: v0.6.1
+      release: v0.7.0
     - name: victoria-metrics
       strategy:
         download: github
         project: VictoriaMetrics/VictoriaMetrics
-        commit: 62ded8cbe84d106bca0b1302f49c3316570ef186
-      release: v1.74.0
+        commit: 1d0030ed5ef0c75e2652371aab29a5cc453e5518
+      release: v1.79.1
       archivePath: victoria-metrics-prod
       skipGpg: true
       skipChecksum: true
       srcFilenames:
-        darwin-amd64: victoria-metrics-darwin-amd64-v1.74.0.tar.gz
-        darwin-arm64: victoria-metrics-darwin-arm64-v1.74.0.tar.gz
-        linux-amd64: victoria-metrics-amd64-v1.74.0.tar.gz
-        linux-arm64: victoria-metrics-arm64-v1.74.0.tar.gz
+        darwin-amd64: victoria-metrics-darwin-amd64-v1.79.1.tar.gz
+        darwin-arm64: victoria-metrics-darwin-arm64-v1.79.1.tar.gz
+        linux-amd64: victoria-metrics-linux-amd64-v1.79.1.tar.gz
+        linux-arm64: victoria-metrics-linux-arm64-v1.79.1.tar.gz
       outputPath: livepeer-victoria-metrics

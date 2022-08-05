@@ -5,6 +5,7 @@ import (
 
 	"github.com/livepeer/catalyst/cmd/downloader/bucket"
 	"github.com/livepeer/catalyst/cmd/downloader/cli"
+	"github.com/livepeer/catalyst/cmd/downloader/constants"
 	"github.com/livepeer/catalyst/cmd/downloader/github"
 	"github.com/livepeer/catalyst/cmd/downloader/types"
 	"github.com/livepeer/catalyst/cmd/downloader/utils"
@@ -45,6 +46,7 @@ func Run(buildFlags types.BuildFlags) {
 		if service.Strategy.Download == "bucket" {
 			projectInfo = bucket.GetArtifactInfo(platform, architecture, manifest.Release, service)
 		} else if service.Strategy.Download == "github" {
+			service.Release = constants.LatestTagReleaseName
 			projectInfo = github.GetArtifactInfo(platform, architecture, manifest.Release, service)
 			service.Release = projectInfo.Version
 		}

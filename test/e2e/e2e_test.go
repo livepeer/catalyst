@@ -2,14 +2,17 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -104,10 +107,59 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	defer p.Kill()
 
 	requireReplicatedStream(t, c2)
+	requireProtocolLoad(t, c2)
 	requireStreamRedirection(t, c1, c2)
 }
 
-func TestMultiNodeCatalyst_BootstrapNode(t *testing.T) {
+func TestStreamInterruption(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping testing in short mode")
+	}
+
+	// given
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	network := createNetwork(ctx, t)
+	defer network.Remove(ctx)
+
+	h1 := randomString("catalyst-")
+	h2 := randomString("catalyst-")
+
+	// when
+	c1 := startCatalyst(ctx, t, h1, network.name, defaultMistConfig())
+	defer c1.Terminate(ctx)
+	c2 := startCatalyst(ctx, t, h2, network.name, mistConfigConnectTo(h1))
+	defer c2.Terminate(ctx)
+
+	// then
+	requireMembersJoined(t, c1, c2)
+
+	// Begin ingesting and verify replication is working at catalyst-two node
+	p1 := startStream(t, c1)
+	requireReplicatedStream(t, c2)
+
+	// Stop and then restart the ingest stream
+	p1.Kill()
+	p2 := startStream(t, c1)
+	defer p2.Kill()
+
+	// Start load test to simulate multiple viewers at catalyst-two node
+	// TODO: This test will succeed until issue #65 (https://github.com/DDVTECH/mistserver/issues/65)
+	//       is resolved. The current goal of this test is to flag cases when #65 reproduces. Once the
+	//       issue is resolved, the expected passing conditions will be updated below.
+	viewers := 5
+	timeout := 30
+	r := runProtocolLoadTest(t, "hls", fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c2.http), viewers, timeout)
+	glog.Infof("Protocol under test: %v, viewers: %v, viewers-passed: %v, score: %v", r.protocol, r.viewers, r.viewersPassed, r.score)
+	if r.score == 0 {
+		glog.Infof("Failed %s test with score %v but ignoring failure", r.protocol, r.score)
+	} else {
+		t.Fatalf("Expected to fail but passed %s test with score: %v", r.protocol, r.score)
+	}
+}
+
+func TestBootstrapNode(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping testing in short mode")
 	}
@@ -274,6 +326,7 @@ func startStream(t *testing.T, c *catalystContainer) *os.Process {
 	ffmpegParams := []string{"-re", "-f", "lavfi", "-i", "testsrc=size=1920x1080:rate=30,format=yuv420p", "-f", "lavfi", "-i", "sine", "-c:v", "libx264", "-b:v", "1000k", "-x264-params", "keyint=60", "-c:a", "aac", "-f", "flv"}
 	ffmpegParams = append(ffmpegParams, fmt.Sprintf("rtmp://localhost:%s/live/stream+foo", c.rtmp))
 	cmd := exec.Command("ffmpeg", ffmpegParams...)
+	glog.Info("Spawning ffmpeg stream to ingest")
 	err := cmd.Start()
 	require.NoError(t, err)
 	return cmd.Process
@@ -293,9 +346,11 @@ func requireReplicatedStream(t *testing.T, c *catalystContainer) {
 		content := string(body)
 		for _, expected := range []string{"RESOLUTION=1920x1080", "FRAME-RATE=30", "index.m3u8"} {
 			if !strings.Contains(content, expected) {
+				glog.Info("Failed to get HLS manifest")
 				return false
 			}
 		}
+		glog.Info("Got HLS manifest!")
 		return true
 	}
 	require.Eventually(t, correctStream, 5*time.Minute, time.Second)
@@ -348,4 +403,100 @@ func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystC
 		return false
 	}
 	require.Eventually(redirect, 5*time.Minute, time.Second)
+}
+
+type results struct {
+	protocol      string
+	viewers       float64
+	viewersPassed float64
+	score         float64
+}
+
+// This test will spawn multiple viewers at node catalyst-two and attempt streaming.
+// Any hiccups in playback or failure to connect will be captured and reported via MistLoadTest.
+func requireProtocolLoad(t *testing.T, c2 *catalystContainer) {
+	tests := map[string]struct {
+		url     string
+		viewers int
+		timeout int
+		score   float64
+	}{
+		"hls": {url: fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c2.http), viewers: 5, timeout: 30, score: 0.8},
+	}
+
+	// Test each protocol defined in the tests map above
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			r := runProtocolLoadTest(t, name, tc.url, tc.viewers, tc.timeout)
+			glog.Infof("Protocol under test: %v, viewers: %v, viewers-passed: %v, score: %v", r.protocol, r.viewers, r.viewersPassed, r.score)
+			if r.score < tc.score {
+				t.Fatalf("Failed %s test with score: %v", r.protocol, r.score)
+			}
+
+		})
+	}
+}
+
+// Executes MistLoadTest for each protocol specified in tests table in requireProtocolLoad()
+func runProtocolLoadTest(t *testing.T, prot string, url string, viewers int, timeout int) *results {
+
+	//TODO: run Mist tester binaries in a dockerized container instead of this method to run on the host
+	tmpDir := t.TempDir()
+	cmd := exec.Command("../copy-mist-binaries.sh", tmpDir)
+	fmt.Printf("Running command and waiting for it to finish...")
+	_, err := cmd.Output()
+	fmt.Printf("Command finished with error: %v \n", err)
+
+	dir := t.TempDir()
+	fmt.Printf("Testing %s url: %s with %d viewers using tmp dir (%s)\n", prot, url, viewers, dir)
+	cmdMistLoadTest := exec.Command(tmpDir+"/MistLoadTest", "-o", dir,
+		"-n", strconv.Itoa(viewers),
+		"-t", strconv.Itoa(timeout),
+		url)
+	out, err := cmdMistLoadTest.Output()
+	require.NoError(t, err)
+	if err != nil {
+		glog.Fatalf("Failed to start MistLoadTest: %s", err)
+	}
+	glog.Infof("MistLoadTest stdout: %s", out)
+
+	defer cmdMistLoadTest.Process.Kill()
+
+	return parseProtocolResults(t, dir, prot)
+}
+
+// Parses MistLoadTest's json output files to determine how many viewers
+// successfully connected and streamed from the specified catalyst node
+func parseProtocolResults(t *testing.T, testdir string, prot string) *results {
+	matches, err := filepath.Glob(testdir + "/" + "*" + strings.ToUpper(prot) + "*json")
+	if err != nil {
+		t.Fatalf("Glob failed: %v", err)
+	}
+
+	if len(matches) == 0 || len(matches) > 1 {
+		t.Fatalf("Expected only one results file but got %v files: %v", len(matches), matches)
+	}
+
+	content, err := ioutil.ReadFile(matches[0])
+	if err != nil {
+		t.Fatalf("Error while opening results file: %s", err)
+	}
+	glog.Infof("Parsing file: %s", matches[0])
+
+	var payload map[string]interface{}
+	err = json.Unmarshal(content, &payload)
+	if err != nil {
+		t.Fatalf("Error during json.Unmarshal(): %s", err)
+	}
+
+	vtotal := float64(payload["viewers"].(float64))
+	vpass := float64(payload["viewers_passed"].(float64))
+	r := results{
+		protocol:      prot,
+		viewers:       vtotal,
+		viewersPassed: vpass,
+		score:         vpass / vtotal,
+	}
+
+	return &r
 }

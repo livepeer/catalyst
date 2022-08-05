@@ -215,6 +215,7 @@ func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error)
 }
 
 func execBalancer(balancerArgs []string) error {
+	glog.Infof("Running MistUtilLoad with %v", balancerArgs)
 	cmd := exec.Command("MistUtilLoad", balancerArgs...)
 
 	cmd.Stdout = os.Stdout
@@ -422,13 +423,18 @@ var getClosestNode = queryMistForClosestNode
 
 func redirectHlsHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
 		playbackID, isValid := parsePlaybackID(r.URL.Path)
 		if !isValid {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		nodeAddr, err := getClosestNode(playbackID)
+		lat := r.Header.Get("X-Latitude")
+		lon := r.Header.Get("X-Longitude")
+
+		nodeAddr, err := getClosestNode(playbackID, lat, lon)
 		if err != nil {
 			glog.Errorf("error finding origin server playbackID=%s error=%s", playbackID, err)
 			w.WriteHeader(http.StatusNotFound)
@@ -456,9 +462,20 @@ func protocol(r *http.Request) string {
 	return "http"
 }
 
-func queryMistForClosestNode(playbackID string) (string, error) {
+func queryMistForClosestNode(playbackID, lat, lon string) (string, error) {
 	url := fmt.Sprintf("http://localhost:%s/%s", mistUtilLoadPort, playbackID)
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+	if lat != "" && lon != "" {
+		req.Header.Set("X-Latitude", lat)
+		req.Header.Set("X-Longitude", lon)
+	} else {
+		glog.Warningf("Incoming request missing X-Latitude/X-Longitude, response will not be geolocated")
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
 	}

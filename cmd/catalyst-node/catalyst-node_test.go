@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -15,7 +16,7 @@ const (
 
 func TestRedirectHandler_Correct(t *testing.T) {
 	defaultFunc := getClosestNode
-	getClosestNode = func(string) (string, error) { return closestNodeAddr, nil }
+	getClosestNode = func(string, string, string) (string, error) { return closestNodeAddr, nil }
 	defer func() { getClosestNode = defaultFunc }()
 
 	requireReq(t, fmt.Sprintf("/hls/%s/index.m3u8", playbackID)).

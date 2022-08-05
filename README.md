@@ -44,7 +44,7 @@ box to bootup. The fields (with some description) are shown below:
 
 ```yaml
 # Manifest versioning, should be a fixed value
-version: 2.0
+version: 3.0
 
 # Default release/tag for projects. Keeping it latest
 # will have the script search for most recent tag using
@@ -79,6 +79,8 @@ box:
           download: github
           # `project` => github project/repo or bucket key for artifacts
           project: livepeer/project-name
+          # `commit` => repository commit SHA (useful for bucket strategy)
+          commit: 0000000000000000000000000000000000000000
 
       # key-value for mapping platform to custom artifact on github release page
       # this bypasses default name generation pattern entirely
