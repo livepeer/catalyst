@@ -17,8 +17,8 @@ box:
       strategy:
         download: github
         project: livepeer/catalyst-api
-        commit: 5d1a1cafef02041729bcd070bd62f9b678e24a11
-      release: v0.0.5
+        commit: 3ca34868b51140d6351a413d1ef04f9aacbf1d1a
+      release: v0.0.6
     - name: mapic
       strategy:
         download: github
