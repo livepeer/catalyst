@@ -13,12 +13,12 @@ box:
         project: livepeer/studio
         commit: 5d07dbc997498f443560eadb979840138d255073
       release: v0.7.0
-    - name: dms-api
+    - name: catalyst-api
       strategy:
         download: github
-        project: livepeer/dms-api
-        commit: 1e4cdb12c97a606d67bc4ad096b5073186c2558b
-      release: v0.0.3
+        project: livepeer/catalyst-api
+        commit: e052bfba99dd9e9608b6c88c0cc0b6b4808ac855
+      release: v0.0.4
     - name: mapic
       strategy:
         download: github
