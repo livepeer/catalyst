@@ -57,8 +57,8 @@ box:
       skipGpg: true
       skipChecksum: true
       srcFilenames:
-        darwin-amd64: victoria-metrics-darwin-amd64-v1.74.0.tar.gz
-        darwin-arm64: victoria-metrics-darwin-arm64-v1.74.0.tar.gz
-        linux-amd64: victoria-metrics-amd64-v1.74.0.tar.gz
-        linux-arm64: victoria-metrics-arm64-v1.74.0.tar.gz
+        darwin-amd64: victoria-metrics-darwin-amd64-v1.79.1.tar.gz
+        darwin-arm64: victoria-metrics-darwin-arm64-v1.79.1.tar.gz
+        linux-amd64: victoria-metrics-linux-amd64-v1.79.1.tar.gz
+        linux-arm64: victoria-metrics-linux-arm64-v1.79.1.tar.gz
       outputPath: livepeer-victoria-metrics
