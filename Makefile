@@ -142,6 +142,7 @@ catalyst:
 .PHONY: clean
 clean:
 	git clean -ffdx && mkdir -p bin build
+	rm $(HOME)/.config/livepeer/mistserver.dev.conf
 
 .PHONY: docker-compose
 docker-compose:
