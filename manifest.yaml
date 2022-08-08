@@ -11,8 +11,14 @@ box:
       strategy:
         download: github
         project: livepeer/studio
-        commit: bb444cf5195568d5abf20fa0952d623bbbd0428e
-      release: v0.6.1
+        commit: 5d07dbc997498f443560eadb979840138d255073
+      release: v0.7.0
+    - name: catalyst-api
+      strategy:
+        download: github
+        project: livepeer/catalyst-api
+        commit: 3ca34868b51140d6351a413d1ef04f9aacbf1d1a
+      release: v0.0.6
     - name: mapic
       strategy:
         download: github
