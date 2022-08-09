@@ -57,8 +57,8 @@ box:
       strategy:
         download: github
         project: VictoriaMetrics/VictoriaMetrics
-        commit: 1d0030ed5ef0c75e2652371aab29a5cc453e5518
-      release: v1.79.1
+        commit: 41b902cf16af5551f69b1077f7a2069248f08f9e
+      release: v1.80.0
       archivePath: victoria-metrics-prod
       skipGpg: true
       skipChecksum: true
