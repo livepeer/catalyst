@@ -145,18 +145,7 @@ func TestStreamInterruption(t *testing.T) {
 	defer p2.Kill()
 
 	// Start load test to simulate multiple viewers at catalyst-two node
-	// TODO: This test will succeed until issue #65 (https://github.com/DDVTECH/mistserver/issues/65)
-	//       is resolved. The current goal of this test is to flag cases when #65 reproduces. Once the
-	//       issue is resolved, the expected passing conditions will be updated below.
-	viewers := 5
-	timeout := 30
-	r := runProtocolLoadTest(t, "hls", fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c2.http), viewers, timeout)
-	glog.Infof("Protocol under test: %v, viewers: %v, viewers-passed: %v, score: %v", r.protocol, r.viewers, r.viewersPassed, r.score)
-	if r.score == 0 {
-		glog.Infof("Failed %s test with score %v but ignoring failure", r.protocol, r.score)
-	} else {
-		t.Fatalf("Expected to fail but passed %s test with score: %v", r.protocol, r.score)
-	}
+	requireProtocolLoad(t, c2)
 }
 
 func TestBootstrapNode(t *testing.T) {
@@ -421,7 +410,7 @@ func requireProtocolLoad(t *testing.T, c2 *catalystContainer) {
 		timeout int
 		score   float64
 	}{
-		"hls": {url: fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c2.http), viewers: 5, timeout: 30, score: 0.8},
+		"hls": {url: fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c2.http), viewers: 5, timeout: 30, score: 0.95},
 	}
 
 	// Test each protocol defined in the tests map above
