@@ -40,6 +40,9 @@ func Run(buildFlags types.BuildFlags) {
 	architecture := cliFlags.Architecture
 
 	for _, service := range manifest.Box {
+		if service.Skip || service.SkipManifestUpdate {
+			continue
+		}
 		if service.Strategy.Download == "" {
 			service.Strategy.Download = "github"
 		}

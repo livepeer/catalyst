@@ -68,3 +68,4 @@ box:
         linux-amd64: victoria-metrics-linux-amd64-v1.79.1.tar.gz
         linux-arm64: victoria-metrics-linux-arm64-v1.79.1.tar.gz
       outputPath: livepeer-victoria-metrics
+      skipManifestUpdate: true

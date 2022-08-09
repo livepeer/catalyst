@@ -196,7 +196,7 @@ func Run(buildFlags types.BuildFlags) {
 		}
 		waitGroup.Add(1)
 		go func(element *types.Service) {
-			glog.V(8).Infof("Triggering async task for %s", element.Name)
+			glog.V(8).Infof("triggering async task for %s", element.Name)
 			err := DownloadService(cliFlags, manifest, element)
 			if err != nil {
 				glog.Fatalf("failed to download %s: %s", element.Name, err)

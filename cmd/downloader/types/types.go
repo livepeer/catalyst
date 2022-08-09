@@ -62,6 +62,8 @@ type Service struct {
 	SkipChecksum bool              `yaml:"skipChecksum,omitempty"`
 	SrcFilenames map[string]string `yaml:"srcFilenames,omitempty"`
 	OutputPath   string            `yaml:"outputPath,omitempty"`
+
+	SkipManifestUpdate bool `yaml:"skipManifestUpdate,omitempty"`
 }
 
 type BoxManifest struct {
