@@ -17,8 +17,8 @@ box:
       strategy:
         download: github
         project: livepeer/catalyst-api
-        commit: 3ca34868b51140d6351a413d1ef04f9aacbf1d1a
-      release: v0.0.6
+        commit: c6023f73e29ddb00652a744ba8ef60a721c7d7b3
+      release: v0.0.7
     - name: mapic
       strategy:
         download: github
@@ -38,7 +38,7 @@ box:
       strategy:
         download: bucket
         project: mistserver
-        commit: 73640afc306234849f3055f690d38542f32258fa
+        commit: 3b2cb3abaf2c107649133608cb07806e4eecdba2
       release: catalyst
       skipGpg: true
       srcFilenames:
