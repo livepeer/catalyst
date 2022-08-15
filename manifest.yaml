@@ -11,14 +11,14 @@ box:
       strategy:
         download: github
         project: livepeer/studio
-        commit: 078e50712330f23a400399063a38134439ef971a
-      release: v0.7.1
+        commit: f6e7530d125fb93e00be07d9554550212f29c3aa
+      release: v0.7.2
     - name: catalyst-api
       strategy:
         download: github
         project: livepeer/catalyst-api
-        commit: a343a5f3c9899721e043d09362c3a416a42b7b06
-      release: v0.0.8
+        commit: aec5ca9a482b6e0367024f890126a55bd73eab8f
+      release: v0.0.9
     - name: mapic
       strategy:
         download: github
@@ -38,7 +38,7 @@ box:
       strategy:
         download: bucket
         project: mistserver
-        commit: 3b2cb3abaf2c107649133608cb07806e4eecdba2
+        commit: 52e1cb9c35555ca67ab215d3f80919b344fb0c32
       release: catalyst
       skipGpg: true
       srcFilenames:
@@ -50,9 +50,9 @@ box:
       strategy:
         download: github
         project: livepeer/studio
-        commit: 078e50712330f23a400399063a38134439ef971a
+        commit: f6e7530d125fb93e00be07d9554550212f29c3aa
       binary: livepeer-www
-      release: v0.7.1
+      release: v0.7.2
     - name: victoria-metrics
       strategy:
         download: github
