@@ -57,6 +57,40 @@ func main() {
 		})
 		os.Exit(0)
 	}
+
+	if procname == "livepeer-vmagent" && dashJ {
+		printJSONInfo(mistconnector.MistConfig{
+			Name:         "Livepeer Victoria Metrics Agent",
+			FriendlyName: "Livepeer-in-a-Box packaged Victoria Metrics Agent (exporter)",
+			Description:  "Livepeer-in-a-Box packaged Victoria Metrics. Useful for remote writing metrics.",
+			Version:      "0.0.1",
+			Required: map[string]mistconnector.MistOptional{
+				"promscrape.config": {
+					Name:    "promscrape.config",
+					Type:    "str",
+					Option:  "-promscrape.config",
+					Help:    "Location of promscape.config file",
+					Default: "./config/scrape_config.yaml",
+				},
+				"remoteWrite.url": {
+					Name:    "remoteWrite.url",
+					Type:    "str",
+					Option:  "-remoteWrite.url",
+					Help:    "array of urls of the Victoria Metrics remote endpoint",
+					Default: "http://localhost/",
+				},
+				"remoteWrite.label": {
+					Name:    "remoteWrite.label",
+					Type:    "str",
+					Option:  "-remoteWrite.label",
+					Help:    "array of labels to add to metrics example label=value,label2=value2",
+					Default: "region=dev",
+				},
+			},
+		})
+		os.Exit(0)
+	}
+
 	mypid := os.Getpid()
 	cmd := exec.Command(os.Args[1], rest...)
 	cmd.Stdin = os.Stdin

@@ -1,11 +1,28 @@
 global:
   scrape_interval: 5s
 scrape_configs:
-  - job_name: livepeer
+  - job_name: mist
     static_configs:
       - targets:
           - localhost:4242
-          - localhost:7935
+
+  - job_name: orchestrator
+    static_configs:
+      - targets:
           - localhost:7936
+
+  - job_name: broacaster
+    static_configs:
+      - targets:
+          - localhost:7935
+
+  - job_name: analyzer
+    static_configs:
+      - targets:
           - localhost:8008
+          - localhost:3004
+
+  - job_name: api-connector
+    static_configs:
+      - targets:
           - localhost:3004
