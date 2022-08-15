@@ -74,7 +74,7 @@ box:
         download: github
         project: VictoriaMetrics/VictoriaMetrics
         commit: c3f84810116f096e47100c57af88228a14433b91
-      release: v1.80.1
+      release: v1.80.0
       archivePath: vmagent-prod
       skipGpg: true
       skipChecksum: true
