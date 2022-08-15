@@ -11,7 +11,7 @@ scrape_configs:
       - targets:
           - localhost:7936
 
-  - job_name: broacaster
+  - job_name: broadcaster
     static_configs:
       - targets:
           - localhost:7935
