@@ -69,3 +69,19 @@ box:
         linux-arm64: victoria-metrics-linux-arm64-v1.79.1.tar.gz
       outputPath: livepeer-victoria-metrics
       skipManifestUpdate: true
+    - name: vmagent
+      strategy:
+        download: github
+        project: VictoriaMetrics/VictoriaMetrics
+        commit: c3f84810116f096e47100c57af88228a14433b91
+      release: v1.80.0
+      archivePath: vmagent-prod
+      skipGpg: true
+      skipChecksum: true
+      srcFilenames:
+        darwin-amd64: vmutils-darwin-amd64-v1.80.0.tar.gz
+        darwin-arm64: vmutils-darwin-arm64-v1.80.0.tar.gz
+        linux-amd64: vmutils-linux-amd64-v1.80.0.tar.gz
+        linux-arm64: vmutils-linux-arm64-v1.80.0.tar.gz
+      outputPath: livepeer-vmagent
+      skipManifestUpdate: true
