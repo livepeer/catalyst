@@ -11,8 +11,6 @@ import (
 // VerifyGPGSignature raises an error if provided `.sig` file is not
 // valid GPG signature for the given file.
 func VerifyGPGSignature(fileName, signatureFileName string) error {
-	glog.Infof("Verifying GPG signature for file=%s", fileName)
-
 	// Generate keyring for the key fingerprint A2F9039A8603C44C21414432A2224D4537874DB2
 	key, err := crypto.NewKeyFromArmored(constants.PGPPublicKey)
 	if err != nil {
@@ -24,12 +22,12 @@ func VerifyGPGSignature(fileName, signatureFileName string) error {
 		glog.Error(err)
 		return err
 	}
-	glog.Info("GPG keyring initialised. Proceeding to load signature now!")
+	glog.V(7).Info("GPG keyring initialised. Proceeding to load signature now!")
 
 	// Read GPG binary signature file
 	reader, err := ioutil.ReadFile(signatureFileName)
 	signature := crypto.NewPGPSignature(reader)
-	glog.Info("GPG signature read success!")
+	glog.V(7).Info("GPG signature read success!")
 
 	// Load signed file to memory as a binary message
 	data, err := ioutil.ReadFile(fileName)

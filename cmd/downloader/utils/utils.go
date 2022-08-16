@@ -15,7 +15,7 @@ import (
 )
 
 func IsSupportedPlatformArch(platform, arch string) bool {
-	glog.Infof("Checking if we support platform=%q and arch=%q", platform, arch)
+	glog.Infof("checking if we support platform=%q and arch=%q", platform, arch)
 	switch platform {
 	case "linux",
 		"darwin":
@@ -34,7 +34,7 @@ func IsSupportedPlatformArch(platform, arch string) bool {
 func ParseYamlManifest(manifestPath string, isURL bool) (*types.BoxManifest, error) {
 	var manifestConfig types.BoxManifest
 	var file []byte
-	glog.Infof("Reading manifest file=%q", manifestPath)
+	glog.Infof("reading manifest file=%q", manifestPath)
 	glog.V(9).Infof("manifestPath=%s isURL=%t", manifestPath, isURL)
 	if !isURL {
 		file, _ = ioutil.ReadFile(manifestPath)
@@ -60,7 +60,7 @@ func ParseYamlManifest(manifestPath string, isURL bool) (*types.BoxManifest, err
 }
 
 func IsFileExists(path string) bool {
-	glog.V(6).Infof("Checking if file exists at path=%q", path)
+	glog.V(6).Infof("checking if file exists at path=%q", path)
 	info, err := os.Stat(path)
 	return err == nil && info.Size() > 0
 }
@@ -70,7 +70,7 @@ func CleanBranchName(branch string) string {
 }
 
 func PlatformExt(platform string) string {
-	glog.Infof("Fetching archive extension for %q systems.", platform)
+	glog.V(7).Infof("fetching archive extension for %q systems.", platform)
 	platformExtMap := map[string]string{
 		"linux":   constants.TarFileExtension,
 		"darwin":  constants.TarFileExtension,

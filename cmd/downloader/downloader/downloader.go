@@ -37,9 +37,10 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 		projectInfo = github.GetArtifactInfo(platform, architecture, manifest.Release, service)
 	}
 	if projectInfo == nil {
-		glog.Fatal("Couldn't get project information!")
+		glog.Fatal("couldn't get project information!")
 	}
-	glog.Infof("Will download %s to %q", projectInfo.Name, downloadPath)
+	glog.Infof("will download %s to %q", projectInfo.Name, downloadPath)
+	glog.V(5).Infof("name=%s release=%s commit=%s", projectInfo.Name, service.Release, service.Strategy.Commit)
 
 	// Download archive
 	archivePath := filepath.Join(downloadPath, projectInfo.ArchiveFileName)
@@ -50,7 +51,7 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 
 	// Download signature
 	if !service.SkipGPG {
-		glog.Infof("Doing GPG verification for service=%s", service.Name)
+		glog.V(3).Infof("verifying GPG signature for service=%s archive=%s file=%s", service.Name, archivePath, projectInfo.SignatureFileName)
 		signaturePath := filepath.Join(downloadPath, projectInfo.SignatureFileName)
 		err = utils.DownloadFile(signaturePath, projectInfo.SignatureURL, flags.SkipDownloaded)
 		if err != nil {
@@ -64,7 +65,7 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 
 	// Download checksum
 	if !service.SkipChecksum {
-		glog.Infof("Doing SHA checksum verification for service=%s", service.Name)
+		glog.V(3).Infof("verifying SHA checksum for service=%s file=%s", service.Name, projectInfo.ChecksumFileName)
 		checksumPath := filepath.Join(downloadPath, projectInfo.ChecksumFileName)
 		err = utils.DownloadFile(checksumPath, projectInfo.ChecksumURL, flags.SkipDownloaded)
 		if err != nil {
@@ -76,15 +77,15 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 		}
 	}
 
-	glog.Infof("Downloaded %s. Getting ready for extraction!", projectInfo.ArchiveFileName)
+	glog.Infof("downloaded %s. Getting ready for extraction!", projectInfo.ArchiveFileName)
 	if projectInfo.Platform == "windows" {
-		glog.Info("Extracting zip archive!")
+		glog.V(7).Info("extracting zip archive!")
 		err = ExtractZipArchive(archivePath, downloadPath, service)
 		if err != nil {
 			return err
 		}
 	} else {
-		glog.Info("Extracting tarball archive!")
+		glog.V(7).Infof("extracting tarball archive!")
 		err = ExtractTarGzipArchive(archivePath, downloadPath, service)
 		if err != nil {
 			return err
@@ -113,14 +114,14 @@ func ExtractZipArchive(archiveFile, extractPath string, service *types.Service) 
 			if outputPath == "" {
 				outputPath = filepath.Join(extractPath, file.Name)
 			}
-			glog.Infof("Extracting to %q", outputPath)
+			glog.V(9).Infof("extracting to %q", outputPath)
 			outfile, err := os.Create(outputPath)
 			if err != nil {
 				return err
 			}
 			reader, _ := file.Open()
 			if _, err := io.Copy(outfile, reader); err != nil {
-				glog.Error("Failed to create file")
+				glog.Error("failed to create file")
 			}
 			outfile.Chmod(fs.FileMode(file.Mode()))
 			outfile.Close()
@@ -158,7 +159,7 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service *types.Servi
 			if output == "" {
 				output = filepath.Join(extractPath, header.Name)
 			}
-			glog.Infof("Extracting to %q", output)
+			glog.V(9).Infof("extracting to %q", output)
 			outfile, err := os.Create(output)
 			if err != nil {
 				return err
@@ -218,7 +219,7 @@ func Run(buildFlags types.BuildFlags) {
 	for _, file := range files {
 		if utils.IsCleanupFile(file.Name()) {
 			fullpath := filepath.Join(cliFlags.DownloadPath, file.Name())
-			glog.V(5).Infof("Cleaning up %s", fullpath)
+			glog.V(9).Infof("Cleaning up %s", fullpath)
 			err = os.Remove(fullpath)
 			if err != nil {
 				glog.Fatal(err)
