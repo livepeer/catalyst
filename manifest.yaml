@@ -17,8 +17,8 @@ box:
       strategy:
         download: github
         project: livepeer/catalyst-api
-        commit: aec5ca9a482b6e0367024f890126a55bd73eab8f
-      release: v0.0.9
+        commit: 72f19b311e142b783d2f3eeed3e5ded9aacdb6e8
+      release: v0.0.10
     - name: mapic
       strategy:
         download: github
@@ -30,15 +30,15 @@ box:
       strategy:
         download: github
         project: livepeer/go-livepeer
-        commit: 0b3c88f814dccca70a23022f4366eb8069955955
+        commit: 0602f81091ba4df17c26b45f57ff1c153ea27d96
       binary: livepeer
-      release: v0.5.33
+      release: v0.5.34
       archivePath: livepeer
     - name: mistserver
       strategy:
         download: bucket
         project: mistserver
-        commit: 2c3331192168d1c68863aef7320b60cd920d8baa
+        commit: 5f695e47bfa8f42dce7bd25c6d78852cc4f300e9
       release: catalyst
       skipGpg: true
       srcFilenames:
