@@ -26,6 +26,13 @@ box:
         commit: 31300bfcbae7f20305e45222303067e694ae2268
       binary: livepeer-mist-api-connector
       release: v0.12.19
+    - name: catalyst-uploader
+      strategy:
+        download: github
+        project: livepeer/catalyst-uploader
+        commit: 4252847669ebbec888a8a28bed1b82e80176ae23
+      binary: livepeer-catalyst-uploader
+      release: v0.0.5
     - name: livepeer
       strategy:
         download: github
@@ -38,7 +45,7 @@ box:
       strategy:
         download: bucket
         project: mistserver
-        commit: 3b2cb3abaf2c107649133608cb07806e4eecdba2
+        commit: 5f695e47bfa8f42dce7bd25c6d78852cc4f300e9
       release: catalyst
       skipGpg: true
       srcFilenames:
