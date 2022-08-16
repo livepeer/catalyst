@@ -13,7 +13,7 @@ steps:
       - go mod download
       - export CI_CATALYST_TEST_IMAGE="${DRONE_REPO}:${DRONE_BUILD_NUMBER}"
       - docker build --tag "$CI_CATALYST_TEST_IMAGE" --build-arg GIT_VERSION="$DRONE_COMMIT_SHA" .
-      - 'parallel go test --logtostderr=true -v ./test/e2e/* --image "$CI_CATALYST_TEST_IMAGE" --network "catalyst-test-${DRONE_BUILD_NUMBER}-0{}" ::: $(seq 0 2)'
+      - 'parallel go test ./test/e2e/* --logtostderr=true -v --image "$CI_CATALYST_TEST_IMAGE" --network "catalyst-test-${DRONE_BUILD_NUMBER}-0{}" ::: $(seq 0 2)'
 
 trigger:
   event:
@@ -21,6 +21,6 @@ trigger:
 
 ---
 kind: signature
-hmac: 773ce5dbcfe1ad4ccd501d1249bed431cc0c5ad5ba6580c849b73ebbbf8ce9ee
+hmac: 4aec5010241788bb29285134637d5590d9b1199ce5253c36ab6a428ceed9081f
 
 ...
