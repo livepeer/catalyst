@@ -30,9 +30,9 @@ box:
       strategy:
         download: github
         project: livepeer/catalyst-uploader
-        commit: 1fa7c2075f080dd6b5e30a000e58d21ce5cbb776
+        commit: de92fc87aefe91f134ac465a93608d92431abddf
       binary: livepeer-catalyst-uploader
-      release: v0.0.7
+      release: v0.0.9
     - name: livepeer
       strategy:
         download: github
@@ -45,7 +45,7 @@ box:
       strategy:
         download: bucket
         project: mistserver
-        commit: 5f695e47bfa8f42dce7bd25c6d78852cc4f300e9
+        commit: 5d1b02f3ce2957b462e0fa5b0b203cd896eacd3f
       release: catalyst
       skipGpg: true
       srcFilenames:
