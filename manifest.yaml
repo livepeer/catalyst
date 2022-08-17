@@ -30,9 +30,9 @@ box:
       strategy:
         download: github
         project: livepeer/catalyst-uploader
-        commit: de92fc87aefe91f134ac465a93608d92431abddf
+        commit: 6eef492c7cb703e37bbe8f875350a2de75bb4503
       binary: livepeer-catalyst-uploader
-      release: v0.0.9
+      release: v0.1.1
     - name: livepeer
       strategy:
         download: github
