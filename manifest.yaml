@@ -26,6 +26,13 @@ box:
         commit: 31300bfcbae7f20305e45222303067e694ae2268
       binary: livepeer-mist-api-connector
       release: v0.12.19
+    - name: catalyst-uploader
+      strategy:
+        download: github
+        project: livepeer/catalyst-uploader
+        commit: 6eef492c7cb703e37bbe8f875350a2de75bb4503
+      binary: livepeer-catalyst-uploader
+      release: v0.1.1
     - name: livepeer
       strategy:
         download: github
