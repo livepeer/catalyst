@@ -118,7 +118,7 @@ manifest:
 
 .PHONY: dev
 dev:
-	if [ $$(uname) == "Darwin" ]; then \
+	if [ $$(uname) = "Darwin" ]; then \
 		if [ ! -d "/Volumes/RAMDisk/" ]; then \
 			disk=$$(hdiutil attach -nomount ram://4194304) \
 			&& sleep 3 \
@@ -128,6 +128,7 @@ dev:
 		&& rm -rf /Volumes/RAMDisk/mist \
 		&& export TMP=/Volumes/RAMDisk; \
 	fi \
+	&& export PATH=$$PATH:$$(pwd)/bin \
 	&& stat $(HOME)/.config/livepeer/mistserver.dev.conf || cp ./config/mistserver.dev.conf $(HOME)/.config/livepeer/mistserver.dev.conf \
 	&& ./bin/MistController -c $(HOME)/.config/livepeer/mistserver.dev.conf
 
