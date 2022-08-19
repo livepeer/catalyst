@@ -14,7 +14,7 @@ ARG	GIT_VERSION=unknown
 ENV	GIT_VERSION="${GIT_VERSION}"
 RUN	make livepeer-log livepeer-catalyst-node
 
-FROM livepeer/streamtester:v0.12.5-16-g9e1b00c as mapic
+FROM	livepeer/mist-api-connector:v0.12.5-18-g30e54c1 as mapic
 FROM	ubuntu:20.04
 
 LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
