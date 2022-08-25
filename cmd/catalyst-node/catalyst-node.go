@@ -467,6 +467,7 @@ func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 		}
 
 		rURL := fmt.Sprintf("%s://%s/hls/%s%s/index.m3u8", protocol(r), nodeAddr, validPrefix, playbackID)
+		glog.V(6).Infof("generated redirect url=%s", rURL)
 		http.Redirect(w, r, rURL, http.StatusFound)
 	})
 }

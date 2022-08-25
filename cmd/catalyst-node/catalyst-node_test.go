@@ -14,7 +14,7 @@ const (
 	playbackID      = "abc_XYZ-123"
 )
 
-var prefixes = []string{"video", "videorec"}
+var prefixes = [...]string{"video"}
 
 func TestRedirectHandler_Correct(t *testing.T) {
 	defaultFunc := getClosestNode
@@ -24,13 +24,13 @@ func TestRedirectHandler_Correct(t *testing.T) {
 	requireReq(t, fmt.Sprintf("/hls/%s/index.m3u8", playbackID)).
 		result().
 		hasStatus(http.StatusFound).
-		hasHeader("Location", fmt.Sprintf("http://%s/hls/%s/index.m3u8", closestNodeAddr, playbackID))
+		hasHeader("Location", fmt.Sprintf("http://%s/hls/%s+%s/index.m3u8", closestNodeAddr, prefixes[0], playbackID))
 
 	requireReq(t, fmt.Sprintf("/hls/%s/index.m3u8", playbackID)).
 		withHeader("X-Forwarded-Proto", "https").
 		result().
 		hasStatus(http.StatusFound).
-		hasHeader("Location", fmt.Sprintf("https://%s/hls/%s/index.m3u8", closestNodeAddr, playbackID))
+		hasHeader("Location", fmt.Sprintf("https://%s/hls/%s+%s/index.m3u8", closestNodeAddr, prefixes[0], playbackID))
 }
 
 func TestRedirectHandler_InvalidPath(t *testing.T) {
@@ -68,7 +68,7 @@ func (hr httpReq) withHeader(key, value string) httpReq {
 
 func (hr httpReq) result() httpCheck {
 	rr := httptest.NewRecorder()
-	redirectHlsHandler(prefixes).ServeHTTP(rr, hr.Request)
+	redirectHlsHandler(prefixes[:]).ServeHTTP(rr, hr.Request)
 	return httpCheck{hr.T, rr}
 }
 
