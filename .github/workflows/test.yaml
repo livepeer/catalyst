@@ -24,18 +24,11 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.17
-
-      - name: Cache go modules
-        id: cache-go-mod
-        uses: actions/cache@v3
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          cache: true
+          cache-dependency-file: go.sum
 
       - name: Install go modules
-        if: steps.cache-go-mod.outputs.cache-hit != 'true'
+        if: steps.go.outputs.cache-hit != 'true'
         run: go mod download
 
       - name: go fmt
