@@ -14,9 +14,11 @@ const (
 	playbackID      = "abc_XYZ-123"
 )
 
+var prefixes = []string{"video", "videorec"}
+
 func TestRedirectHandler_Correct(t *testing.T) {
 	defaultFunc := getClosestNode
-	getClosestNode = func(string, string, string) (string, error) { return closestNodeAddr, nil }
+	getClosestNode = func(string, string, string, []string) (string, error) { return closestNodeAddr, nil }
 	defer func() { getClosestNode = defaultFunc }()
 
 	requireReq(t, fmt.Sprintf("/hls/%s/index.m3u8", playbackID)).
@@ -66,7 +68,7 @@ func (hr httpReq) withHeader(key, value string) httpReq {
 
 func (hr httpReq) result() httpCheck {
 	rr := httptest.NewRecorder()
-	redirectHlsHandler().ServeHTTP(rr, hr.Request)
+	redirectHlsHandler(prefixes).ServeHTTP(rr, hr.Request)
 	return httpCheck{hr.T, rr}
 }
 
