@@ -19,9 +19,10 @@ type bandwidth struct {
 }
 
 type protocol struct {
-	Connector string `json:"connector"`
-	RetryJoin string `json:"retry-join,omitempty"`
-	RPCAddr   string `json:"rpc-addr,omitempty"`
+	Connector        string `json:"connector"`
+	RetryJoin        string `json:"retry-join,omitempty"`
+	RPCAddr          string `json:"rpc-addr,omitempty"`
+	RedirectPrefixes string `json:"redirect-prefixes,omitempty"`
 }
 
 type config struct {
@@ -108,7 +109,7 @@ func defaultMistConfig() mistConfig {
 				{Connector: "TSSRT"},
 				{Connector: "WAV"},
 				{Connector: "WebRTC"},
-				{Connector: "livepeer-catalyst-node", RPCAddr: fmt.Sprintf("0.0.0.0:%s", serfPort)},
+				{Connector: "livepeer-catalyst-node", RPCAddr: fmt.Sprintf("0.0.0.0:%s", serfPort), RedirectPrefixes: "stream"},
 			},
 			SessionInputMode:       "14",
 			SessionOutputMode:      "14",

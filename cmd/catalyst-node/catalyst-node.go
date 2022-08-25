@@ -305,6 +305,7 @@ func main() {
 	}
 
 	cliFlags.RedirectPrefixes = strings.Split(*prefixes, ",")
+	glog.Infof("found redirectPrefixes=%v", cliFlags.RedirectPrefixes)
 
 	parseSerfConfig(&serfConfig, retryJoin, serfTags)
 
@@ -443,7 +444,7 @@ func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 		lat := r.Header.Get("X-Latitude")
 		lon := r.Header.Get("X-Longitude")
 
-		var nodeAddr string
+		var nodeAddr, validPrefix string
 		var err error
 
 		for _, prefix := range redirectPrefixes {
@@ -453,6 +454,7 @@ func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 				continue
 			}
 			if nodeAddr != "" {
+				validPrefix = prefix + "+"
 				err = nil
 				break
 			}
@@ -464,7 +466,7 @@ func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 			return
 		}
 
-		rURL := fmt.Sprintf("%s://%s/hls/%s/index.m3u8", protocol(r), nodeAddr, playbackID)
+		rURL := fmt.Sprintf("%s://%s/hls/%s%s/index.m3u8", protocol(r), nodeAddr, validPrefix, playbackID)
 		http.Redirect(w, r, rURL, http.StatusFound)
 	})
 }
