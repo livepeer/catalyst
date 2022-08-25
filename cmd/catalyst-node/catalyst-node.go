@@ -308,7 +308,7 @@ func main() {
 
 	parseSerfConfig(&serfConfig, retryJoin, serfTags)
 
-	go startCatalystWebServer(cliFlags.HTTPAddress)
+	go startCatalystWebServer(cliFlags.HTTPAddress, cliFlags.RedirectPrefixes)
 
 	config.serfTags = serfConfig.Tags
 
@@ -325,7 +325,7 @@ func main() {
 		// eli note: i put this in a loop in case client boots before server.
 		// doesn't seem to happen in practice.
 		for {
-			err := runClient(config)
+			err := runClient(*config)
 			if err != nil {
 				glog.Errorf("Error starting client: %v", err)
 			}
