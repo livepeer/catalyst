@@ -25,8 +25,8 @@ import (
 )
 
 const (
-	httpPort         = "8090"
-	mistUtilLoadPort = "8042"
+	httpPort         = 8090
+	mistUtilLoadPort = 8042
 )
 
 var Version = "unknown"
@@ -36,6 +36,16 @@ type catalystConfig struct {
 	serfRPCAuthKey           string
 	serfTags                 map[string]string
 	mistLoadBalancerEndpoint string
+}
+
+type catalystNodeCliFlags struct {
+	Verbosity        int
+	MistJSON         bool
+	Version          bool
+	RunBalancer      bool
+	BalancerArgs     string
+	HTTPAddress      string
+	RedirectPrefixes []string
 }
 
 func runClient(config catalystConfig) error {
@@ -140,16 +150,16 @@ func runClient(config catalystConfig) error {
 	}
 }
 
-func connectSerfAgent(serfRPCAddress string, serfRPCAuthKey string) (*serfclient.RPCClient, error) {
+func connectSerfAgent(serfRPCAddress, serfRPCAuthKey string) (*serfclient.RPCClient, error) {
 	return serfclient.ClientFromConfig(&serfclient.Config{
 		Addr:    serfRPCAddress,
 		AuthKey: serfRPCAuthKey,
 	})
 }
 
-func changeLoadBalancerServers(endpoint string, server string, action string) ([]byte, error) {
-	url := endpoint + "?" + action + "server=" + url.QueryEscape(server)
-	req, err := http.NewRequest("POST", url, nil)
+func changeLoadBalancerServers(endpoint, server, action string) ([]byte, error) {
+	actionURL := endpoint + "?" + action + "server=" + url.QueryEscape(server)
+	req, err := http.NewRequest("POST", actionURL, nil)
 	if err != nil {
 		glog.Errorf("Error creating request: %v", err)
 		return nil, err
@@ -175,12 +185,11 @@ func changeLoadBalancerServers(endpoint string, server string, action string) ([
 	}
 
 	glog.V(6).Infof("requested mist to %s server %s to the load balancer\n", action, server)
-	glog.V(6).Infof(string(b))
+	glog.V(6).Info(string(b))
 	return b, nil
 }
 
 func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error) {
-
 	url := endpoint + "?lstservers=1"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -235,24 +244,27 @@ func execBalancer(balancerArgs []string) error {
 }
 
 func main() {
+	var cliFlags = &catalystNodeCliFlags{}
+	var config = &catalystConfig{}
 
 	flag.Set("logtostderr", "true")
 	vFlag := flag.Lookup("v")
 	fs := flag.NewFlagSet("catalyst-node-connected", flag.ExitOnError)
 
-	mistJSON := fs.Bool("j", false, "Print application info as json")
-	verbosity := fs.String("v", "", "Log verbosity.  {4|5|6}")
-	serfRPCAddress := fs.String("serf-rpc-address", "127.0.0.1:7373", "Serf RPC address")
-	serfRPCAuthKey := fs.String("serf-rpc-auth-key", "", "Serf RPC auth key")
-	serfTags := fs.String("serf-tags", "node=media", "Serf tags for Catalyst nodes")
-
-	mistLoadBalancerEndpoint := fs.String("mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
-	version := fs.Bool("version", false, "Print out the version")
-	runBalancer := fs.Bool("run-balancer", true, "run MistUtilLoad")
-	balancerArgs := fs.String("balancer-args", "", "arguments passed to MistUtilLoad")
+	fs.BoolVar(&cliFlags.MistJSON, "j", false, "Print application info as json")
+	fs.IntVar(&cliFlags.Verbosity, "v", 3, "Log verbosity.  {4|5|6}")
+	fs.BoolVar(&cliFlags.Version, "version", false, "Print out the version")
+	fs.BoolVar(&cliFlags.RunBalancer, "run-balancer", true, "run MistUtilLoad")
+	fs.StringVar(&cliFlags.BalancerArgs, "balancer-args", "", "arguments passed to MistUtilLoad")
+	prefixes := fs.String("redirect-prefixes", "", "Set of valid prefixes of playback id which are handled by mistserver")
 
 	// Catalyst web server
-	httpAddr := fs.String("http-addr", fmt.Sprintf("127.0.0.1:%s", httpPort), "Address to bind for Catalyst HTTP commands")
+	fs.StringVar(&cliFlags.HTTPAddress, "http-addr", fmt.Sprintf("127.0.0.1:%d", httpPort), "Address to bind for Catalyst HTTP commands")
+
+	fs.StringVar(&config.serfRPCAddress, "serf-rpc-address", "127.0.0.1:7373", "Serf RPC address")
+	fs.StringVar(&config.serfRPCAuthKey, "serf-rpc-auth-key", "", "Serf RPC auth key")
+	serfTags := fs.String("serf-tags", "node=media", "Serf tags for Catalyst nodes")
+	fs.StringVar(&config.mistLoadBalancerEndpoint, "mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
 
 	// Serf commands passed straight through to the agent
 	serfConfig := agent.Config{}
@@ -270,10 +282,10 @@ func main() {
 		ff.WithEnvVarPrefix("CATALYST_NODE"),
 		ff.WithEnvVarSplit(","),
 	)
-	vFlag.Value.Set(*verbosity)
+	vFlag.Value.Set(fmt.Sprint(cliFlags.Verbosity))
 	flag.CommandLine.Parse(nil)
 
-	if *mistJSON {
+	if cliFlags.MistJSON {
 		mistconnector.PrintMistConfigJson(
 			"catalyst-node",
 			"Catalyst multi-node server. Coordinates stream replication and load balancing to multiple catalyst nodes.",
@@ -284,7 +296,7 @@ func main() {
 		return
 	}
 
-	if *version {
+	if cliFlags.Version {
 		fmt.Println("catalyst-node version: " + Version)
 		fmt.Printf("golang runtime version: %s %s\n", runtime.Compiler, runtime.Version())
 		fmt.Printf("architecture: %s\n", runtime.GOARCH)
@@ -292,20 +304,17 @@ func main() {
 		return
 	}
 
+	cliFlags.RedirectPrefixes = strings.Split(*prefixes, ",")
+
 	parseSerfConfig(&serfConfig, retryJoin, serfTags)
 
-	go startCatalystWebServer(*httpAddr)
+	go startCatalystWebServer(cliFlags.HTTPAddress)
 
-	config := catalystConfig{
-		serfRPCAddress:           *serfRPCAddress,
-		serfRPCAuthKey:           *serfRPCAuthKey,
-		serfTags:                 serfConfig.Tags,
-		mistLoadBalancerEndpoint: *mistLoadBalancerEndpoint,
-	}
+	config.serfTags = serfConfig.Tags
 
-	if *runBalancer {
+	if cliFlags.RunBalancer {
 		go func() {
-			err := execBalancer(strings.Split(*balancerArgs, " "))
+			err := execBalancer(strings.Split(cliFlags.BalancerArgs, " "))
 			if err != nil {
 				glog.Fatal(err)
 			}
@@ -362,7 +371,7 @@ func main() {
 	os.Exit(exitCode)
 }
 
-func parseSerfConfig(config *agent.Config, retryJoin *string, serfTags *string) {
+func parseSerfConfig(config *agent.Config, retryJoin, serfTags *string) {
 	if *retryJoin != "" {
 		config.RetryJoin = strings.Split(*retryJoin, ",")
 	}
@@ -413,15 +422,15 @@ func writeSerfConfig(config *agent.Config) (string, error) {
 	return tmpFile.Name(), err
 }
 
-func startCatalystWebServer(httpAddr string) {
-	http.Handle("/hls/", redirectHlsHandler())
+func startCatalystWebServer(httpAddr string, redirectPrefixes []string) {
+	http.Handle("/hls/", redirectHlsHandler(redirectPrefixes))
 	glog.Infof("HTTP server listening on %s", httpAddr)
 	glog.Fatal(http.ListenAndServe(httpAddr, nil))
 }
 
 var getClosestNode = queryMistForClosestNode
 
-func redirectHlsHandler() http.Handler {
+func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
@@ -434,7 +443,7 @@ func redirectHlsHandler() http.Handler {
 		lat := r.Header.Get("X-Latitude")
 		lon := r.Header.Get("X-Longitude")
 
-		nodeAddr, err := getClosestNode(playbackID, lat, lon)
+		nodeAddr, err := getClosestNode(playbackID, lat, lon, redirectPrefixes)
 		if err != nil {
 			glog.Errorf("error finding origin server playbackID=%s error=%s", playbackID, err)
 			w.WriteHeader(http.StatusNotFound)
@@ -452,7 +461,8 @@ func parsePlaybackID(path string) (string, bool) {
 	if len(m) < 2 {
 		return "", false
 	}
-	return m[1], true
+	slice := strings.Split(m[1], "+")
+	return slice[len(slice)-1], true
 }
 
 func protocol(r *http.Request) string {
@@ -462,35 +472,51 @@ func protocol(r *http.Request) string {
 	return "http"
 }
 
-func queryMistForClosestNode(playbackID, lat, lon string) (string, error) {
-	url := fmt.Sprintf("http://localhost:%s/%s", mistUtilLoadPort, playbackID)
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", err
-	}
-	if lat != "" && lon != "" {
-		req.Header.Set("X-Latitude", lat)
-		req.Header.Set("X-Longitude", lon)
-	} else {
-		glog.Warningf("Incoming request missing X-Latitude/X-Longitude, response will not be geolocated")
-	}
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
+func queryMistForClosestNode(playbackID, lat, lon string, redirectPrefixes []string) (string, error) {
+	var queryError error
+	var response string
+	for _, prefix := range redirectPrefixes {
+		url := fmt.Sprintf("http://localhost:%d/%s+%s", mistUtilLoadPort, prefix, playbackID)
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			response = ""
+			queryError = err
+			continue
+		}
+		if lat != "" && lon != "" {
+			req.Header.Set("X-Latitude", lat)
+			req.Header.Set("X-Longitude", lon)
+		} else {
+			glog.Warningf("Incoming request missing X-Latitude/X-Longitude, response will not be geolocated")
+		}
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			response = ""
+			queryError = err
+			continue
+		}
+		defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("GET request '%s' failed with http status code %d", url, resp.StatusCode)
+		if resp.StatusCode != http.StatusOK {
+			response = ""
+			queryError = fmt.Errorf("GET request '%s' failed with http status code %d", url, resp.StatusCode)
+			continue
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			response = ""
+			queryError = fmt.Errorf("GET request '%s' failed while reading response body", url)
+			continue
+		}
+		if string(body) == "FULL" {
+			response = ""
+			queryError = fmt.Errorf("GET request '%s' returned 'FULL'", url)
+			continue
+		}
+		response = string(body)
+		queryError = nil
+		break
 	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("GET request '%s' failed while reading response body", url)
-	}
-	if string(body) == "FULL" {
-		return "", fmt.Errorf("GET request '%s' returned 'FULL'", url)
-	}
-
-	return string(body), nil
+	return response, queryError
 }
