@@ -459,7 +459,7 @@ func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 		}
 
 		if nodeAddr == "" || err != nil {
-			glog.Errorf("error finding origin server playbackID=%s error=%s prefix=%s", playbackID, err)
+			glog.Errorf("error finding origin server playbackID=%s error=%s", playbackID, err)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -470,11 +470,16 @@ func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 }
 
 func parsePlaybackID(path string) (string, bool) {
-	r := regexp.MustCompile("^/hls/([a-zA-Z0-9_\\-+]+)/index.m3u8$")
+	r := regexp.MustCompile("^/hls/([\\w+-]+)/index.m3u8$")
 	m := r.FindStringSubmatch(path)
 	if len(m) < 2 {
 		return "", false
 	}
+	// Incoming requests might come with some prefix attached to the
+	// playback ID. We try to drop that here by splitting at `+` and
+	// picking the last piece. For eg.
+	// incoming path = '/hls/video+4712oox4msvs9qsf/index.m3u8'
+	// playbackID = '4712oox4msvs9qsf'
 	slice := strings.Split(m[1], "+")
 	return slice[len(slice)-1], true
 }
