@@ -443,9 +443,23 @@ func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 		lat := r.Header.Get("X-Latitude")
 		lon := r.Header.Get("X-Longitude")
 
-		nodeAddr, err := getClosestNode(playbackID, lat, lon, redirectPrefixes)
-		if err != nil {
-			glog.Errorf("error finding origin server playbackID=%s error=%s", playbackID, err)
+		var nodeAddr string
+		var err error
+
+		for _, prefix := range redirectPrefixes {
+			nodeAddr, err = getClosestNode(playbackID, lat, lon, prefix)
+			if err != nil {
+				glog.Errorf("error finding origin server playbackID=%s prefix=%s error=%s", playbackID, prefix, err)
+				continue
+			}
+			if nodeAddr != "" {
+				err = nil
+				break
+			}
+		}
+
+		if nodeAddr == "" || err != nil {
+			glog.Errorf("error finding origin server playbackID=%s error=%s prefix=%s", playbackID, err)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -472,51 +486,34 @@ func protocol(r *http.Request) string {
 	return "http"
 }
 
-func queryMistForClosestNode(playbackID, lat, lon string, redirectPrefixes []string) (string, error) {
-	var queryError error
-	var response string
-	for _, prefix := range redirectPrefixes {
-		url := fmt.Sprintf("http://localhost:%d/%s+%s", mistUtilLoadPort, prefix, playbackID)
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			response = ""
-			queryError = err
-			continue
-		}
-		if lat != "" && lon != "" {
-			req.Header.Set("X-Latitude", lat)
-			req.Header.Set("X-Longitude", lon)
-		} else {
-			glog.Warningf("Incoming request missing X-Latitude/X-Longitude, response will not be geolocated")
-		}
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			response = ""
-			queryError = err
-			continue
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			response = ""
-			queryError = fmt.Errorf("GET request '%s' failed with http status code %d", url, resp.StatusCode)
-			continue
-		}
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			response = ""
-			queryError = fmt.Errorf("GET request '%s' failed while reading response body", url)
-			continue
-		}
-		if string(body) == "FULL" {
-			response = ""
-			queryError = fmt.Errorf("GET request '%s' returned 'FULL'", url)
-			continue
-		}
-		response = string(body)
-		queryError = nil
-		break
+func queryMistForClosestNode(playbackID, lat, lon, prefix string) (string, error) {
+	url := fmt.Sprintf("http://localhost:%d/%s+%s", mistUtilLoadPort, prefix, playbackID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
 	}
-	return response, queryError
+	if lat != "" && lon != "" {
+		req.Header.Set("X-Latitude", lat)
+		req.Header.Set("X-Longitude", lon)
+	} else {
+		glog.Warningf("Incoming request missing X-Latitude/X-Longitude, response will not be geolocated")
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("GET request '%s' failed with http status code %d", url, resp.StatusCode)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("GET request '%s' failed while reading response body", url)
+	}
+	if string(body) == "FULL" {
+		return "", fmt.Errorf("GET request '%s' returned 'FULL'", url)
+	}
+	return string(body), nil
 }

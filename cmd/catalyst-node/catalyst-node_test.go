@@ -18,7 +18,7 @@ var prefixes = []string{"video", "videorec"}
 
 func TestRedirectHandler_Correct(t *testing.T) {
 	defaultFunc := getClosestNode
-	getClosestNode = func(string, string, string, []string) (string, error) { return closestNodeAddr, nil }
+	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
 	defer func() { getClosestNode = defaultFunc }()
 
 	requireReq(t, fmt.Sprintf("/hls/%s/index.m3u8", playbackID)).

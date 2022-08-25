@@ -58,5 +58,5 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.out
-          name: catalyst
+          name: ${{ github.event.repository.name }}
           verbose: true
