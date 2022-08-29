@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	serfclient "github.com/hashicorp/serf/client"
@@ -446,19 +447,24 @@ func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 
 		var nodeAddr, validPrefix string
 		var err error
+		var waitGroup sync.WaitGroup
 
 		for _, prefix := range redirectPrefixes {
-			nodeAddr, err = getClosestNode(playbackID, lat, lon, prefix)
-			if err != nil {
-				glog.Errorf("error finding origin server playbackID=%s prefix=%s error=%s", playbackID, prefix, err)
-				continue
-			}
-			if nodeAddr != "" {
-				validPrefix = prefix + "+"
-				err = nil
-				break
-			}
+			waitGroup.Add(1)
+			go func(prefix string) {
+				addr, err := getClosestNode(playbackID, lat, lon, prefix)
+				if err != nil {
+					glog.V(8).Infof("error finding origin server playbackID=%s prefix=%s error=%s", playbackID, prefix, err)
+				}
+				if addr != "" {
+					nodeAddr = addr
+					validPrefix = prefix + "+"
+					err = nil
+				}
+				waitGroup.Done()
+			}(prefix)
 		}
+		waitGroup.Wait()
 
 		if nodeAddr == "" || err != nil {
 			glog.Errorf("error finding origin server playbackID=%s error=%s", playbackID, err)
@@ -495,7 +501,10 @@ func protocol(r *http.Request) string {
 }
 
 func queryMistForClosestNode(playbackID, lat, lon, prefix string) (string, error) {
-	url := fmt.Sprintf("http://localhost:%d/%s+%s", mistUtilLoadPort, prefix, playbackID)
+	if prefix != "" {
+		prefix += "+"
+	}
+	url := fmt.Sprintf("http://localhost:%d/%s%s", mistUtilLoadPort, prefix, playbackID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", err
