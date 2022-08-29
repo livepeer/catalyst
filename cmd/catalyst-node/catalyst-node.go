@@ -305,7 +305,7 @@ func main() {
 	}
 
 	cliFlags.RedirectPrefixes = strings.Split(*prefixes, ",")
-	glog.Infof("found redirectPrefixes=%v", cliFlags.RedirectPrefixes)
+	glog.V(4).Infof("found redirectPrefixes=%v", cliFlags.RedirectPrefixes)
 
 	parseSerfConfig(&serfConfig, retryJoin, serfTags)
 
