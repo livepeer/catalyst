@@ -23,9 +23,9 @@ box:
       strategy:
         download: github
         project: livepeer/stream-tester
-        commit: 31300bfcbae7f20305e45222303067e694ae2268
+        commit: d73657408f54f80ecec7ac5d551bcd6f38d18c0a
       binary: livepeer-mist-api-connector
-      release: v0.12.19
+      release: v0.12.20
     - name: catalyst-uploader
       strategy:
         download: github
@@ -45,7 +45,7 @@ box:
       strategy:
         download: bucket
         project: mistserver
-        commit: d3e6f305d05db8bb32da4e3af7f898e00749b10c
+        commit: cf62bc97055de364033daff1cd9254049f36879e
       release: catalyst
       skipGpg: true
       srcFilenames:
