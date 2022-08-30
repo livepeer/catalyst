@@ -20,8 +20,8 @@
     "defaultStream": null,
     "limits": null,
     "location": {
-      "lat": 0.0000000000,
-      "lon": 0.0000000000,
+      "lat": 0.0,
+      "lon": 0.0,
       "name": ""
     },
     "prometheus": "koekjes",
@@ -92,7 +92,8 @@
       {
         "connector": "livepeer-catalyst-node",
         "retry-join": "catalyst-two",
-        "rpc-addr": "0.0.0.0:7373"
+        "rpc-addr": "0.0.0.0:7373",
+        "redirect-prefixes": "stream"
       }
     ],
     "serverid": null,

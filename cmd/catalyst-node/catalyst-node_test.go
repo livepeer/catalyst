@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,23 +13,70 @@ import (
 const (
 	closestNodeAddr = "someurl.com"
 	playbackID      = "abc_XYZ-123"
+	pathTemplate    = "/hls/%s/index.m3u8"
 )
+
+var prefixes = [...]string{"video", "videorec", "stream", "playback"}
+
+func randomPlaybackID(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+
+	res := make([]byte, length)
+	for i := 0; i < length; i++ {
+		res[i] = charset[rand.Intn(length)]
+	}
+	return string(res)
+}
+
+func TestPlaybackIDParserWithPrefix(t *testing.T) {
+	for i := 0; i < rand.Int()%16+1; i++ {
+		id := randomPlaybackID(rand.Int()%24 + 1)
+		path := fmt.Sprintf("/hls/%s+%s/index.m3u8", prefixes[rand.Intn(len(prefixes))], id)
+		playbackID, parsed := parsePlaybackID(path)
+		if !parsed {
+			t.Fail()
+		}
+		require.Equal(t, id, playbackID)
+	}
+}
+
+func TestPlaybackIDParserWithoutPrefix(t *testing.T) {
+	for i := 0; i < rand.Int()%16+1; i++ {
+		id := randomPlaybackID(rand.Int()%24 + 1)
+		path := fmt.Sprintf("/hls/%s/index.m3u8", id)
+		playbackID, parsed := parsePlaybackID(path)
+		if !parsed {
+			t.Fail()
+		}
+		require.Equal(t, id, playbackID)
+	}
+}
+
+func getURLs(proto, host string) []string {
+	var urls []string
+	for _, prefix := range prefixes {
+		urls = append(urls, fmt.Sprintf("%s://%s/hls/%s+%s/index.m3u8", proto, host, prefix, playbackID))
+	}
+	return urls
+}
 
 func TestRedirectHandler_Correct(t *testing.T) {
 	defaultFunc := getClosestNode
-	getClosestNode = func(string, string, string) (string, error) { return closestNodeAddr, nil }
+	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
 	defer func() { getClosestNode = defaultFunc }()
 
-	requireReq(t, fmt.Sprintf("/hls/%s/index.m3u8", playbackID)).
+	path := fmt.Sprintf("/hls/%s/index.m3u8", playbackID)
+
+	requireReq(t, path).
 		result().
 		hasStatus(http.StatusFound).
-		hasHeader("Location", fmt.Sprintf("http://%s/hls/%s/index.m3u8", closestNodeAddr, playbackID))
+		hasHeader("Location", getURLs("http", closestNodeAddr)...)
 
-	requireReq(t, fmt.Sprintf("/hls/%s/index.m3u8", playbackID)).
+	requireReq(t, path).
 		withHeader("X-Forwarded-Proto", "https").
 		result().
 		hasStatus(http.StatusFound).
-		hasHeader("Location", fmt.Sprintf("https://%s/hls/%s/index.m3u8", closestNodeAddr, playbackID))
+		hasHeader("Location", getURLs("https", closestNodeAddr)...)
 }
 
 func TestRedirectHandler_InvalidPath(t *testing.T) {
@@ -66,7 +114,7 @@ func (hr httpReq) withHeader(key, value string) httpReq {
 
 func (hr httpReq) result() httpCheck {
 	rr := httptest.NewRecorder()
-	redirectHlsHandler().ServeHTTP(rr, hr.Request)
+	redirectHlsHandler(prefixes[:]).ServeHTTP(rr, hr.Request)
 	return httpCheck{hr.T, rr}
 }
 
@@ -75,7 +123,15 @@ func (hc httpCheck) hasStatus(code int) httpCheck {
 	return hc
 }
 
-func (hc httpCheck) hasHeader(key, value string) httpCheck {
-	require.Equal(hc, value, hc.Header().Get(key))
+func (hc httpCheck) hasHeader(key string, values ...string) httpCheck {
+	var success = false
+	header := hc.Header().Get(key)
+	for _, value := range values {
+		if header == value {
+			success = true
+			break
+		}
+	}
+	require.True(hc, success)
 	return hc
 }

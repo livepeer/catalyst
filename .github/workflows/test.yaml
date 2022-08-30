@@ -45,11 +45,11 @@ jobs:
         uses: reviewdog/action-misspell@v1
 
       - name: Run tests with coverage
-        run: go test ./... --short --race --covermode=atomic --coverprofile=coverage.out
+        run: go test ./... --short --covermode=atomic --coverprofile=coverage.out
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.out
-          name: catalyst
+          name: ${{ github.event.repository.name }}
           verbose: true
