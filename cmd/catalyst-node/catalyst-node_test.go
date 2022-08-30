@@ -127,7 +127,6 @@ func (hc httpCheck) hasHeader(key string, values ...string) httpCheck {
 	var success = false
 	header := hc.Header().Get(key)
 	for _, value := range values {
-		fmt.Printf("%s\t%s\n", header, value)
 		if header == value {
 			success = true
 			break
