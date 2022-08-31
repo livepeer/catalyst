@@ -53,7 +53,15 @@ build/compiled/lib/libsrt.a:
   && cmake .. -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -D USE_ENCLIB=mbedtls -D ENABLE_SHARED=false -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} \
   && make -j$(nproc) install
 
-mistserver: build/compiled/lib/libmbedtls.a build/compiled/lib/libsrtp2.a build/compiled/lib/libsrt.a
+build/compiled/lib/librist.a: build/compiled/lib/libmbedtls.a
+	git clone -b v0.2.7 https://code.videolan.org/rist/librist.git $(buildpath)/librist \
+	&& cd $(buildpath)/librist \
+	&& mkdir build \
+	&& cd build \
+	&& meson -Dprefix=$(buildpath)/compiled -Dpkg_config_path=$(buildpath)/compiled/lib/pkgconfig -Dcmake_prefix_path=$(buildpath)/compiled -Ddefault_library=static -Dprefer_static=true -Dbuiltin_cjson=true -Dpkgconfig.relocatable=true .. \
+	&& ninja install
+
+mistserver: build/compiled/lib/libmbedtls.a build/compiled/lib/libsrtp2.a build/compiled/lib/libsrt.a build/compiled/lib/librist.a
 
 .PHONY: mistserver
 mistserver:
@@ -63,7 +71,7 @@ mistserver:
 	export C_INCLUDE_PATH=~$(buildpath)/compiled/include \
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
-	&& cmake ../../../mistserver -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} -DNORIST=yes \
+	&& cmake ../../../mistserver -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} \
 	&& make -j${PROC_COUNT} \
 	&& make install
 
