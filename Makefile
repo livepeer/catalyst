@@ -106,6 +106,7 @@ livepeer-mist-api-connector:
 	&& cd ../stream-tester \
 	&& make connector \
 	&& cd - \
+	&& rm -rf ./bin/livepeer-mist-api-connector \
 	&& cp ../stream-tester/build/mist-api-connector ./bin/livepeer-mist-api-connector
 
 .PHONY: download
