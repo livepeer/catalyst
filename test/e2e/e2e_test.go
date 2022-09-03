@@ -251,7 +251,8 @@ func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network s
 			Target:   "/config",
 			ReadOnly: true},
 		},
-		Cmd: []string{"MistController", "-c", fmt.Sprintf("/config/%s", mcFile)},
+		Cmd:     []string{"MistController", "-c", fmt.Sprintf("/config/%s", mcFile)},
+		ShmSize: 1000000000,
 	}
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
