@@ -501,11 +501,27 @@ func protocol(r *http.Request) string {
 }
 
 func queryMistForClosestNode(playbackID, lat, lon, prefix string) (string, error) {
+	// First, check to see if any server has this stream
+	_, err := queryMistForClosestNodeSource(playbackID, lat, lon, prefix, true)
+	if err != nil {
+		return "", err
+	}
+	// If so, fetch the best server for playback
+	return queryMistForClosestNodeSource(playbackID, lat, lon, prefix, false)
+}
+
+func queryMistForClosestNodeSource(playbackID, lat, lon, prefix string, source bool) (string, error) {
 	if prefix != "" {
 		prefix += "+"
 	}
-	url := fmt.Sprintf("http://localhost:%d/%s%s", mistUtilLoadPort, prefix, playbackID)
-	req, err := http.NewRequest("GET", url, nil)
+	var murl string
+	enc := url.QueryEscape(fmt.Sprintf("%s%s", prefix, playbackID))
+	if source {
+		murl = fmt.Sprintf("http://localhost:%d/%s", mistUtilLoadPort, enc)
+	} else {
+		murl = fmt.Sprintf("http://localhost:%d/?source=%s", mistUtilLoadPort, enc)
+	}
+	req, err := http.NewRequest("GET", murl, nil)
 	if err != nil {
 		return "", err
 	}
@@ -523,14 +539,14 @@ func queryMistForClosestNode(playbackID, lat, lon, prefix string) (string, error
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("GET request '%s' failed with http status code %d", url, resp.StatusCode)
+		return "", fmt.Errorf("GET request '%s' failed with http status code %d", murl, resp.StatusCode)
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("GET request '%s' failed while reading response body", url)
+		return "", fmt.Errorf("GET request '%s' failed while reading response body", murl)
 	}
 	if string(body) == "FULL" {
-		return "", fmt.Errorf("GET request '%s' returned 'FULL'", url)
+		return "", fmt.Errorf("GET request '%s' returned 'FULL'", murl)
 	}
 	return string(body), nil
 }
