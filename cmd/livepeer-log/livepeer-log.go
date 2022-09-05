@@ -86,6 +86,13 @@ func main() {
 					Help:    "array of labels to add to metrics example label=value,label2=value2",
 					Default: "region=dev",
 				},
+				"loggerLevel": {
+					Name:    "loggerLevel",
+					Type:    "str",
+					Option:  "-loggerLevel",
+					Help:    "Minimum level of errors to log. Possible values: INFO, WARN, ERROR, FATAL, PANIC (default 'INFO')",
+					Default: "FATAL",
+				},
 			},
 		})
 		os.Exit(0)
