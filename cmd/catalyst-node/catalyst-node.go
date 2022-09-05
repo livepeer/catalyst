@@ -281,7 +281,6 @@ func main() {
 		ff.WithConfigFileFlag("config"),
 		ff.WithConfigFileParser(ff.PlainParser),
 		ff.WithEnvVarPrefix("CATALYST_NODE"),
-		ff.WithEnvVarSplit(","),
 	)
 	vFlag.Value.Set(fmt.Sprint(cliFlags.Verbosity))
 	flag.CommandLine.Parse(nil)
