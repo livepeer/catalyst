@@ -517,10 +517,11 @@ func queryMistForClosestNodeSource(playbackID, lat, lon, prefix string, source b
 	var murl string
 	enc := url.QueryEscape(fmt.Sprintf("%s%s", prefix, playbackID))
 	if source {
-		murl = fmt.Sprintf("http://localhost:%d/%s", mistUtilLoadPort, enc)
-	} else {
 		murl = fmt.Sprintf("http://localhost:%d/?source=%s", mistUtilLoadPort, enc)
+	} else {
+		murl = fmt.Sprintf("http://localhost:%d/%s", mistUtilLoadPort, enc)
 	}
+	glog.V(8).Infof("MistUtilLoad started request=%s", murl)
 	req, err := http.NewRequest("GET", murl, nil)
 	if err != nil {
 		return "", err
@@ -545,6 +546,7 @@ func queryMistForClosestNodeSource(playbackID, lat, lon, prefix string, source b
 	if err != nil {
 		return "", fmt.Errorf("GET request '%s' failed while reading response body", murl)
 	}
+	glog.V(8).Infof("MistUtilLoad responded request=%s response=%s", murl, body)
 	if string(body) == "FULL" {
 		return "", fmt.Errorf("GET request '%s' returned 'FULL'", murl)
 	}
