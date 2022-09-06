@@ -435,7 +435,7 @@ func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
-		playbackID, isValid := parsePlaybackID(r.URL.Path)
+		playbackID, suffix, isValid := parsePlaybackID(r.URL.Path)
 		if !isValid {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -471,17 +471,17 @@ func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 			return
 		}
 
-		rURL := fmt.Sprintf("%s://%s/hls/%s%s/index.m3u8", protocol(r), nodeAddr, validPrefix, playbackID)
+		rURL := fmt.Sprintf("%s://%s/hls/%s%s/%s", protocol(r), nodeAddr, validPrefix, playbackID, suffix)
 		glog.V(6).Infof("generated redirect url=%s", rURL)
 		http.Redirect(w, r, rURL, http.StatusFound)
 	})
 }
 
-func parsePlaybackID(path string) (string, bool) {
-	r := regexp.MustCompile("^/hls/([\\w+-]+)/index.m3u8$")
+func parsePlaybackID(path string) (string, string, bool) {
+	r := regexp.MustCompile("^/hls/([\\w+-]+)/(.*index.m3u8.*)$")
 	m := r.FindStringSubmatch(path)
-	if len(m) < 2 {
-		return "", false
+	if len(m) < 3 {
+		return "", "", false
 	}
 	// Incoming requests might come with some prefix attached to the
 	// playback ID. We try to drop that here by splitting at `+` and
@@ -489,7 +489,7 @@ func parsePlaybackID(path string) (string, bool) {
 	// incoming path = '/hls/video+4712oox4msvs9qsf/index.m3u8'
 	// playbackID = '4712oox4msvs9qsf'
 	slice := strings.Split(m[1], "+")
-	return slice[len(slice)-1], true
+	return slice[len(slice)-1], m[2], true
 }
 
 func protocol(r *http.Request) string {

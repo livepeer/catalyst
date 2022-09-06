@@ -13,7 +13,6 @@ import (
 const (
 	closestNodeAddr = "someurl.com"
 	playbackID      = "abc_XYZ-123"
-	pathTemplate    = "/hls/%s/index.m3u8"
 )
 
 var prefixes = [...]string{"video", "videorec", "stream", "playback"}
@@ -32,7 +31,7 @@ func TestPlaybackIDParserWithPrefix(t *testing.T) {
 	for i := 0; i < rand.Int()%16+1; i++ {
 		id := randomPlaybackID(rand.Int()%24 + 1)
 		path := fmt.Sprintf("/hls/%s+%s/index.m3u8", prefixes[rand.Intn(len(prefixes))], id)
-		playbackID, parsed := parsePlaybackID(path)
+		playbackID, _, parsed := parsePlaybackID(path)
 		if !parsed {
 			t.Fail()
 		}
@@ -40,11 +39,25 @@ func TestPlaybackIDParserWithPrefix(t *testing.T) {
 	}
 }
 
+func TestPlaybackIDParserWithSegment(t *testing.T) {
+	for i := 0; i < rand.Int()%16+1; i++ {
+		id := randomPlaybackID(rand.Int()%24 + 1)
+		seg := "2_1"
+		path := fmt.Sprintf("/hls/%s+%s/%s/index.m3u8", prefixes[rand.Intn(len(prefixes))], id, seg)
+		playbackID, suffix, parsed := parsePlaybackID(path)
+		if !parsed {
+			t.Fail()
+		}
+		require.Equal(t, id, playbackID)
+		require.Equal(t, fmt.Sprintf("%s/index.m3u8", seg), suffix)
+	}
+}
+
 func TestPlaybackIDParserWithoutPrefix(t *testing.T) {
 	for i := 0; i < rand.Int()%16+1; i++ {
 		id := randomPlaybackID(rand.Int()%24 + 1)
 		path := fmt.Sprintf("/hls/%s/index.m3u8", id)
-		playbackID, parsed := parsePlaybackID(path)
+		playbackID, _, parsed := parsePlaybackID(path)
 		if !parsed {
 			t.Fail()
 		}
@@ -56,6 +69,14 @@ func getURLs(proto, host string) []string {
 	var urls []string
 	for _, prefix := range prefixes {
 		urls = append(urls, fmt.Sprintf("%s://%s/hls/%s+%s/index.m3u8", proto, host, prefix, playbackID))
+	}
+	return urls
+}
+
+func getURLsWithSeg(proto, host, seg string) []string {
+	var urls []string
+	for _, prefix := range prefixes {
+		urls = append(urls, fmt.Sprintf("%s://%s/hls/%s+%s/%s/index.m3u8", proto, host, prefix, playbackID, seg))
 	}
 	return urls
 }
@@ -77,6 +98,21 @@ func TestRedirectHandler_Correct(t *testing.T) {
 		result().
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getURLs("https", closestNodeAddr)...)
+}
+
+func TestRedirectHandler_SegmentInPath(t *testing.T) {
+	defaultFunc := getClosestNode
+	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
+	defer func() { getClosestNode = defaultFunc }()
+
+	seg := "4_1"
+	getParams := "mTrack=0&iMsn=4&sessId=1274784345"
+	path := fmt.Sprintf("/hls/%s/%s/index.m3u8?%s", playbackID, seg, getParams)
+
+	requireReq(t, path).
+		result().
+		hasStatus(http.StatusFound).
+		hasHeader("Location", getURLsWithSeg("http", closestNodeAddr, seg)...)
 }
 
 func TestRedirectHandler_InvalidPath(t *testing.T) {
