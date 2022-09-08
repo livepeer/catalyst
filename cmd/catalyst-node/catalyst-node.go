@@ -479,7 +479,7 @@ func redirectHandler(redirectPrefixes []string) http.Handler {
 }
 
 func parsePlaybackIDHLS(path string) (string, string, bool) {
-	r := regexp.MustCompile("^/hls/([\\w+-]+)/(.*index.m3u8.*)$")
+	r := regexp.MustCompile(`^/hls/([\w+-]+)/(.*index.m3u8.*)$`)
 	m := r.FindStringSubmatch(path)
 	if len(m) < 3 {
 		return "", "", false
@@ -495,7 +495,7 @@ func parsePlaybackIDHLS(path string) (string, string, bool) {
 }
 
 func parsePlaybackIDJS(path string) (string, string, bool) {
-	r := regexp.MustCompile("^/json_([\\w+-]+).js$")
+	r := regexp.MustCompile(`^/json_([\w+-]+).js$`)
 	m := r.FindStringSubmatch(path)
 	if len(m) < 2 {
 		return "", "", false
