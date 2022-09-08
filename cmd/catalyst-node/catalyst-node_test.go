@@ -89,6 +89,27 @@ func getHLSURLsWithSeg(proto, host, seg string) []string {
 	return urls
 }
 
+func TestRedirectHandler404(t *testing.T) {
+	defaultFunc := getClosestNode
+	getClosestNode = func(string, string, string, string) (string, error) {
+		return closestNodeAddr, fmt.Errorf("No node found")
+	}
+	defer func() { getClosestNode = defaultFunc }()
+
+	path := fmt.Sprintf("/hls/%s/index.m3u8", playbackID)
+
+	requireReq(t, path).
+		result().
+		hasStatus(http.StatusFound).
+		hasHeader("Location", getHLSURLs("http", closestNodeAddr)...)
+
+	requireReq(t, path).
+		withHeader("X-Forwarded-Proto", "https").
+		result().
+		hasStatus(http.StatusFound).
+		hasHeader("Location", getHLSURLs("https", closestNodeAddr)...)
+}
+
 func TestRedirectHandlerHLS_Correct(t *testing.T) {
 	defaultFunc := getClosestNode
 	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
@@ -129,7 +150,6 @@ func TestRedirectHandlerHLS_InvalidPath(t *testing.T) {
 	requireReq(t, "/hls/").result().hasStatus(http.StatusNotFound)
 	requireReq(t, "/hls/12345").result().hasStatus(http.StatusNotFound)
 	requireReq(t, "/hls/12345/somepath").result().hasStatus(http.StatusNotFound)
-	requireReq(t, "/hls/12345/somepath/index.m3u8").result().hasStatus(http.StatusNotFound)
 }
 
 func TestRedirectHandlerJS_Correct(t *testing.T) {

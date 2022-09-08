@@ -431,6 +431,46 @@ func startCatalystWebServer(httpAddr string, redirectPrefixes []string) {
 
 var getClosestNode = queryMistForClosestNode
 
+// return the best node available for a given stream. will return any node if nobody has the stream.
+func getBestNode(redirectPrefixes []string, playbackID, lat, lon string) (string, string, error) {
+	var nodeAddr, fullPlaybackID, fallbackAddr string
+	var err error
+	var waitGroup sync.WaitGroup
+
+	for _, prefix := range redirectPrefixes {
+		waitGroup.Add(1)
+		go func(prefix string) {
+			addr, e := getClosestNode(playbackID, lat, lon, prefix)
+			if e != nil {
+				err := e
+				glog.V(8).Infof("error finding origin server playbackID=%s prefix=%s error=%s", playbackID, prefix, err)
+				// If we didn't find a stream but we did find a server, keep that so we can use it to handle a 404
+				if addr != "" {
+					fallbackAddr = addr
+				}
+			} else {
+				nodeAddr = addr
+				fullPlaybackID = prefix + "+" + playbackID
+			}
+			waitGroup.Done()
+		}(prefix)
+	}
+	waitGroup.Wait()
+
+	// good path: we found the stream and a good node to play it back, yay!
+	if nodeAddr != "" {
+		return nodeAddr, fullPlaybackID, nil
+	}
+
+	// bad path: nobody has the stream, but we did find a server which can handle the 404 for us.
+	if fallbackAddr != "" {
+		return fallbackAddr, redirectPrefixes[0] + "+" + playbackID, nil
+	}
+
+	// ugly path: we couldn't find ANY servers. yikes.
+	return "", "", err
+}
+
 func redirectHandler(redirectPrefixes []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -444,35 +484,15 @@ func redirectHandler(redirectPrefixes []string) http.Handler {
 		lat := r.Header.Get("X-Latitude")
 		lon := r.Header.Get("X-Longitude")
 
-		var nodeAddr, validPrefix string
-		var err error
-		var waitGroup sync.WaitGroup
-
-		for _, prefix := range redirectPrefixes {
-			waitGroup.Add(1)
-			go func(prefix string) {
-				addr, err := getClosestNode(playbackID, lat, lon, prefix)
-				if err != nil {
-					glog.V(8).Infof("error finding origin server playbackID=%s prefix=%s error=%s", playbackID, prefix, err)
-				}
-				if addr != "" {
-					nodeAddr = addr
-					validPrefix = prefix + "+" + playbackID
-					err = nil
-				}
-				waitGroup.Done()
-			}(prefix)
-		}
-		waitGroup.Wait()
-
-		if nodeAddr == "" || err != nil {
-			glog.Errorf("error finding origin server playbackID=%s error=%s", playbackID, err)
-			w.WriteHeader(http.StatusNotFound)
+		bestNode, fullPlaybackID, err := getBestNode(redirectPrefixes, playbackID, lat, lon)
+		if err != nil {
+			glog.Errorf("failed to find either origin or fallback server for playbackID=%s err=%s", playbackID, err)
+			w.WriteHeader(http.StatusBadGateway)
 			return
 		}
 
-		rPath := fmt.Sprintf(pathTmpl, validPrefix)
-		rURL := fmt.Sprintf("%s://%s%s", protocol(r), nodeAddr, rPath)
+		rPath := fmt.Sprintf(pathTmpl, fullPlaybackID)
+		rURL := fmt.Sprintf("%s://%s%s", protocol(r), bestNode, rPath)
 		glog.V(6).Infof("generated redirect url=%s", rURL)
 		http.Redirect(w, r, rURL, http.StatusFound)
 	})
@@ -529,12 +549,19 @@ func protocol(r *http.Request) string {
 
 func queryMistForClosestNode(playbackID, lat, lon, prefix string) (string, error) {
 	// First, check to see if any server has this stream
-	_, err := queryMistForClosestNodeSource(playbackID, lat, lon, prefix, true)
-	if err != nil {
-		return "", err
+	_, err1 := queryMistForClosestNodeSource(playbackID, lat, lon, prefix, true)
+	// Then, check the best playback server
+	node, err2 := queryMistForClosestNodeSource(playbackID, lat, lon, prefix, false)
+	// If we can't get a playback server, error
+	if err2 != nil {
+		return "", err2
 	}
-	// If so, fetch the best server for playback
-	return queryMistForClosestNodeSource(playbackID, lat, lon, prefix, false)
+	// If we didn't find the stream but we did find a node, return it with the error for 404s
+	if err1 != nil {
+		return node, err1
+	}
+	// Good path, we found the stream and a playback nodew!
+	return node, nil
 }
 
 func queryMistForClosestNodeSource(playbackID, lat, lon, prefix string, source bool) (string, error) {
