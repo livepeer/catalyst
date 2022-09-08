@@ -49,7 +49,7 @@ func TestPlaybackIDParserWithSegment(t *testing.T) {
 			t.Fail()
 		}
 		require.Equal(t, id, playbackID)
-		require.Equal(t, fmt.Sprintf("%s/index.m3u8", seg), suffix)
+		require.Equal(t, fmt.Sprintf("/hls/%%s/%s/index.m3u8", seg), suffix)
 	}
 }
 
@@ -69,6 +69,14 @@ func getHLSURLs(proto, host string) []string {
 	var urls []string
 	for _, prefix := range prefixes {
 		urls = append(urls, fmt.Sprintf("%s://%s/hls/%s+%s/index.m3u8", proto, host, prefix, playbackID))
+	}
+	return urls
+}
+
+func getJSURLs(proto, host string) []string {
+	var urls []string
+	for _, prefix := range prefixes {
+		urls = append(urls, fmt.Sprintf("%s://%s/json_%s+%s.js", proto, host, prefix, playbackID))
 	}
 	return urls
 }
@@ -124,6 +132,25 @@ func TestRedirectHandlerHLS_InvalidPath(t *testing.T) {
 	requireReq(t, "/hls/12345/somepath/index.m3u8").result().hasStatus(http.StatusNotFound)
 }
 
+func TestRedirectHandlerJS_Correct(t *testing.T) {
+	defaultFunc := getClosestNode
+	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
+	defer func() { getClosestNode = defaultFunc }()
+
+	path := fmt.Sprintf("/json_%s.js", playbackID)
+
+	requireReq(t, path).
+		result().
+		hasStatus(http.StatusFound).
+		hasHeader("Location", getJSURLs("http", closestNodeAddr)...)
+
+	requireReq(t, path).
+		withHeader("X-Forwarded-Proto", "https").
+		result().
+		hasStatus(http.StatusFound).
+		hasHeader("Location", getJSURLs("https", closestNodeAddr)...)
+}
+
 type httpReq struct {
 	*testing.T
 	*http.Request
@@ -150,7 +177,7 @@ func (hr httpReq) withHeader(key, value string) httpReq {
 
 func (hr httpReq) result() httpCheck {
 	rr := httptest.NewRecorder()
-	redirectHlsHandler(prefixes[:]).ServeHTTP(rr, hr.Request)
+	redirectHandler(prefixes[:]).ServeHTTP(rr, hr.Request)
 	return httpCheck{hr.T, rr}
 }
 
@@ -160,14 +187,7 @@ func (hc httpCheck) hasStatus(code int) httpCheck {
 }
 
 func (hc httpCheck) hasHeader(key string, values ...string) httpCheck {
-	var success = false
 	header := hc.Header().Get(key)
-	for _, value := range values {
-		if header == value {
-			success = true
-			break
-		}
-	}
-	require.True(hc, success)
+	require.Contains(hc, values, header)
 	return hc
 }

@@ -424,18 +424,18 @@ func writeSerfConfig(config *agent.Config) (string, error) {
 }
 
 func startCatalystWebServer(httpAddr string, redirectPrefixes []string) {
-	http.Handle("/hls/", redirectHlsHandler(redirectPrefixes))
+	http.Handle("/", redirectHandler(redirectPrefixes))
 	glog.Infof("HTTP server listening on %s", httpAddr)
 	glog.Fatal(http.ListenAndServe(httpAddr, nil))
 }
 
 var getClosestNode = queryMistForClosestNode
 
-func redirectHlsHandler(redirectPrefixes []string) http.Handler {
+func redirectHandler(redirectPrefixes []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
-		playbackID, suffix, isValid := parsePlaybackID(r.URL.Path)
+		playbackID, pathTmpl, isValid := parsePlaybackID(r.URL.Path)
 		if !isValid {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -457,7 +457,7 @@ func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 				}
 				if addr != "" {
 					nodeAddr = addr
-					validPrefix = prefix + "+"
+					validPrefix = prefix + "+" + playbackID
 					err = nil
 				}
 				waitGroup.Done()
@@ -471,13 +471,14 @@ func redirectHlsHandler(redirectPrefixes []string) http.Handler {
 			return
 		}
 
-		rURL := fmt.Sprintf("%s://%s/hls/%s%s/%s", protocol(r), nodeAddr, validPrefix, playbackID, suffix)
+		rPath := fmt.Sprintf(pathTmpl, validPrefix)
+		rURL := fmt.Sprintf("%s://%s%s", protocol(r), nodeAddr, rPath)
 		glog.V(6).Infof("generated redirect url=%s", rURL)
 		http.Redirect(w, r, rURL, http.StatusFound)
 	})
 }
 
-func parsePlaybackID(path string) (string, string, bool) {
+func parsePlaybackIDHLS(path string) (string, string, bool) {
 	r := regexp.MustCompile("^/hls/([\\w+-]+)/(.*index.m3u8.*)$")
 	m := r.FindStringSubmatch(path)
 	if len(m) < 3 {
@@ -489,7 +490,34 @@ func parsePlaybackID(path string) (string, string, bool) {
 	// incoming path = '/hls/video+4712oox4msvs9qsf/index.m3u8'
 	// playbackID = '4712oox4msvs9qsf'
 	slice := strings.Split(m[1], "+")
-	return slice[len(slice)-1], m[2], true
+	pathTmpl := "/hls/%s/" + m[2]
+	return slice[len(slice)-1], pathTmpl, true
+}
+
+func parsePlaybackIDJS(path string) (string, string, bool) {
+	r := regexp.MustCompile("^/json_([\\w+-]+).js$")
+	m := r.FindStringSubmatch(path)
+	if len(m) < 2 {
+		return "", "", false
+	}
+	// Incoming requests might come with some prefix attached to the
+	// playback ID. We try to drop that here by splitting at `+` and
+	// picking the last piece. For eg.
+	// incoming path = '/hls/video+4712oox4msvs9qsf/index.m3u8'
+	// playbackID = '4712oox4msvs9qsf'
+	slice := strings.Split(m[1], "+")
+	return slice[len(slice)-1], "/json_%s.js", true
+}
+
+func parsePlaybackID(path string) (string, string, bool) {
+	parsers := []func(string) (string, string, bool){parsePlaybackIDHLS, parsePlaybackIDJS}
+	for _, parser := range parsers {
+		playbackID, suffix, isValid := parser(path)
+		if isValid {
+			return playbackID, suffix, isValid
+		}
+	}
+	return "", "", false
 }
 
 func protocol(r *http.Request) string {
