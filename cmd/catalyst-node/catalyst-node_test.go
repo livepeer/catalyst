@@ -65,7 +65,7 @@ func TestPlaybackIDParserWithoutPrefix(t *testing.T) {
 	}
 }
 
-func getURLs(proto, host string) []string {
+func getHLSURLs(proto, host string) []string {
 	var urls []string
 	for _, prefix := range prefixes {
 		urls = append(urls, fmt.Sprintf("%s://%s/hls/%s+%s/index.m3u8", proto, host, prefix, playbackID))
@@ -73,7 +73,7 @@ func getURLs(proto, host string) []string {
 	return urls
 }
 
-func getURLsWithSeg(proto, host, seg string) []string {
+func getHLSURLsWithSeg(proto, host, seg string) []string {
 	var urls []string
 	for _, prefix := range prefixes {
 		urls = append(urls, fmt.Sprintf("%s://%s/hls/%s+%s/%s/index.m3u8", proto, host, prefix, playbackID, seg))
@@ -81,7 +81,7 @@ func getURLsWithSeg(proto, host, seg string) []string {
 	return urls
 }
 
-func TestRedirectHandler_Correct(t *testing.T) {
+func TestRedirectHandlerHLS_Correct(t *testing.T) {
 	defaultFunc := getClosestNode
 	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
 	defer func() { getClosestNode = defaultFunc }()
@@ -91,16 +91,16 @@ func TestRedirectHandler_Correct(t *testing.T) {
 	requireReq(t, path).
 		result().
 		hasStatus(http.StatusFound).
-		hasHeader("Location", getURLs("http", closestNodeAddr)...)
+		hasHeader("Location", getHLSURLs("http", closestNodeAddr)...)
 
 	requireReq(t, path).
 		withHeader("X-Forwarded-Proto", "https").
 		result().
 		hasStatus(http.StatusFound).
-		hasHeader("Location", getURLs("https", closestNodeAddr)...)
+		hasHeader("Location", getHLSURLs("https", closestNodeAddr)...)
 }
 
-func TestRedirectHandler_SegmentInPath(t *testing.T) {
+func TestRedirectHandlerHLS_SegmentInPath(t *testing.T) {
 	defaultFunc := getClosestNode
 	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
 	defer func() { getClosestNode = defaultFunc }()
@@ -112,10 +112,10 @@ func TestRedirectHandler_SegmentInPath(t *testing.T) {
 	requireReq(t, path).
 		result().
 		hasStatus(http.StatusFound).
-		hasHeader("Location", getURLsWithSeg("http", closestNodeAddr, seg)...)
+		hasHeader("Location", getHLSURLsWithSeg("http", closestNodeAddr, seg)...)
 }
 
-func TestRedirectHandler_InvalidPath(t *testing.T) {
+func TestRedirectHandlerHLS_InvalidPath(t *testing.T) {
 	requireReq(t, "/hls").result().hasStatus(http.StatusNotFound)
 	requireReq(t, "/hls").result().hasStatus(http.StatusNotFound)
 	requireReq(t, "/hls/").result().hasStatus(http.StatusNotFound)
