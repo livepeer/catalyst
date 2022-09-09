@@ -431,6 +431,33 @@ func startCatalystWebServer(httpAddr string, redirectPrefixes []string) {
 
 var getClosestNode = queryMistForClosestNode
 
+func redirectHandler(redirectPrefixes []string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		playbackID, pathTmpl, isValid := parsePlaybackID(r.URL.Path)
+		if !isValid {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		lat := r.Header.Get("X-Latitude")
+		lon := r.Header.Get("X-Longitude")
+
+		bestNode, fullPlaybackID, err := getBestNode(redirectPrefixes, playbackID, lat, lon)
+		if err != nil {
+			glog.Errorf("failed to find either origin or fallback server for playbackID=%s err=%s", playbackID, err)
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
+
+		rPath := fmt.Sprintf(pathTmpl, fullPlaybackID)
+		rURL := fmt.Sprintf("%s://%s%s", protocol(r), bestNode, rPath)
+		glog.V(6).Infof("generated redirect url=%s", rURL)
+		http.Redirect(w, r, rURL, http.StatusFound)
+	})
+}
+
 // return the best node available for a given stream. will return any node if nobody has the stream.
 func getBestNode(redirectPrefixes []string, playbackID, lat, lon string) (string, string, error) {
 	var nodeAddr, fullPlaybackID, fallbackAddr string
@@ -472,33 +499,6 @@ func getBestNode(redirectPrefixes []string, playbackID, lat, lon string) (string
 
 	// ugly path: we couldn't find ANY servers. yikes.
 	return "", "", err
-}
-
-func redirectHandler(redirectPrefixes []string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "*")
-		playbackID, pathTmpl, isValid := parsePlaybackID(r.URL.Path)
-		if !isValid {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		lat := r.Header.Get("X-Latitude")
-		lon := r.Header.Get("X-Longitude")
-
-		bestNode, fullPlaybackID, err := getBestNode(redirectPrefixes, playbackID, lat, lon)
-		if err != nil {
-			glog.Errorf("failed to find either origin or fallback server for playbackID=%s err=%s", playbackID, err)
-			w.WriteHeader(http.StatusBadGateway)
-			return
-		}
-
-		rPath := fmt.Sprintf(pathTmpl, fullPlaybackID)
-		rURL := fmt.Sprintf("%s://%s%s", protocol(r), bestNode, rPath)
-		glog.V(6).Infof("generated redirect url=%s", rURL)
-		http.Redirect(w, r, rURL, http.StatusFound)
-	})
 }
 
 // Incoming requests might come with some prefix attached to the
