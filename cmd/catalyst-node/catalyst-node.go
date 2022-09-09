@@ -434,6 +434,7 @@ var getClosestNode = queryMistForClosestNode
 // return the best node available for a given stream. will return any node if nobody has the stream.
 func getBestNode(redirectPrefixes []string, playbackID, lat, lon string) (string, string, error) {
 	var nodeAddr, fullPlaybackID, fallbackAddr string
+	var mu sync.Mutex
 	var err error
 	var waitGroup sync.WaitGroup
 
@@ -441,9 +442,11 @@ func getBestNode(redirectPrefixes []string, playbackID, lat, lon string) (string
 		waitGroup.Add(1)
 		go func(prefix string) {
 			addr, e := getClosestNode(playbackID, lat, lon, prefix)
+			mu.Lock()
+			defer mu.Unlock()
 			if e != nil {
-				err := e
-				glog.V(8).Infof("error finding origin server playbackID=%s prefix=%s error=%s", playbackID, prefix, err)
+				err = e
+				glog.V(8).Infof("error finding origin server playbackID=%s prefix=%s error=%s", playbackID, prefix, e)
 				// If we didn't find a stream but we did find a server, keep that so we can use it to handle a 404
 				if addr != "" {
 					fallbackAddr = addr
