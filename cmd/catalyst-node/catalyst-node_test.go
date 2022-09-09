@@ -99,13 +99,13 @@ func TestRedirectHandler404(t *testing.T) {
 	path := fmt.Sprintf("/hls/%s/index.m3u8", playbackID)
 
 	requireReq(t, path).
-		result().
+		result(nil).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getHLSURLs("http", closestNodeAddr)...)
 
 	requireReq(t, path).
 		withHeader("X-Forwarded-Proto", "https").
-		result().
+		result(nil).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getHLSURLs("https", closestNodeAddr)...)
 }
@@ -118,13 +118,13 @@ func TestRedirectHandlerHLS_Correct(t *testing.T) {
 	path := fmt.Sprintf("/hls/%s/index.m3u8", playbackID)
 
 	requireReq(t, path).
-		result().
+		result(nil).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getHLSURLs("http", closestNodeAddr)...)
 
 	requireReq(t, path).
 		withHeader("X-Forwarded-Proto", "https").
-		result().
+		result(nil).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getHLSURLs("https", closestNodeAddr)...)
 }
@@ -139,17 +139,17 @@ func TestRedirectHandlerHLS_SegmentInPath(t *testing.T) {
 	path := fmt.Sprintf("/hls/%s/%s/index.m3u8?%s", playbackID, seg, getParams)
 
 	requireReq(t, path).
-		result().
+		result(nil).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getHLSURLsWithSeg("http", closestNodeAddr, seg)...)
 }
 
 func TestRedirectHandlerHLS_InvalidPath(t *testing.T) {
-	requireReq(t, "/hls").result().hasStatus(http.StatusNotFound)
-	requireReq(t, "/hls").result().hasStatus(http.StatusNotFound)
-	requireReq(t, "/hls/").result().hasStatus(http.StatusNotFound)
-	requireReq(t, "/hls/12345").result().hasStatus(http.StatusNotFound)
-	requireReq(t, "/hls/12345/somepath").result().hasStatus(http.StatusNotFound)
+	requireReq(t, "/hls").result(nil).hasStatus(http.StatusNotFound)
+	requireReq(t, "/hls").result(nil).hasStatus(http.StatusNotFound)
+	requireReq(t, "/hls/").result(nil).hasStatus(http.StatusNotFound)
+	requireReq(t, "/hls/12345").result(nil).hasStatus(http.StatusNotFound)
+	requireReq(t, "/hls/12345/somepath").result(nil).hasStatus(http.StatusNotFound)
 }
 
 func TestRedirectHandlerJS_Correct(t *testing.T) {
@@ -160,15 +160,37 @@ func TestRedirectHandlerJS_Correct(t *testing.T) {
 	path := fmt.Sprintf("/json_%s.js", playbackID)
 
 	requireReq(t, path).
-		result().
+		result(nil).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getJSURLs("http", closestNodeAddr)...)
 
 	requireReq(t, path).
 		withHeader("X-Forwarded-Proto", "https").
-		result().
+		result(nil).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getJSURLs("https", closestNodeAddr)...)
+}
+
+func TestNodeHostRedirect(t *testing.T) {
+	hostCli := &catalystNodeCliFlags{NodeHost: "right-host"}
+	// Success case; get past the redirect handler and 404
+	requireReq(t, "/any/path").
+		withHeader("Host", "right-host").
+		result(hostCli).
+		hasStatus(http.StatusNotFound)
+
+	requireReq(t, "/any/path").
+		withHeader("Host", "wrong-host").
+		result(hostCli).
+		hasStatus(http.StatusFound).
+		hasHeader("Location", "http://right-host/any/path")
+
+	requireReq(t, "/any/path").
+		withHeader("Host", "wrong-host").
+		withHeader("X-Forwarded-Proto", "https").
+		result(hostCli).
+		hasStatus(http.StatusFound).
+		hasHeader("Location", "https://right-host/any/path")
 }
 
 type httpReq struct {
@@ -195,9 +217,12 @@ func (hr httpReq) withHeader(key, value string) httpReq {
 	return hr
 }
 
-func (hr httpReq) result() httpCheck {
+func (hr httpReq) result(cli *catalystNodeCliFlags) httpCheck {
+	if cli == nil {
+		cli = &catalystNodeCliFlags{}
+	}
 	rr := httptest.NewRecorder()
-	redirectHandler(prefixes[:]).ServeHTTP(rr, hr.Request)
+	redirectHandler(prefixes[:], cli.NodeHost).ServeHTTP(rr, hr.Request)
 	return httpCheck{hr.T, rr}
 }
 

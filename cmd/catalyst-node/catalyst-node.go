@@ -47,6 +47,7 @@ type catalystNodeCliFlags struct {
 	BalancerArgs     string
 	HTTPAddress      string
 	RedirectPrefixes []string
+	NodeHost         string
 }
 
 func runClient(config catalystConfig) error {
@@ -257,6 +258,7 @@ func main() {
 	fs.BoolVar(&cliFlags.Version, "version", false, "Print out the version")
 	fs.BoolVar(&cliFlags.RunBalancer, "run-balancer", true, "run MistUtilLoad")
 	fs.StringVar(&cliFlags.BalancerArgs, "balancer-args", "", "arguments passed to MistUtilLoad")
+	fs.StringVar(&cliFlags.NodeHost, "node-host", "", "Hostname this node should handle requests for. Requests on any other domain will trigger a redirect. Useful as a 404 handler to send users to another node.")
 	prefixes := fs.String("redirect-prefixes", "", "Set of valid prefixes of playback id which are handled by mistserver")
 
 	// Catalyst web server
@@ -309,7 +311,7 @@ func main() {
 
 	parseSerfConfig(&serfConfig, retryJoin, serfTags)
 
-	go startCatalystWebServer(cliFlags.HTTPAddress, cliFlags.RedirectPrefixes)
+	go startCatalystWebServer(cliFlags.HTTPAddress, cliFlags.RedirectPrefixes, cliFlags.NodeHost)
 
 	config.serfTags = serfConfig.Tags
 
@@ -423,18 +425,28 @@ func writeSerfConfig(config *agent.Config) (string, error) {
 	return tmpFile.Name(), err
 }
 
-func startCatalystWebServer(httpAddr string, redirectPrefixes []string) {
-	http.Handle("/", redirectHandler(redirectPrefixes))
+func startCatalystWebServer(httpAddr string, redirectPrefixes []string, nodeHost string) {
+	http.Handle("/", redirectHandler(redirectPrefixes, nodeHost))
 	glog.Infof("HTTP server listening on %s", httpAddr)
 	glog.Fatal(http.ListenAndServe(httpAddr, nil))
 }
 
 var getClosestNode = queryMistForClosestNode
 
-func redirectHandler(redirectPrefixes []string) http.Handler {
+func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
+
+		if nodeHost != "" {
+			host := r.Header.Get("Host")
+			if host != nodeHost {
+				rURL := fmt.Sprintf("%s://%s%s", protocol(r), nodeHost, r.URL.Path)
+				http.Redirect(w, r, rURL, http.StatusFound)
+				return
+			}
+		}
+
 		playbackID, pathTmpl, isValid := parsePlaybackID(r.URL.Path)
 		if !isValid {
 			w.WriteHeader(http.StatusNotFound)
