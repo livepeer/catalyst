@@ -7,7 +7,7 @@ go1.17 is recommended because building with < 1.17 (specifically 1.16) can resul
 From there:
 
 ```
-# boots up Postgres and RabbitMQ dependencies
+# boots up Postgres, RabbitMQ and MinIO S3 dependencies
 make docker-compose
 
 # downloads or builds services as appropriate
@@ -17,9 +17,10 @@ make
 make dev
 ```
 
-You should then have a web interface running at
-[http://localhost:3004](http://localhost:3004) and a Mist interface at
-[http://localhost:4242](http://localhost:4242).
+After that, you should have a few web interfaces running:
+- Livepeer Studio at [http://localhost:3012](http://localhost:3012)
+- Mist at [http://localhost:4242](http://localhost:4242).
+- MinIO S3 at [http://localhost:9000](http://localhost:9000)
 
 ## Credentials/secrets
 
@@ -36,6 +37,13 @@ Mist credentials:
 username: test
 password: test
 ```
+
+MinIO S3 credentials:
+
+````
+username: minioadmin
+password: minioadmin
+````
 
 ## Manifest
 

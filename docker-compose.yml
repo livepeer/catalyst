@@ -2,6 +2,15 @@
 
 version: "3.2"
 services:
+  minio:
+    image: quay.io/minio/minio
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - ./.docker/minio/data:/data
+      - ./config/minio.sh:/minio.sh
+    entrypoint: bash -c /minio.sh
   postgres:
     image: postgres
     container_name: box-postgres
