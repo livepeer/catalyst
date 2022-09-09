@@ -498,17 +498,17 @@ func redirectHandler(redirectPrefixes []string) http.Handler {
 	})
 }
 
+// Incoming requests might come with some prefix attached to the
+// playback ID. We try to drop that here by splitting at `+` and
+// picking the last piece. For eg.
+// incoming path = '/hls/video+4712oox4msvs9qsf/index.m3u8'
+// playbackID = '4712oox4msvs9qsf'
 func parsePlaybackIDHLS(path string) (string, string, bool) {
 	r := regexp.MustCompile(`^/hls/([\w+-]+)/(.*index.m3u8.*)$`)
 	m := r.FindStringSubmatch(path)
 	if len(m) < 3 {
 		return "", "", false
 	}
-	// Incoming requests might come with some prefix attached to the
-	// playback ID. We try to drop that here by splitting at `+` and
-	// picking the last piece. For eg.
-	// incoming path = '/hls/video+4712oox4msvs9qsf/index.m3u8'
-	// playbackID = '4712oox4msvs9qsf'
 	slice := strings.Split(m[1], "+")
 	pathTmpl := "/hls/%s/" + m[2]
 	return slice[len(slice)-1], pathTmpl, true
@@ -520,11 +520,6 @@ func parsePlaybackIDJS(path string) (string, string, bool) {
 	if len(m) < 2 {
 		return "", "", false
 	}
-	// Incoming requests might come with some prefix attached to the
-	// playback ID. We try to drop that here by splitting at `+` and
-	// picking the last piece. For eg.
-	// incoming path = '/hls/video+4712oox4msvs9qsf/index.m3u8'
-	// playbackID = '4712oox4msvs9qsf'
 	slice := strings.Split(m[1], "+")
 	return slice[len(slice)-1], "/json_%s.js", true
 }
