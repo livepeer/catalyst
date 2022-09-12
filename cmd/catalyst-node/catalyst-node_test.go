@@ -174,19 +174,17 @@ func TestRedirectHandlerJS_Correct(t *testing.T) {
 func TestNodeHostRedirect(t *testing.T) {
 	hostCli := &catalystNodeCliFlags{NodeHost: "right-host"}
 	// Success case; get past the redirect handler and 404
-	requireReq(t, "/any/path").
+	requireReq(t, "http://right-host/any/path").
 		withHeader("Host", "right-host").
 		result(hostCli).
 		hasStatus(http.StatusNotFound)
 
-	requireReq(t, "/any/path").
-		withHeader("Host", "wrong-host").
+	requireReq(t, "http://wrong-host/any/path").
 		result(hostCli).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", "http://right-host/any/path")
 
-	requireReq(t, "/any/path").
-		withHeader("Host", "wrong-host").
+	requireReq(t, "http://wrong-host/any/path").
 		withHeader("X-Forwarded-Proto", "https").
 		result(hostCli).
 		hasStatus(http.StatusFound).

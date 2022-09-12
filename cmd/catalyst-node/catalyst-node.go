@@ -451,10 +451,11 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 		w.Header().Set("Access-Control-Allow-Headers", "*")
 
 		if nodeHost != "" {
-			host := r.Header.Get("Host")
+			host := r.Host
 			if host != nodeHost {
 				rURL := fmt.Sprintf("%s://%s%s", protocol(r), nodeHost, r.URL.Path)
 				http.Redirect(w, r, rURL, http.StatusFound)
+				glog.V(6).Infof("NodeHost redirect host=%s nodeHost=%s from=%s to=%s", host, nodeHost, r.URL, rURL)
 				return
 			}
 		}
