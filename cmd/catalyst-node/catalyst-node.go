@@ -10,10 +10,12 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"os/signal"
 	"regexp"
 	"runtime"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	serfclient "github.com/hashicorp/serf/client"
@@ -231,6 +233,16 @@ func execBalancer(balancerArgs []string) error {
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
+		for {
+			s := <-c
+			glog.Errorf("caught signal=%v killing MistUtilLoad", s)
+			cmd.Process.Kill()
+		}
+	}()
 
 	err := cmd.Start()
 	if err != nil {
