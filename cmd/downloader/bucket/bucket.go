@@ -57,13 +57,17 @@ func GetArtifactInfo(platform, architecture, release string, service *types.Serv
 	if err != nil {
 		glog.Fatal(err)
 	}
+	commit := service.Strategy.Commit
+	if commit == "" {
+		commit = GetArtifactVersion(*buildInfo)
+	}
 	service.Strategy.Commit = buildInfo.Commit
 
 	var info = &types.ArtifactInfo{
 		Name:         service.Name,
 		Platform:     platform,
 		Architecture: architecture,
-		Version:      GetArtifactVersion(*buildInfo),
+		Version:      commit,
 	}
 
 	extension := utils.PlatformExt(platform)
@@ -97,5 +101,6 @@ func GetArtifactInfo(platform, architecture, release string, service *types.Serv
 		info.SignatureFileName = fmt.Sprintf("%s.%s", info.ArchiveFileName, constants.SignatureFileExtension)
 		info.SignatureURL = GenerateArtifactURL(project, info.Version, info.SignatureFileName)
 	}
+
 	return info
 }
