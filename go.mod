@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/ProtonMail/gopenpgp/v2 v2.4.10
 	github.com/golang/glog v1.0.0
-	github.com/hashicorp/serf v0.9.8
+	github.com/hashicorp/serf v0.10.0
 	github.com/magicsong/color-glog v0.0.1
 	github.com/mitchellh/cli v1.1.4
 	github.com/mitchellh/mapstructure v1.5.0
@@ -51,7 +51,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/hashicorp/mdns v1.0.4 // indirect
-	github.com/hashicorp/memberlist v0.3.0 // indirect
+	github.com/hashicorp/memberlist v0.4.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
@@ -87,6 +87,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
-	golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c // indirect
+	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
