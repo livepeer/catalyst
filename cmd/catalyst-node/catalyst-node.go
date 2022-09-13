@@ -39,6 +39,7 @@ type catalystConfig struct {
 	serfRPCAuthKey           string
 	serfTags                 map[string]string
 	mistLoadBalancerEndpoint string
+	mistLoadBalancerTemplate string
 }
 
 type catalystNodeCliFlags struct {
@@ -135,7 +136,7 @@ func runClient(config catalystConfig) error {
 		for k := range balancedServers {
 			if _, ok := membersMap[k]; !ok {
 				glog.Infof("deleting server %s from load balancer\n", k)
-				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "del")
+				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, config.mistLoadBalancerTemplate, k, "del")
 				if err != nil {
 					glog.Errorf("Error deleting server %s from load balancer: %v\n", k, err)
 				}
@@ -145,7 +146,7 @@ func runClient(config catalystConfig) error {
 		for k := range membersMap {
 			if _, ok := balancedServers[k]; !ok {
 				glog.Infof("adding server %s to load balancer\n", k)
-				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, k, "add")
+				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, config.mistLoadBalancerTemplate, k, "add")
 				if err != nil {
 					glog.Errorf("Error adding server %s to load balancer: %v\n", k, err)
 				}
@@ -161,8 +162,9 @@ func connectSerfAgent(serfRPCAddress, serfRPCAuthKey string) (*serfclient.RPCCli
 	})
 }
 
-func changeLoadBalancerServers(endpoint, server, action string) ([]byte, error) {
-	actionURL := endpoint + "?" + action + "server=" + url.QueryEscape(server)
+func changeLoadBalancerServers(endpoint, tmpl, server, action string) ([]byte, error) {
+	serverTmpl := fmt.Sprintf(tmpl, server)
+	actionURL := endpoint + "?" + action + "server=" + url.QueryEscape(serverTmpl)
 	req, err := http.NewRequest("POST", actionURL, nil)
 	if err != nil {
 		glog.Errorf("Error creating request: %v", err)
@@ -280,6 +282,7 @@ func main() {
 	fs.StringVar(&config.serfRPCAuthKey, "serf-rpc-auth-key", "", "Serf RPC auth key")
 	serfTags := fs.String("serf-tags", "node=media", "Serf tags for Catalyst nodes")
 	fs.StringVar(&config.mistLoadBalancerEndpoint, "mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
+	fs.StringVar(&config.mistLoadBalancerTemplate, "mist-load-balancer-template", "http://%s:4242", "template for passing nodes to MistUtilBalancer")
 
 	// Serf commands passed straight through to the agent
 	serfConfig := agent.Config{}
