@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/serf v0.9.8
 	github.com/magicsong/color-glog v0.0.1
 	github.com/mitchellh/cli v1.1.4
-	github.com/mitchellh/mapstructure v1.4.1
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/peterbourgon/ff/v3 v3.1.2
 	github.com/stretchr/testify v1.7.2
 	github.com/testcontainers/testcontainers-go v0.13.1-0.20220712105725-8e65673ca167
