@@ -3,7 +3,7 @@ module github.com/livepeer/catalyst
 go 1.17
 
 require (
-	github.com/ProtonMail/gopenpgp/v2 v2.4.5
+	github.com/ProtonMail/gopenpgp/v2 v2.4.10
 	github.com/golang/glog v1.0.0
 	github.com/hashicorp/serf v0.9.8
 	github.com/magicsong/color-glog v0.0.1
@@ -28,6 +28,7 @@ require (
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
+	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/containerd/cgroups v1.0.4 // indirect
 	github.com/containerd/containerd v1.5.13 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -80,8 +81,8 @@ require (
 )
 
 require (
-	github.com/ProtonMail/go-crypto v0.0.0-20220113124808-70ae35bab23f // indirect
-	github.com/ProtonMail/go-mime v0.0.0-20190923161245-9b5a4261663a // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20220822140716-1678d6eb0cbe // indirect
+	github.com/ProtonMail/go-mime v0.0.0-20220302105931-303f85f7fe0f // indirect
 	github.com/livepeer/livepeer-data v0.4.16
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
