@@ -5,14 +5,14 @@ box:
       strategy:
         download: github
         project: livepeer/livepeer-data
-        commit: 06482656fa108b64bd44f3d9e2976f83b0ef722c
-      release: v0.4.19
+        commit: b2a1cacec7215d227811a5712c9ce4cbd4f134a9
+      release: v0.4.20
     - name: api
       strategy:
         download: github
         project: livepeer/studio
-        commit: de3a27500d4666bf9114174a61bf72e1c05bb3b3
-      release: v0.7.4
+        commit: 843e6831600f2f61a2781f3440a1f86c9de12f85
+      release: v0.7.5
     - name: catalyst-api
       strategy:
         download: github
@@ -23,9 +23,9 @@ box:
       strategy:
         download: github
         project: livepeer/stream-tester
-        commit: d73657408f54f80ecec7ac5d551bcd6f38d18c0a
+        commit: 0a4731375c401d635e71224929dc400d5f8cc9a4
       binary: livepeer-mist-api-connector
-      release: v0.12.20
+      release: v0.12.21
     - name: catalyst-uploader
       strategy:
         download: github
@@ -57,9 +57,9 @@ box:
       strategy:
         download: github
         project: livepeer/studio
-        commit: de3a27500d4666bf9114174a61bf72e1c05bb3b3
+        commit: 843e6831600f2f61a2781f3440a1f86c9de12f85
       binary: livepeer-www
-      release: v0.7.4
+      release: v0.7.5
     - name: victoria-metrics
       strategy:
         download: github
