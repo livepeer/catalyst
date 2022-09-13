@@ -14,7 +14,7 @@ ARG	GIT_VERSION=unknown
 ENV	GIT_VERSION="${GIT_VERSION}"
 RUN	make livepeer-log livepeer-catalyst-node
 
-FROM	ubuntu:20.04
+FROM	ubuntu:22.04
 
 LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
 
