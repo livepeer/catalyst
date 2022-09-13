@@ -284,6 +284,7 @@ func main() {
 	// Serf commands passed straight through to the agent
 	serfConfig := agent.Config{}
 	fs.StringVar(&serfConfig.BindAddr, "bind", "0.0.0.0:9935", "Address to bind network listeners to. To use an IPv6 address, specify [::1] or [::1]:7946.")
+	fs.StringVar(&serfConfig.AdvertiseAddr, "advertise", "0.0.0.0", "Address to advertise to the other cluster members")
 	fs.StringVar(&serfConfig.RPCAddr, "rpc-addr", "127.0.0.1:7373", "Address to bind the RPC listener.")
 	retryJoin := fs.String("retry-join", "", "An agent to join with. This flag be specified multiple times. Does not exit on failure like -join, used to retry until success.")
 	fs.StringVar(&serfConfig.EncryptKey, "encrypt", "", "Key for encrypting network traffic within Serf. Must be a base64-encoded 32-byte key.")
