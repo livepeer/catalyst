@@ -7,7 +7,7 @@ if [[ ! -e "/data/mc" ]]; then
   case $(uname -m) in
     x86_64) ARCH="amd64" ;;
     arm64)  ARCH="arm64" ;;
-    *) ARCH="$(uname -m)" ;;
+    *) ARCH=$(uname -m) ;;
   esac
   OSARCH=$(uname|tr [:upper:] [:lower:])-$ARCH
   curl https://dl.min.io/client/mc/release/$OSARCH/mc --create-dirs -o /data/mc
