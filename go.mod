@@ -10,7 +10,7 @@ require (
 	github.com/mitchellh/cli v1.1.4
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/peterbourgon/ff/v3 v3.1.2
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.0
 	github.com/testcontainers/testcontainers-go v0.13.1-0.20220712105725-8e65673ca167
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	gopkg.in/yaml.v3 v3.0.1
