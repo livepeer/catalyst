@@ -53,6 +53,8 @@ type catalystNodeCliFlags struct {
 	NodeHost         string
 }
 
+var mediaFilter = map[string]string{"node": "media"}
+
 func runClient(config catalystConfig) error {
 	client, err := connectSerfAgent(config.serfRPCAddress, config.serfRPCAuthKey)
 
@@ -98,7 +100,7 @@ func runClient(config catalystConfig) error {
 		<-inbox
 		glog.V(5).Infof("got event: %v", event)
 
-		members, err := client.MembersFiltered(config.serfTags, ".*", ".*")
+		members, err := client.MembersFiltered(mediaFilter, ".*", ".*")
 
 		if err != nil {
 			glog.Errorf("Error getting serf, will retry: %v\n", err)
