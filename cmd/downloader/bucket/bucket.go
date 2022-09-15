@@ -21,18 +21,17 @@ func GetArtifactVersion(buildInfo types.BuildManifestInformation) string {
 // GetBuildInformation pulls in build manifest from bucket.
 func GetBuildInformation(release, project string) (*types.BuildManifestInformation, error) {
 	var buildInfo *types.BuildManifestInformation
-	resp, err := http.Get(fmt.Sprintf(constants.BucketManifestURLFormat, project, release))
+	url := fmt.Sprintf(constants.BucketManifestURLFormat, project, release)
+	glog.V(6).Infof("fetching manifest data for project=%s from url=%s", project, url)
+	resp, err := http.Get(url)
 	if err != nil {
-		glog.Error(err)
 		return nil, err
 	}
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		glog.Error(err)
 		return nil, err
 	}
 	if err := json.Unmarshal(content, &buildInfo); err != nil {
-		glog.Error(err)
 		return nil, err
 	}
 	return buildInfo, nil
@@ -55,6 +54,7 @@ func GetArtifactInfo(platform, architecture, release string, service *types.Serv
 	release = utils.CleanBranchName(service.Release)
 	buildInfo, err := GetBuildInformation(release, project)
 	if err != nil {
+		glog.Errorf("error when processing service=%s", service.Name)
 		glog.Fatal(err)
 	}
 	commit := service.Strategy.Commit
