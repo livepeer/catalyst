@@ -9,7 +9,7 @@ require (
 	github.com/magicsong/color-glog v0.0.1
 	github.com/mitchellh/cli v1.1.4
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/peterbourgon/ff/v3 v3.1.2
+	github.com/peterbourgon/ff/v3 v3.3.0
 	github.com/stretchr/testify v1.8.0
 	github.com/testcontainers/testcontainers-go v0.13.1-0.20220712105725-8e65673ca167
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
