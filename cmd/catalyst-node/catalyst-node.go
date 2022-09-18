@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -29,10 +30,12 @@ import (
 
 const (
 	httpPort         = 8090
+	httpInternalPort = 8091
 	mistUtilLoadPort = 8042
 )
 
 var Version = "unknown"
+var serfClient *serfclient.RPCClient
 
 type catalystConfig struct {
 	serfRPCAddress           string
@@ -43,14 +46,15 @@ type catalystConfig struct {
 }
 
 type catalystNodeCliFlags struct {
-	Verbosity        int
-	MistJSON         bool
-	Version          bool
-	RunBalancer      bool
-	BalancerArgs     string
-	HTTPAddress      string
-	RedirectPrefixes []string
-	NodeHost         string
+	Verbosity           int
+	MistJSON            bool
+	Version             bool
+	RunBalancer         bool
+	BalancerArgs        string
+	HTTPAddress         string
+	HTTPInternalAddress string
+	RedirectPrefixes    []string
+	NodeHost            string
 }
 
 var mediaFilter = map[string]string{"node": "media"}
@@ -61,6 +65,7 @@ func runClient(config catalystConfig) error {
 	if err != nil {
 		return err
 	}
+	serfClient = client
 	defer client.Close()
 
 	eventCh := make(chan map[string]interface{})
@@ -278,7 +283,8 @@ func main() {
 	prefixes := fs.String("redirect-prefixes", "", "Set of valid prefixes of playback id which are handled by mistserver")
 
 	// Catalyst web server
-	fs.StringVar(&cliFlags.HTTPAddress, "http-addr", fmt.Sprintf("127.0.0.1:%d", httpPort), "Address to bind for Catalyst HTTP commands")
+	fs.StringVar(&cliFlags.HTTPAddress, "http-addr", fmt.Sprintf("127.0.0.1:%d", httpPort), "Address to bind for external-facing Catalyst HTTP handling")
+	fs.StringVar(&cliFlags.HTTPInternalAddress, "http-internal-addr", fmt.Sprintf("127.0.0.1:%d", httpInternalPort), "Address to bind for internal privileged HTTP commands")
 
 	fs.StringVar(&config.serfRPCAddress, "serf-rpc-address", "127.0.0.1:7373", "Serf RPC address")
 	fs.StringVar(&config.serfRPCAuthKey, "serf-rpc-auth-key", "", "Serf RPC auth key")
@@ -330,6 +336,7 @@ func main() {
 	parseSerfConfig(&serfConfig, retryJoin, serfTags)
 
 	go startCatalystWebServer(cliFlags.HTTPAddress, cliFlags.RedirectPrefixes, cliFlags.NodeHost)
+	go startInternalWebServer(cliFlags.HTTPInternalAddress)
 
 	config.serfTags = serfConfig.Tags
 
@@ -449,6 +456,12 @@ func startCatalystWebServer(httpAddr string, redirectPrefixes []string, nodeHost
 	glog.Fatal(http.ListenAndServe(httpAddr, nil))
 }
 
+func startInternalWebServer(internalAddr string) {
+	http.Handle("/STREAM_SOURCE", streamSourceHandler())
+	glog.Infof("Internal HTTP server listening on %s", internalAddr)
+	glog.Fatal(http.ListenAndServe(internalAddr, nil))
+}
+
 var getClosestNode = queryMistForClosestNode
 
 func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
@@ -487,6 +500,55 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 		glog.V(6).Infof("generated redirect url=%s", rURL)
 		http.Redirect(w, r, rURL, http.StatusFound)
 	})
+}
+
+func streamSourceHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			glog.Errorf("error handling STREAM_SOURCE body=%s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		streamName := string(b)
+		glog.V(7).Infof("got mist STREAM_SOURCE request=%s", streamName)
+		source, err := getStreamSource(streamName)
+		if err != nil {
+			glog.Errorf("error finding STREAM_SOURCE: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		glog.V(7).Infof("replying to Mist STREAM_SOURCE request=%s response=%s", streamName, source)
+		w.Write([]byte(source))
+	})
+}
+
+func getStreamSource(streamName string) (string, error) {
+	source, err := queryMistForClosestNodeSource(streamName, "0", "0", "", true)
+	if err != nil {
+		return "", err
+	}
+	// parse node name out of dtsc:// url
+	u, err := url.Parse(source)
+	if err != nil {
+		return "", err
+	}
+	nodeName := u.Host
+
+	members, err := serfClient.MembersFiltered(map[string]string{}, "alive", nodeName)
+	if err != nil {
+		return "", err
+	}
+	if len(members) < 1 {
+		return "", fmt.Errorf("serf node not found name=%s", nodeName)
+	}
+	member := members[0]
+	dtsc, has := member.Tags["dtsc"]
+	if !has {
+		glog.V(7).Infof("no dtsc tag found, replying as-is streamName=%s node=%s", streamName, source)
+		return source, nil
+	}
+	return dtsc, nil
 }
 
 // return the best node available for a given stream. will return any node if nobody has the stream.
