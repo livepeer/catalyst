@@ -507,7 +507,7 @@ func streamSourceHandler() http.Handler {
 		b, err := io.ReadAll(r.Body)
 		if err != nil {
 			glog.Errorf("error handling STREAM_SOURCE body=%s", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("push://"))
 			return
 		}
 		streamName := string(b)
@@ -515,7 +515,7 @@ func streamSourceHandler() http.Handler {
 		source, err := getStreamSource(streamName)
 		if err != nil {
 			glog.Errorf("error finding STREAM_SOURCE: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("push://"))
 			return
 		}
 		glog.V(7).Infof("replying to Mist STREAM_SOURCE request=%s response=%s", streamName, source)
