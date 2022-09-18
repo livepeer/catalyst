@@ -17,22 +17,22 @@ box:
       strategy:
         download: github
         project: livepeer/catalyst-api
-        commit: f8d600f5f13901adcb9b6e9576388b6f8b0ec6d7
-      release: v0.0.11
+        commit: aa55623ae6fb6d6ae4db090e7306da91d7bbd5fe
+      release: v0.0.12
     - name: mapic
       strategy:
         download: github
         project: livepeer/stream-tester
-        commit: 0a4731375c401d635e71224929dc400d5f8cc9a4
+        commit: c1e427d2d04cf8eb543e871b60daffb2a6105515
       binary: livepeer-mist-api-connector
-      release: v0.12.21
+      release: v0.12.23
     - name: catalyst-uploader
       strategy:
         download: github
         project: livepeer/catalyst-uploader
-        commit: 6eef492c7cb703e37bbe8f875350a2de75bb4503
+        commit: 5e6c4147a2a01216b153d68d1ece365f287fddfc
       binary: livepeer-catalyst-uploader
-      release: v0.1.1
+      release: v0.1.2
     - name: livepeer
       strategy:
         download: github
@@ -45,7 +45,7 @@ box:
       strategy:
         download: bucket
         project: mistserver
-        commit: 86c1b592a04d6f0d42669a2e16b3b4e77b204844
+        commit: 3bf27d31a6f8c8369452a191944eab0769b8137f
       release: catalyst
       skipGpg: true
       srcFilenames:
