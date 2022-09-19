@@ -497,7 +497,7 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 
 		rPath := fmt.Sprintf(pathTmpl, fullPlaybackID)
 		rURL := fmt.Sprintf("%s://%s%s", protocol(r), bestNode, rPath)
-		rURL, err = resolveNodeUrl(rURL)
+		rURL, err = resolveNodeURL(rURL)
 		if err != nil {
 			glog.Errorf("failed to resolve node URL playbackID=%s err=%s", playbackID, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -518,26 +518,26 @@ func streamSourceHandler() http.Handler {
 		}
 		streamName := string(b)
 		glog.V(7).Infof("got mist STREAM_SOURCE request=%s", streamName)
-		dtscUrl, err := queryMistForClosestNodeSource(streamName, "0", "0", "", true)
+		dtscURL, err := queryMistForClosestNodeSource(streamName, "0", "0", "", true)
 		if err != nil {
 			glog.Errorf("error querying mist for STREAM_SOURCE: %s", err)
 			w.Write([]byte("push://"))
 			return
 		}
-		outUrl, err := resolveNodeUrl(dtscUrl)
+		outURL, err := resolveNodeURL(dtscURL)
 		if err != nil {
 			glog.Errorf("error finding STREAM_SOURCE: %s", err)
 			w.Write([]byte("push://"))
 			return
 		}
-		glog.V(7).Infof("replying to Mist STREAM_SOURCE request=%s response=%s", streamName, outUrl)
-		w.Write([]byte(outUrl))
+		glog.V(7).Infof("replying to Mist STREAM_SOURCE request=%s response=%s", streamName, outURL)
+		w.Write([]byte(outURL))
 	})
 }
 
 // Given a dtsc:// or https:// url, resolve the proper address of the node via serf tags
-func resolveNodeUrl(streamUrl string) (string, error) {
-	u, err := url.Parse(streamUrl)
+func resolveNodeURL(streamURL string) (string, error) {
+	u, err := url.Parse(streamURL)
 	if err != nil {
 		return "", err
 	}
@@ -555,7 +555,7 @@ func resolveNodeUrl(streamUrl string) (string, error) {
 	addr, has := member.Tags[protocol]
 	if !has {
 		glog.V(7).Infof("no tag found, not tag resolving protocol=%s nodeName=%s", protocol, nodeName)
-		return streamUrl, nil
+		return streamURL, nil
 	}
 	u2, err := url.Parse(addr)
 	if err != nil {
