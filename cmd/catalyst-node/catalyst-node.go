@@ -544,14 +544,7 @@ func resolveNodeURL(streamURL string) (string, error) {
 	nodeName := u.Host
 	protocol := u.Scheme
 
-	members, err := serfClient.MembersFiltered(map[string]string{}, "alive", nodeName)
-	if err != nil {
-		return "", err
-	}
-	if len(members) < 1 {
-		return "", fmt.Errorf("serf node not found name=%s", nodeName)
-	}
-	member := members[0]
+	member, err := getSerfMember(nodeName)
 	addr, has := member.Tags[protocol]
 	if !has {
 		glog.V(7).Infof("no tag found, not tag resolving protocol=%s nodeName=%s", protocol, nodeName)
@@ -565,6 +558,22 @@ func resolveNodeURL(streamURL string) (string, error) {
 	u2.RawQuery = u.RawQuery
 	return u2.String(), nil
 }
+
+func querySerfForMember(name string) (*serfclient.Member, error) {
+	members, err := serfClient.MembersFiltered(map[string]string{}, "alive", name)
+	if err != nil {
+		return nil, err
+	}
+	if len(members) < 1 {
+		return nil, fmt.Errorf("could not find serf member name=%s", name)
+	}
+	if len(members) > 1 {
+		glog.Errorf("WARNING: found multiple serf members with the same name! name=%s count=%d", name, len(members))
+	}
+	return &members[0], nil
+}
+
+var getSerfMember = querySerfForMember
 
 // return the best node available for a given stream. will return any node if nobody has the stream.
 func getBestNode(redirectPrefixes []string, playbackID, lat, lon string) (string, string, error) {
