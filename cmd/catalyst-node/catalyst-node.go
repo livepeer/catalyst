@@ -497,6 +497,12 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 
 		rPath := fmt.Sprintf(pathTmpl, fullPlaybackID)
 		rURL := fmt.Sprintf("%s://%s%s", protocol(r), bestNode, rPath)
+		rURL, err = resolveNodeUrl(rURL)
+		if err != nil {
+			glog.Errorf("failed to resolve node URL playbackID=%s err=%s", playbackID, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		glog.V(6).Infof("generated redirect url=%s", rURL)
 		http.Redirect(w, r, rURL, http.StatusFound)
 	})
@@ -512,28 +518,31 @@ func streamSourceHandler() http.Handler {
 		}
 		streamName := string(b)
 		glog.V(7).Infof("got mist STREAM_SOURCE request=%s", streamName)
-		source, err := getStreamSource(streamName)
+		dtscUrl, err := queryMistForClosestNodeSource(streamName, "0", "0", "", true)
+		if err != nil {
+			glog.Errorf("error querying mist for STREAM_SOURCE: %s", err)
+			w.Write([]byte("push://"))
+			return
+		}
+		outUrl, err := resolveNodeUrl(dtscUrl)
 		if err != nil {
 			glog.Errorf("error finding STREAM_SOURCE: %s", err)
 			w.Write([]byte("push://"))
 			return
 		}
-		glog.V(7).Infof("replying to Mist STREAM_SOURCE request=%s response=%s", streamName, source)
-		w.Write([]byte(source))
+		glog.V(7).Infof("replying to Mist STREAM_SOURCE request=%s response=%s", streamName, outUrl)
+		w.Write([]byte(outUrl))
 	})
 }
 
-func getStreamSource(streamName string) (string, error) {
-	source, err := queryMistForClosestNodeSource(streamName, "0", "0", "", true)
-	if err != nil {
-		return "", err
-	}
-	// parse node name out of dtsc:// url
-	u, err := url.Parse(source)
+// Given a dtsc:// or https:// url, resolve the proper address of the node via serf tags
+func resolveNodeUrl(streamUrl string) (string, error) {
+	u, err := url.Parse(streamUrl)
 	if err != nil {
 		return "", err
 	}
 	nodeName := u.Host
+	protocol := u.Scheme
 
 	members, err := serfClient.MembersFiltered(map[string]string{}, "alive", nodeName)
 	if err != nil {
@@ -543,12 +552,18 @@ func getStreamSource(streamName string) (string, error) {
 		return "", fmt.Errorf("serf node not found name=%s", nodeName)
 	}
 	member := members[0]
-	dtsc, has := member.Tags["dtsc"]
+	addr, has := member.Tags[protocol]
 	if !has {
-		glog.V(7).Infof("no dtsc tag found, replying as-is streamName=%s node=%s", streamName, source)
-		return source, nil
+		glog.V(7).Infof("no tag found, not tag resolving protocol=%s nodeName=%s", protocol, nodeName)
+		return streamUrl, nil
 	}
-	return dtsc, nil
+	u2, err := url.Parse(addr)
+	if err != nil {
+		glog.Errorf("node has unparsable tag!! nodeName=%s protocol=%s tag=%s", nodeName, protocol, addr)
+	}
+	u2.Path = u.Path
+	u2.RawQuery = u.RawQuery
+	return u2.String(), nil
 }
 
 // return the best node available for a given stream. will return any node if nobody has the stream.
