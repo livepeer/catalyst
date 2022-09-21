@@ -5,6 +5,7 @@ CMAKE_OSX_ARCHITECTURES=$(shell uname -m)
 GIT_VERSION?=$(shell git describe --always --long --abbrev=8 --dirty)
 GO_LDFLAG_VERSION := -X 'main.Version=$(GIT_VERSION)'
 MIST_COMMIT ?= "catalyst"
+DOCKER_TAG ?= "livepeer/catalyst"
 STRIP_BINARIES ?= "true"
 
 $(shell mkdir -p ./bin)
@@ -163,8 +164,13 @@ full-reset: docker-compose-rm clean all
 livepeer-catalyst-node:
 	go build -o ./bin/livepeer-catalyst-node -ldflags="$(GO_LDFLAG_VERSION)" cmd/catalyst-node/catalyst-node.go
 
+.PHONY: docker
 docker:
-	docker build -t livepeer/catalyst --build-arg=GIT_VERSION=$(GIT_VERSION) .
+	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) .
+
+.PHONY: docker-local
+docker-local:
+	tar ch ./bin Dockerfile.local | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) -
 
 test: docker
 	go test ./test/e2e/* -v --logtostderr
