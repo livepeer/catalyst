@@ -290,7 +290,7 @@ func main() {
 	fs.StringVar(&config.serfRPCAuthKey, "serf-rpc-auth-key", "", "Serf RPC auth key")
 	serfTags := fs.String("serf-tags", "node=media", "Serf tags for Catalyst nodes")
 	fs.StringVar(&config.mistLoadBalancerEndpoint, "mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
-	fs.StringVar(&config.mistLoadBalancerTemplate, "mist-load-balancer-template", "http://%s:4242", "template for passing nodes to MistUtilBalancer")
+	fs.StringVar(&config.mistLoadBalancerTemplate, "mist-load-balancer-template", "http://%s:4242", "template for specifying the host that should be queried for Prometheus stat output for this node")
 
 	// Serf commands passed straight through to the agent
 	serfConfig := agent.Config{}
@@ -518,6 +518,7 @@ func streamSourceHandler() http.Handler {
 		}
 		streamName := string(b)
 		glog.V(7).Infof("got mist STREAM_SOURCE request=%s", streamName)
+		// Lat/Lon are irrelevent when we're just looking for any server that has this source
 		dtscURL, err := queryMistForClosestNodeSource(streamName, "0", "0", "", true)
 		if err != nil {
 			glog.Errorf("error querying mist for STREAM_SOURCE: %s", err)
@@ -545,6 +546,9 @@ func resolveNodeURL(streamURL string) (string, error) {
 	protocol := u.Scheme
 
 	member, err := getSerfMember(nodeName)
+	if err != nil {
+		return "", err
+	}
 	addr, has := member.Tags[protocol]
 	if !has {
 		glog.V(7).Infof("no tag found, not tag resolving protocol=%s nodeName=%s", protocol, nodeName)
@@ -552,7 +556,9 @@ func resolveNodeURL(streamURL string) (string, error) {
 	}
 	u2, err := url.Parse(addr)
 	if err != nil {
-		glog.Errorf("node has unparsable tag!! nodeName=%s protocol=%s tag=%s", nodeName, protocol, addr)
+		err = fmt.Errorf("node has unparsable tag!! nodeName=%s protocol=%s tag=%s", nodeName, protocol, addr)
+		glog.Error(err)
+		return "", err
 	}
 	u2.Path = u.Path
 	u2.RawQuery = u.RawQuery
@@ -568,7 +574,7 @@ func querySerfForMember(name string) (*serfclient.Member, error) {
 		return nil, fmt.Errorf("could not find serf member name=%s", name)
 	}
 	if len(members) > 1 {
-		glog.Errorf("WARNING: found multiple serf members with the same name! name=%s count=%d", name, len(members))
+		glog.Errorf("found multiple serf members with the same name! this shouldn't happen! name=%s count=%d", name, len(members))
 	}
 	return &members[0], nil
 }
