@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"io/ioutil"
 
 	"github.com/livepeer/catalyst/cmd/downloader/bucket"
@@ -16,11 +17,14 @@ import (
 var version = "Unknown"
 
 func GenerateYamlManifest(manifest types.BoxManifest, path string) error {
-	data, err := yaml.Marshal(manifest)
+	var data bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&data)
+	yamlEncoder.SetIndent(2)
+	err := yamlEncoder.Encode(&manifest)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(path, data, 0644)
+	err = ioutil.WriteFile(path, data.Bytes(), 0644)
 	return err
 }
 

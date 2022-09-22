@@ -1,125 +1,125 @@
 version: "3.0"
 release: latest
 box:
-    - name: analyzer
-      strategy:
-        download: bucket
-        project: livepeer-data
-        commit: 210a2de32fd61e511f5505df6e9aaa75c187e711
-      release: main
-      srcFilenames:
-        darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
-        darwin-arm64: livepeer-analyzer-darwin-arm64.tar.gz
-        linux-amd64: livepeer-analyzer-linux-amd64.tar.gz
-        linux-arm64: livepeer-analyzer-linux-arm64.tar.gz
-        windows-amd64: livepeer-analyzer-windows-amd64.zip
-        windows-arm64: livepeer-analyzer-windows-arm64.zip
-    - name: api
-      strategy:
-        download: github
-        project: livepeer/studio
-        commit: b3c8705b879193d69a5e6a5507010861d235bf5f
-      release: v0.8.0
-    - name: catalyst-api
-      strategy:
-        download: bucket
-        project: catalyst-api
-        commit: d4ffbb504f88943552ed6efe4b387a9ab3ce7658
-      release: main
-      srcFilenames:
-        darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
-        darwin-arm64: livepeer-catalyst-api-darwin-arm64.tar.gz
-        linux-amd64: livepeer-catalyst-api-linux-amd64.tar.gz
-        linux-arm64: livepeer-catalyst-api-linux-arm64.tar.gz
-    - name: mapic
-      strategy:
-        download: bucket
-        project: mist-api-connector
-        commit: c1e427d2d04cf8eb543e871b60daffb2a6105515
-      binary: livepeer-mist-api-connector
-      release: master
-      srcFilenames:
-        darwin-amd64: livepeer-mist-api-connector-darwin-amd64.tar.gz
-        darwin-arm64: livepeer-mist-api-connector-darwin-arm64.tar.gz
-        linux-amd64: livepeer-mist-api-connector-linux-amd64.tar.gz
-        linux-arm64: livepeer-mist-api-connector-linux-arm64.tar.gz
-        windows-amd64: livepeer-mist-api-connector-windows-amd64.zip
-        windows-arm64: livepeer-mist-api-connector-windows-arm64.zip
-    - name: catalyst-uploader
-      strategy:
-        download: bucket
-        project: catalyst-uploader
-        commit: 614122f19a23559983cba73633082eee70434f82
-      binary: livepeer-catalyst-uploader
-      release: main
-      srcFilenames:
-        darwin-amd64: livepeer-catalyst-uploader-darwin-amd64.tar.gz
-        darwin-arm64: livepeer-catalyst-uploader-darwin-arm64.tar.gz
-        linux-amd64: livepeer-catalyst-uploader-linux-amd64.tar.gz
-        linux-arm64: livepeer-catalyst-uploader-linux-arm64.tar.gz
-    - name: livepeer
-      strategy:
-        download: bucket
-        project: go-livepeer
-        commit: 80e70628ed1cace7a88784a37dc5312bb86663bf
-      binary: livepeer
-      release: master
-      archivePath: livepeer
-      srcFilenames:
-        darwin-amd64: livepeer-darwin-amd64.tar.gz
-        darwin-arm64: livepeer-darwin-arm64.tar.gz
-        linux-amd64: livepeer-linux-amd64.tar.gz
-        linux-arm64: livepeer-linux-arm64.tar.gz
-        windows-amd64: livepeer-windows-amd64.zip
-        windows-arm64: livepeer-windows-arm64.zip
-    - name: mistserver
-      strategy:
-        download: bucket
-        project: mistserver
-        commit: d562bfde0e8851e71d8679e0bcd6673516e3a574
-      release: catalyst
-      skipGpg: true
-      srcFilenames:
-        darwin-amd64: livepeer-mistserver-darwin-amd64.tar.gz
-        darwin-arm64: livepeer-mistserver-darwin-arm64.tar.gz
-        linux-amd64: livepeer-mistserver-linux-amd64.tar.gz
-        linux-arm64: livepeer-mistserver-linux-arm64.tar.gz
-    - name: www
-      strategy:
-        download: github
-        project: livepeer/studio
-        commit: b3c8705b879193d69a5e6a5507010861d235bf5f
-      binary: livepeer-www
-      release: v0.8.0
-    - name: victoria-metrics
-      strategy:
-        download: github
-        project: VictoriaMetrics/VictoriaMetrics
-        commit: 1d0030ed5ef0c75e2652371aab29a5cc453e5518
-      release: v1.79.1
-      archivePath: victoria-metrics-prod
-      skipGpg: true
-      skipChecksum: true
-      srcFilenames:
-        darwin-amd64: victoria-metrics-darwin-amd64-v1.79.1.tar.gz
-        darwin-arm64: victoria-metrics-darwin-arm64-v1.79.1.tar.gz
-        linux-amd64: victoria-metrics-linux-amd64-v1.79.1.tar.gz
-        linux-arm64: victoria-metrics-linux-arm64-v1.79.1.tar.gz
-      outputPath: livepeer-victoria-metrics
-      skipManifestUpdate: true
-    - name: vmagent
-      strategy:
-        download: github
-        project: VictoriaMetrics/VictoriaMetrics
-        commit: c3f84810116f096e47100c57af88228a14433b91
-      release: v1.80.0
-      archivePath: vmagent-prod
-      skipGpg: true
-      skipChecksum: true
-      srcFilenames:
-        darwin-amd64: vmutils-darwin-amd64-v1.80.0.tar.gz
-        darwin-arm64: vmutils-darwin-arm64-v1.80.0.tar.gz
-        linux-amd64: vmutils-linux-amd64-v1.80.0.tar.gz
-        linux-arm64: vmutils-linux-arm64-v1.80.0.tar.gz
-      outputPath: livepeer-vmagent
-      skipManifestUpdate: true
+  - name: analyzer
+    strategy:
+      download: bucket
+      project: livepeer-data
+      commit: 210a2de32fd61e511f5505df6e9aaa75c187e711
+    release: main
+    srcFilenames:
+      darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
+      darwin-arm64: livepeer-analyzer-darwin-arm64.tar.gz
+      linux-amd64: livepeer-analyzer-linux-amd64.tar.gz
+      linux-arm64: livepeer-analyzer-linux-arm64.tar.gz
+      windows-amd64: livepeer-analyzer-windows-amd64.zip
+      windows-arm64: livepeer-analyzer-windows-arm64.zip
+  - name: api
+    strategy:
+      download: github
+      project: livepeer/studio
+      commit: b3c8705b879193d69a5e6a5507010861d235bf5f
+    release: v0.8.0
+  - name: catalyst-api
+    strategy:
+      download: bucket
+      project: catalyst-api
+      commit: d4ffbb504f88943552ed6efe4b387a9ab3ce7658
+    release: main
+    srcFilenames:
+      darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
+      darwin-arm64: livepeer-catalyst-api-darwin-arm64.tar.gz
+      linux-amd64: livepeer-catalyst-api-linux-amd64.tar.gz
+      linux-arm64: livepeer-catalyst-api-linux-arm64.tar.gz
+  - name: mapic
+    strategy:
+      download: bucket
+      project: mist-api-connector
+      commit: c1e427d2d04cf8eb543e871b60daffb2a6105515
+    binary: livepeer-mist-api-connector
+    release: master
+    srcFilenames:
+      darwin-amd64: livepeer-mist-api-connector-darwin-amd64.tar.gz
+      darwin-arm64: livepeer-mist-api-connector-darwin-arm64.tar.gz
+      linux-amd64: livepeer-mist-api-connector-linux-amd64.tar.gz
+      linux-arm64: livepeer-mist-api-connector-linux-arm64.tar.gz
+      windows-amd64: livepeer-mist-api-connector-windows-amd64.zip
+      windows-arm64: livepeer-mist-api-connector-windows-arm64.zip
+  - name: catalyst-uploader
+    strategy:
+      download: bucket
+      project: catalyst-uploader
+      commit: 8c1446380acd27abaecd0898e791736ab82ea2ec
+    binary: livepeer-catalyst-uploader
+    release: main
+    srcFilenames:
+      darwin-amd64: livepeer-catalyst-uploader-darwin-amd64.tar.gz
+      darwin-arm64: livepeer-catalyst-uploader-darwin-arm64.tar.gz
+      linux-amd64: livepeer-catalyst-uploader-linux-amd64.tar.gz
+      linux-arm64: livepeer-catalyst-uploader-linux-arm64.tar.gz
+  - name: livepeer
+    strategy:
+      download: bucket
+      project: go-livepeer
+      commit: 80e70628ed1cace7a88784a37dc5312bb86663bf
+    binary: livepeer
+    release: master
+    archivePath: livepeer
+    srcFilenames:
+      darwin-amd64: livepeer-darwin-amd64.tar.gz
+      darwin-arm64: livepeer-darwin-arm64.tar.gz
+      linux-amd64: livepeer-linux-amd64.tar.gz
+      linux-arm64: livepeer-linux-arm64.tar.gz
+      windows-amd64: livepeer-windows-amd64.zip
+      windows-arm64: livepeer-windows-arm64.zip
+  - name: mistserver
+    strategy:
+      download: bucket
+      project: mistserver
+      commit: d562bfde0e8851e71d8679e0bcd6673516e3a574
+    release: catalyst
+    skipGpg: true
+    srcFilenames:
+      darwin-amd64: livepeer-mistserver-darwin-amd64.tar.gz
+      darwin-arm64: livepeer-mistserver-darwin-arm64.tar.gz
+      linux-amd64: livepeer-mistserver-linux-amd64.tar.gz
+      linux-arm64: livepeer-mistserver-linux-arm64.tar.gz
+  - name: www
+    strategy:
+      download: github
+      project: livepeer/studio
+      commit: b3c8705b879193d69a5e6a5507010861d235bf5f
+    binary: livepeer-www
+    release: v0.8.0
+  - name: victoria-metrics
+    strategy:
+      download: github
+      project: VictoriaMetrics/VictoriaMetrics
+      commit: 1d0030ed5ef0c75e2652371aab29a5cc453e5518
+    release: v1.79.1
+    archivePath: victoria-metrics-prod
+    skipGpg: true
+    skipChecksum: true
+    srcFilenames:
+      darwin-amd64: victoria-metrics-darwin-amd64-v1.79.1.tar.gz
+      darwin-arm64: victoria-metrics-darwin-arm64-v1.79.1.tar.gz
+      linux-amd64: victoria-metrics-linux-amd64-v1.79.1.tar.gz
+      linux-arm64: victoria-metrics-linux-arm64-v1.79.1.tar.gz
+    outputPath: livepeer-victoria-metrics
+    skipManifestUpdate: true
+  - name: vmagent
+    strategy:
+      download: github
+      project: VictoriaMetrics/VictoriaMetrics
+      commit: c3f84810116f096e47100c57af88228a14433b91
+    release: v1.80.0
+    archivePath: vmagent-prod
+    skipGpg: true
+    skipChecksum: true
+    srcFilenames:
+      darwin-amd64: vmutils-darwin-amd64-v1.80.0.tar.gz
+      darwin-arm64: vmutils-darwin-arm64-v1.80.0.tar.gz
+      linux-amd64: vmutils-linux-amd64-v1.80.0.tar.gz
+      linux-arm64: vmutils-linux-arm64-v1.80.0.tar.gz
+    outputPath: livepeer-vmagent
+    skipManifestUpdate: true
