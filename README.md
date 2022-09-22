@@ -106,7 +106,35 @@ password: test
 
 ## Streaming and playback
 
+This section will cover stream and playback using HLS to local
+catalyst system. The following variables are used here:
 
+  - `PLAYBACK_ID`
+
+### Streaming in
+
+The RTMP stream endpoint is accessible at
+`rtmp://localhost/live/video+<PLAYBACK_ID>`, so an example stream
+could be started (using ffmpeg) as follows:
+
+```sh
+ffmpeg -re -stream_loop -1 \
+  -i "/path/to/video/file.mp4" \
+  -c:v copy -c:a copy -strict -2 \
+  -f flv \
+  rtmp://localhost/live/video+foo
+```
+where the `PLAYBACK_ID` is `foo`.
+
+### Playback
+
+Playback over HLS is available through m3u8 playlist file accessible
+at `http://localhost:8080/hls/video+<PLAYBACK_ID>/index.m3u8`. For the
+example stream above, playback can be started with:
+
+```sh
+ffplay http://localhost:8080/hls/video+foo/index.m3u8
+```
 
 ## Manifest
 
