@@ -156,7 +156,7 @@ docker-compose-rm:
 
 .PHONY: full-reset
 full-reset: docker-compose-rm clean all
-	mv $(HOME)/.config/livepeer/mistserver.dev.conf $(HOME)/.config/livepeer/mistserver-$$(date +%s).dev.conf || echo '' \
+	mv $(HOME)/.config/livepeer/catalyst.json $(HOME)/.config/livepeer/catalyst-$$(date +%s)-dev.json || echo '' \
 	&& echo "done"
 
 .PHONY: livepeer-catalyst-node

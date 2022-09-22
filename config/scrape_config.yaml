@@ -4,25 +4,14 @@ scrape_configs:
   - job_name: mist
     static_configs:
       - targets:
-          - localhost:4242
+          - 127.0.0.1:4242
 
   - job_name: orchestrator
     static_configs:
       - targets:
-          - localhost:7936
+          - 127.0.0.1:7936
 
   - job_name: broadcaster
     static_configs:
       - targets:
-          - localhost:7935
-
-  - job_name: analyzer
-    static_configs:
-      - targets:
-          - localhost:8008
-          - localhost:3004
-
-  - job_name: api-connector
-    static_configs:
-      - targets:
-          - localhost:3004
+          - 127.0.0.1:7935
