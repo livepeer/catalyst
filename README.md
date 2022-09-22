@@ -104,14 +104,14 @@ username: test
 password: test
 ```
 
-## Streaming and playback
+## Streaming
 
 This section will cover stream and playback using HLS to local
 catalyst system. The following variables are used here:
 
   - `PLAYBACK_ID`
 
-### Streaming in
+### Using `ffmpeg`
 
 The RTMP stream endpoint is accessible at
 `rtmp://localhost/live/video+<PLAYBACK_ID>`, so an example stream
@@ -126,7 +126,24 @@ ffmpeg -re -stream_loop -1 \
 ```
 where the `PLAYBACK_ID` is `foo`.
 
-### Playback
+### Using OBS Studio
+
+Under OBS Studio streaming settings, select "Serive" as "Custom..."
+which should display text input options asking for "Server" and
+"Stream Key" (ref. screenshot below). Use following values for the
+same:
+
+```text
+Server: rtmp://localhost/live
+Stream Key: video+<PLAYBACK_ID>
+```
+
+Deselect the option to "Use authentication". The example (as shown in
+screenshot) uses `video+foo` as the "Stream Key".
+
+[![obs-studio]][obs-studio]
+
+## Playback
 
 Playback over HLS is available through m3u8 playlist file accessible
 at `http://localhost:8080/hls/video+<PLAYBACK_ID>/index.m3u8`. For the
@@ -135,6 +152,7 @@ example stream above, playback can be started with:
 ```sh
 ffplay http://localhost:8080/hls/video+foo/index.m3u8
 ```
+
 
 ## Manifest
 
@@ -204,3 +222,4 @@ box:
   [mistserver]: https://github.com/DDVTECH/mistserver
   [catalyst-api]: https://github.com/livepeer/catalyst-api
   [victoria-metrics]: https://github.com/VictoriaMetrics/VictoriaMetrics
+  [obs-studio]: .github/assets/obs-studio.png
