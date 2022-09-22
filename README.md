@@ -1,7 +1,7 @@
 # Catalyst
 
-The entire bundle of application needed for booting up a livepeer
-system in place is termed as [catalyst].
+The entire bundle of application needed for booting up livepeer's
+decentralised media server in place is termed as [catalyst].
 
 ## Getting Started
 
