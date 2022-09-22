@@ -100,6 +100,9 @@
         "port": "7979"
       },
       {
+        "connector": "livepeer-catalyst-node"
+      },
+      {
         "cliAddr": "127.0.0.1:7936",
         "connector": "livepeer",
         "metricsClientIP": true,
@@ -108,6 +111,10 @@
         "orchestrator": true,
         "serviceAddr": "127.0.0.1:8936",
         "transcoder": true
+      },
+      {
+        "connector": "livepeer-victoria-metrics",
+        "promscrape.config": "./config/scrape_config.yaml"
       }
     ],
     "serverid": null,
