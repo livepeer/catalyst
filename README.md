@@ -1,50 +1,64 @@
 # Catalyst
 
-The entire bundle of application needed for booting up livepeer's
-decentralised media server in place is termed as [catalyst].
+The entire bundle needed for booting up Livepeer's decentralised media
+server in place is termed as [Catalyst].
 
 ## Getting Started
 
 Make sure you have the following installed on the machine before
-proceeding:
+proceeding.
+
+> Note: Compiling Mistserver/go-livpeeer etc have another set of
+> requirements, not listed here (but covered under compile from source
+> section below).
+
+### Mandatory requirements
 
   - go1.17± or newer
-  - ffmpeg v5 (or newer)
-  - GNU make (not required, but good to have for using `Makefile`
-    commands)
-  - docker version 19 (or newer) (not mandatory for basic catalyst
-    operations)
-  - cloning this repository alongside [go-livepeer], [mistserver] and
-    other dependent projects of [catalyst] in the same directory
+  - GNU make
   - about 2-3 GB of free disk space
+
+### Optional
+
+  - ffmpeg v5 or newer (can be compiled from [go-livepeer], by running
+    `make ffmpeg`)
+  - Docker version 19 or newer
+  - cloning this repository alongside [go-livepeer], [MistServer] and
+    other dependent projects of [Catalyst] in the same
+    directory. Directories would look like:
+
+        /path/to/projects
+                    |- catalyst/
+                    |- go-livepeer/
+                    |- mistserver/
 
 ±: go1.17 is recommended because building with < 1.17 (specifically 1.16)
 can result in issues on arm64 architectures.
 
-Note: Compiling mistserver has another set of requirements, not
-covered by this readme.
-
-## Setting up catalyst system
+## Setting up Catalyst system
 
 ### First run (or reset workflow)
 
 Run `make full-reset` which cleans out any older config files, and
 local copies of binaries. It also shuts down `docker-compose` system
-which aren't needed for base catalyst usage.
+which aren't needed for base Catalyst usage.
 
-### Direct usage (download-and-run)
+### Using prebuilt binaries (download-and-run)
 
 This section covers using prebuilt binaries for setting up and booting
-catalyst system. This is done through using the configuration present
+Catalyst system. This is done through using the configuration present
 in `manifest.yaml` (section below covers its structure).
 
-Run the following command from the root of this repository directory
-(the `-v=9` is just for most verbose output, and can be skipped):
+Run the following commands from the root of this repository directory:
 
-    go run cmd/downloader/downloader/downloader.go -v=9
+    go build -o ./bin/livepeer-log ./cmd/livepeer-log/livepeer-log.go
+    go build -o ./bin/livepeer-catalyst-node \
+      -ldflags="-X 'main.Version=$(git describe --always --abbrev=8 --dirty)'" \
+      cmd/catalyst-node/catalyst-node.go
+    go run cmd/downloader/downloader/downloader.go
 
-    # or
-    make download ARGS='-v=9'
+    # or, single command:
+    make all
 
 Other options available for downloader script can be checked with
 using `--help`.
@@ -52,15 +66,15 @@ using `--help`.
 The above should download all prebuilt binaries to the `bin/`
 directory.
 
-### Indirect usage (build-and-run)
+### Compile from source (build-and-run)
 
 This section covers building the dependent projects before booting up
-[catalyst]. There are quite a few applications needed for catalyst as
+[Catalyst]. There are quite a few applications needed for Catalyst as
 listed below (but not limited to):
 
   - [go-livepeer]
-  - [mistserver]
-  - [catalyst] (for `livepeer-log`, `catalyst-node`)
+  - [MistServer]
+  - [Catalyst] (for `livepeer-log`, `catalyst-node`)
   - [catalyst-api]
   - [victoria-metrics] (recommended to just download a stable binary
     from github releases)
@@ -70,6 +84,23 @@ need to be compiled as described in their respective project docs and
 the compiled binary would need to be ported to `bin/` afterwards (can
 be symlinked instead).
 
+#### Requirements for compiling MistServer
+
+  - git
+  - gcc or clang
+  - CMake
+  - about 4 GB of free disk space
+
+#### Requirements for compiling [go-livepeer]
+
+  - go1.17 (for arm64 build support)
+  - git
+  - GNU make
+  - CMake
+  - gcc-multilib
+  - autoconf
+  - pkg-config
+
 ```sh
 make mistserver
 make go-livepeer
@@ -77,39 +108,57 @@ make livepeer-log
 make livepeer-catalyst-node
 ```
 
-## Booting up catalyst
+## Running Catalyst
 
-Next is just booting up the catalyst system:
+> The command does some memory allocation on macOS too, but for linux
+> it is as simple as launching `MistController` with path to
+> configuration file.
+
+Next is just booting up the Catalyst system:
 
     make dev
 
 Which will create a copy of developer config file to
 `~/.config/livepeer/catalyst.json` (default path) and use that to boot
 up `MistController`; which controls and monitors setting up other
-required sub-systems.
+required sub-systems. An example of `MistController` starting up
+Livepeer broadcaster is shown in logs as follows:
 
-The above command does some memory allocation on macOS too, but for
-linux it is as simple as launching `MistController` with path to
-configuration file.
+```text
+[2022-09-22 15:32:30] MistController (2244175) CONF: Starting connector: {"broadcaster":true,"connector":"livepeer","metricsClientIP":true,"metricsPerStream":true,"monitor":true,"orchAddr":"localhost:8936","rtmpAddr":"127.0.0.1:1936"}
+[2022-09-22 15:32:30] MistController (2244175) INFO: added logger for livepeer
+[2022-09-22 15:32:30] livepeer (2244394) INFO: I0922 15:32:30.537623 2244406 starter.go:333] ***Livepeer is running on the offchain network***
+[2022-09-22 15:32:30] livepeer (2244394) INFO: I0922 15:32:30.539038 2244406 census.go:323] Compiler: gc Arch amd64 OS linux Go version go1.17.13
+[2022-09-22 15:32:30] livepeer (2244394) INFO: I0922 15:32:30.539078 2244406 census.go:324] Livepeer version: 0.5.34-80e70628
+[2022-09-22 15:32:30] livepeer (2244394) INFO: I0922 15:32:30.539101 2244406 census.go:325] Node type bctr node ID livepeer.system
+[2022-09-22 15:32:30] livepeer (2244394) INFO: I0922 15:32:30.539449 2244406 starter.go:491] ***Livepeer is in off-chain mode***
+[2022-09-22 15:32:30] livepeer (2244394) INFO: I0922 15:32:30.539595 2244406 starter.go:1156] ***Livepeer Running in Broadcaster Mode***
+[2022-09-22 15:32:30] livepeer (2244394) INFO: I0922 15:32:30.539667 2244406 starter.go:1157] Video Ingest Endpoint - rtmp://127.0.0.1:1936
+```
 
 You should then have a Mist interface accessible at
 [http://localhost:4242](http://localhost:4242).
 
-## Credentials/secrets
+### Credentials/secrets
 
-Mist credentials:
+MistServer credentials:
 
 ```
 username: test
 password: test
 ```
 
+## Hot reloading
+
+If a binary is replaced in the `bin/` directory, no need to shutdown
+the whole catalyst process, and simply running for eg. `killall
+livepeer` for restarting livepeer binary works. `MistController` keeps
+track of all sub-systems and boots them back up in case they exit.
+
 ## Streaming
 
 This section will cover stream and playback using HLS to local
-catalyst system. The following variables are used here:
-
-  - `PLAYBACK_ID`
+Catalyst system.
 
 ### Using `ffmpeg`
 
@@ -152,7 +201,6 @@ example stream above, playback can be started with:
 ```sh
 ffplay http://localhost:8080/hls/video+foo/index.m3u8
 ```
-
 
 ## Manifest
 
@@ -218,8 +266,8 @@ box:
 ```
 
   [go-livepeer]: https://github.com/livepeer/go-livepeer
-  [catalyst]: https://github.com/livepeer/catalyst
-  [mistserver]: https://github.com/DDVTECH/mistserver
+  [Catalyst]: https://github.com/livepeer/catalyst
+  [MistServer]: https://github.com/DDVTECH/mistserver
   [catalyst-api]: https://github.com/livepeer/catalyst-api
   [victoria-metrics]: https://github.com/VictoriaMetrics/VictoriaMetrics
   [obs-studio]: .github/assets/obs-studio.png
