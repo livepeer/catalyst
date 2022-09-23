@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"fmt"
@@ -10,6 +10,17 @@ import (
 	serfclient "github.com/hashicorp/serf/client"
 	"github.com/stretchr/testify/require"
 )
+
+type catalystNodeCliFlags struct {
+	Verbosity        int
+	MistJSON         bool
+	Version          bool
+	RunBalancer      bool
+	BalancerArgs     string
+	HTTPAddress      string
+	RedirectPrefixes []string
+	NodeHost         string
+}
 
 const (
 	closestNodeAddr = "someurl.com"
@@ -106,7 +117,7 @@ func TestRedirectHandler404(t *testing.T) {
 	defer func() { getClosestNode = defaultFunc }()
 
 	defaultSerf := getSerfMember
-	getSerfMember = func(string) (*serfclient.Member, error) { return fakeSerfMember, nil }
+	getSerfMember = func(string, *serfclient.RPCClient) (*serfclient.Member, error) { return fakeSerfMember, nil }
 	defer func() { getSerfMember = defaultSerf }()
 
 	path := fmt.Sprintf("/hls/%s/index.m3u8", playbackID)
@@ -128,7 +139,7 @@ func TestRedirectHandlerHLS_Correct(t *testing.T) {
 	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
 	defer func() { getClosestNode = defaultFunc }()
 	defaultSerf := getSerfMember
-	getSerfMember = func(string) (*serfclient.Member, error) { return fakeSerfMember, nil }
+	getSerfMember = func(string, *serfclient.RPCClient) (*serfclient.Member, error) { return fakeSerfMember, nil }
 	defer func() { getSerfMember = defaultSerf }()
 
 	path := fmt.Sprintf("/hls/%s/index.m3u8", playbackID)
@@ -150,7 +161,7 @@ func TestRedirectHandlerHLS_SegmentInPath(t *testing.T) {
 	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
 	defer func() { getClosestNode = defaultFunc }()
 	defaultSerf := getSerfMember
-	getSerfMember = func(string) (*serfclient.Member, error) { return fakeSerfMember, nil }
+	getSerfMember = func(string, *serfclient.RPCClient) (*serfclient.Member, error) { return fakeSerfMember, nil }
 	defer func() { getSerfMember = defaultSerf }()
 
 	seg := "4_1"
@@ -176,7 +187,7 @@ func TestRedirectHandlerJS_Correct(t *testing.T) {
 	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
 	defer func() { getClosestNode = defaultFunc }()
 	defaultSerf := getSerfMember
-	getSerfMember = func(string) (*serfclient.Member, error) { return fakeSerfMember, nil }
+	getSerfMember = func(string, *serfclient.RPCClient) (*serfclient.Member, error) { return fakeSerfMember, nil }
 	defer func() { getSerfMember = defaultSerf }()
 
 	path := fmt.Sprintf("/json_%s.js", playbackID)
@@ -270,11 +281,12 @@ func (hr httpReq) withHeader(key, value string) httpReq {
 }
 
 func (hr httpReq) result(cli *catalystNodeCliFlags) httpCheck {
+	var serfClient *serfclient.RPCClient
 	if cli == nil {
 		cli = &catalystNodeCliFlags{}
 	}
 	rr := httptest.NewRecorder()
-	redirectHandler(prefixes[:], cli.NodeHost).ServeHTTP(rr, hr.Request)
+	RedirectHandler(prefixes[:], cli.NodeHost, serfClient).ServeHTTP(rr, hr.Request)
 	return httpCheck{hr.T, rr}
 }
 
