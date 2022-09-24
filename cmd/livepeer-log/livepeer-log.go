@@ -45,13 +45,26 @@ func main() {
 			FriendlyName: "Livepeer-in-a-Box packaged Victoria Metrics",
 			Description:  "Livepeer-in-a-Box packaged Victoria Metrics. Comes with some built-in scrape configs for dev.",
 			Version:      "0.0.1",
-			Required: map[string]mistconnector.MistOptional{
+			Optional: map[string]mistconnector.MistOptional{
 				"promscrape.config": {
 					Name:    "promscrape.config",
 					Type:    "str",
 					Option:  "-promscrape.config",
 					Help:    "Location of promscape.config file",
 					Default: "./config/scrape_config.yaml",
+				},
+				"envflag.enable": {
+					Name:    "envflag.enable",
+					Option:  "-envflag.enable",
+					Help:    "Whether to enable reading flags from environment variables additionally to command line. Command line flag values have priority over values from environment vars. Flags are read only from command line if this flag isn't set. See https://docs.victoriametrics.com/#environment-variables for more details",
+					Default: "true",
+				},
+				"envflag.prefix": {
+					Name:    "envflag.prefix",
+					Type:    "str",
+					Option:  "-envflag.prefix",
+					Help:    "Prefix for environment variables if -envflag.enable is set",
+					Default: "VM_",
 				},
 			},
 		})
@@ -64,7 +77,7 @@ func main() {
 			FriendlyName: "Livepeer-in-a-Box packaged Victoria Metrics Agent (exporter)",
 			Description:  "Livepeer-in-a-Box packaged Victoria Metrics. Useful for remote writing metrics.",
 			Version:      "0.0.1",
-			Required: map[string]mistconnector.MistOptional{
+			Optional: map[string]mistconnector.MistOptional{
 				"promscrape.config": {
 					Name:    "promscrape.config",
 					Type:    "str",
@@ -92,6 +105,19 @@ func main() {
 					Option:  "-loggerLevel",
 					Help:    "Minimum level of errors to log. Possible values: INFO, WARN, ERROR, FATAL, PANIC (default 'INFO')",
 					Default: "FATAL",
+				},
+				"envflag.enable": {
+					Name:    "envflag.enable",
+					Option:  "-envflag.enable",
+					Help:    "Whether to enable reading flags from environment variables additionally to command line. Command line flag values have priority over values from environment vars. Flags are read only from command line if this flag isn't set. See https://docs.victoriametrics.com/#environment-variables for more details",
+					Default: "true",
+				},
+				"envflag.prefix": {
+					Name:    "envflag.prefix",
+					Type:    "str",
+					Option:  "-envflag.prefix",
+					Help:    "Prefix for environment variables if -envflag.enable is set",
+					Default: "VM_",
 				},
 			},
 		})
