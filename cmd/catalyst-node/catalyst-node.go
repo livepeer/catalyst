@@ -55,6 +55,8 @@ type catalystNodeCliFlags struct {
 	HTTPInternalAddress string
 	RedirectPrefixes    []string
 	NodeHost            string
+	NodeLatitude        float64
+	NodeLongitude       float64
 }
 
 var mediaFilter = map[string]string{"node": "media"}
@@ -280,6 +282,8 @@ func main() {
 	fs.BoolVar(&cliFlags.RunBalancer, "run-balancer", true, "run MistUtilLoad")
 	fs.StringVar(&cliFlags.BalancerArgs, "balancer-args", "", "arguments passed to MistUtilLoad")
 	fs.StringVar(&cliFlags.NodeHost, "node-host", "", "Hostname this node should handle requests for. Requests on any other domain will trigger a redirect. Useful as a 404 handler to send users to another node.")
+	fs.Float64Var(&cliFlags.NodeLatitude, "node-latitude", 0, "Latitude of this Catalyst node. Used for load balancing.")
+	fs.Float64Var(&cliFlags.NodeLongitude, "node-longitude", 0, "Longitude of this Catalyst node. Used for load balancing.")
 	prefixes := fs.String("redirect-prefixes", "", "Set of valid prefixes of playback id which are handled by mistserver")
 
 	// Catalyst web server
@@ -336,7 +340,7 @@ func main() {
 	parseSerfConfig(&serfConfig, retryJoin, serfTags)
 
 	go startCatalystWebServer(cliFlags.HTTPAddress, cliFlags.RedirectPrefixes, cliFlags.NodeHost)
-	go startInternalWebServer(cliFlags.HTTPInternalAddress)
+	go startInternalWebServer(cliFlags.HTTPInternalAddress, cliFlags.NodeLatitude, cliFlags.NodeLongitude)
 
 	config.serfTags = serfConfig.Tags
 
@@ -456,8 +460,8 @@ func startCatalystWebServer(httpAddr string, redirectPrefixes []string, nodeHost
 	glog.Fatal(http.ListenAndServe(httpAddr, nil))
 }
 
-func startInternalWebServer(internalAddr string) {
-	http.Handle("/STREAM_SOURCE", streamSourceHandler())
+func startInternalWebServer(internalAddr string, lat, lon float64) {
+	http.Handle("/STREAM_SOURCE", streamSourceHandler(lat, lon))
 	glog.Infof("Internal HTTP server listening on %s", internalAddr)
 	glog.Fatal(http.ListenAndServe(internalAddr, nil))
 }
@@ -508,7 +512,7 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 	})
 }
 
-func streamSourceHandler() http.Handler {
+func streamSourceHandler(lat, lon float64) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -518,8 +522,9 @@ func streamSourceHandler() http.Handler {
 		}
 		streamName := string(b)
 		glog.V(7).Infof("got mist STREAM_SOURCE request=%s", streamName)
-		// Lat/Lon are irrelevent when we're just looking for any server that has this source
-		dtscURL, err := queryMistForClosestNodeSource(streamName, "0", "0", "", true)
+		latStr := fmt.Sprintf("%f", lat)
+		lonStr := fmt.Sprintf("%f", lon)
+		dtscURL, err := queryMistForClosestNodeSource(streamName, latStr, lonStr, "", true)
 		if err != nil {
 			glog.Errorf("error querying mist for STREAM_SOURCE: %s", err)
 			w.Write([]byte("push://"))
