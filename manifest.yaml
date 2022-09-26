@@ -49,7 +49,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-uploader
-      commit: 8c1446380acd27abaecd0898e791736ab82ea2ec
+      commit: ec35acbe1d920d48e75b70dc3e4c6c189b374e48
     binary: livepeer-catalyst-uploader
     release: main
     srcFilenames:
