@@ -487,7 +487,7 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 				}
 				newURL.Scheme = protocol(r)
 				newURL.Host = nodeHost
-				http.Redirect(w, r, newURL.String(), http.StatusFound)
+				http.Redirect(w, r, newURL.String(), http.StatusMovedPermanently)
 				glog.V(6).Infof("NodeHost redirect host=%s nodeHost=%s from=%s to=%s", host, nodeHost, r.URL, newURL)
 				return
 			}
@@ -518,7 +518,7 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 			return
 		}
 		glog.V(6).Infof("generated redirect url=%s", rURL)
-		http.Redirect(w, r, rURL, http.StatusFound)
+		http.Redirect(w, r, rURL, http.StatusMovedPermanently)
 	})
 }
 
