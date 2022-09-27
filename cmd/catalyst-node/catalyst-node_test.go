@@ -206,6 +206,11 @@ func TestNodeHostRedirect(t *testing.T) {
 		hasStatus(http.StatusFound).
 		hasHeader("Location", "http://right-host/any/path")
 
+	requireReq(t, "http://wrong-host/any/path?foo=bar").
+		result(hostCli).
+		hasStatus(http.StatusFound).
+		hasHeader("Location", "http://right-host/any/path?foo=bar")
+
 	requireReq(t, "http://wrong-host/any/path").
 		withHeader("X-Forwarded-Proto", "https").
 		result(hostCli).

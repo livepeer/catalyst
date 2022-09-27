@@ -479,9 +479,16 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 		if nodeHost != "" {
 			host := r.Host
 			if host != nodeHost {
-				rURL := fmt.Sprintf("%s://%s%s", protocol(r), nodeHost, r.URL.Path)
-				http.Redirect(w, r, rURL, http.StatusFound)
-				glog.V(6).Infof("NodeHost redirect host=%s nodeHost=%s from=%s to=%s", host, nodeHost, r.URL, rURL)
+				newURL, err := url.Parse(r.URL.String())
+				if err != nil {
+					glog.Errorf("failed to parse incoming url for redirect url=%s err=%s", r.URL.String(), err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				newURL.Scheme = protocol(r)
+				newURL.Host = nodeHost
+				http.Redirect(w, r, newURL.String(), http.StatusFound)
+				glog.V(6).Infof("NodeHost redirect host=%s nodeHost=%s from=%s to=%s", host, nodeHost, r.URL, newURL)
 				return
 			}
 		}
