@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -31,11 +32,11 @@ import (
 const (
 	httpPort         = 8090
 	httpInternalPort = 8091
-	mistUtilLoadPort = 8042
 )
 
 var Version = "unknown"
 var serfClient *serfclient.RPCClient
+var mistUtilLoadPort = rand.Intn(10000) + 40000
 
 type catalystConfig struct {
 	serfRPCAddress           string
@@ -239,8 +240,9 @@ func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error)
 }
 
 func execBalancer(balancerArgs []string) error {
-	glog.Infof("Running MistUtilLoad with %v", balancerArgs)
-	cmd := exec.Command("MistUtilLoad", balancerArgs...)
+	args := append(balancerArgs, "-p", fmt.Sprintf("%d", mistUtilLoadPort))
+	glog.Infof("Running MistUtilLoad with %v", args)
+	cmd := exec.Command("MistUtilLoad", args...)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -346,6 +348,7 @@ func main() {
 
 	if cliFlags.RunBalancer {
 		go func() {
+
 			err := execBalancer(strings.Split(cliFlags.BalancerArgs, " "))
 			if err != nil {
 				glog.Fatal(err)
