@@ -127,10 +127,9 @@ func runClient(config catalystConfig) error {
 		for _, member := range members {
 			memberHost := member.Name
 
-			// commented out as for now the load balancer does not return ports
-			//if member.Port != 0 {
-			//	memberHost = fmt.Sprintf("%s:%d", memberHost, member.Port)
-			//}
+			if member.Status != "alive" {
+				continue
+			}
 
 			membersMap[memberHost] = true
 		}
