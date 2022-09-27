@@ -295,7 +295,7 @@ func main() {
 	fs.StringVar(&config.serfRPCAddress, "serf-rpc-address", "127.0.0.1:7373", "Serf RPC address")
 	fs.StringVar(&config.serfRPCAuthKey, "serf-rpc-auth-key", "", "Serf RPC auth key")
 	serfTags := fs.String("serf-tags", "node=media", "Serf tags for Catalyst nodes")
-	fs.StringVar(&config.mistLoadBalancerEndpoint, "mist-load-balancer-endpoint", "http://127.0.0.1:8042/", "Mist util load endpoint")
+	fs.StringVar(&config.mistLoadBalancerEndpoint, "mist-load-balancer-endpoint", fmt.Sprintf("http://127.0.0.1:%d/", mistUtilLoadPort), "Mist util load endpoint")
 	fs.StringVar(&config.mistLoadBalancerTemplate, "mist-load-balancer-template", "http://%s:4242", "template for specifying the host that should be queried for Prometheus stat output for this node")
 
 	// Serf commands passed straight through to the agent
