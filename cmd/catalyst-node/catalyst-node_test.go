@@ -218,6 +218,33 @@ func TestNodeHostRedirect(t *testing.T) {
 		hasHeader("Location", "https://right-host/any/path")
 }
 
+func TestNodeHostPortRedirect(t *testing.T) {
+	hostCli := &catalystNodeCliFlags{NodeHost: "right-host:20443"}
+
+	requireReq(t, "http://wrong-host/any/path").
+		result(hostCli).
+		hasStatus(http.StatusFound).
+		hasHeader("Location", "http://right-host:20443/any/path")
+
+	requireReq(t, "http://wrong-host:1234/any/path").
+		result(hostCli).
+		hasStatus(http.StatusFound).
+		hasHeader("Location", "http://right-host:20443/any/path")
+
+	requireReq(t, "http://wrong-host:7777/any/path").
+		withHeader("X-Forwarded-Proto", "https").
+		result(hostCli).
+		hasStatus(http.StatusFound).
+		hasHeader("Location", "https://right-host:20443/any/path")
+
+	hostCli = &catalystNodeCliFlags{NodeHost: "right-host"}
+	requireReq(t, "http://wrong-host:7777/any/path").
+		withHeader("X-Forwarded-Proto", "https").
+		result(hostCli).
+		hasStatus(http.StatusFound).
+		hasHeader("Location", "https://right-host/any/path")
+}
+
 type httpReq struct {
 	*testing.T
 	*http.Request
