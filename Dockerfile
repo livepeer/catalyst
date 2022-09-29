@@ -50,6 +50,7 @@ ARG	BUILD_TARGET
 RUN	apt update && apt install -yqq \
 	ca-certificates \
 	musl \
+	python3 \
 	"$(if [ "$BUILD_TARGET" != "stripped" ]; then echo "gdb"; fi)" \
 	&& rm -rf /var/lib/apt/lists/*
 
