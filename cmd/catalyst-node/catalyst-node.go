@@ -532,6 +532,13 @@ func streamSourceHandler(lat, lon float64) http.Handler {
 		}
 		streamName := string(b)
 		glog.V(7).Infof("got mist STREAM_SOURCE request=%s", streamName)
+
+		// if VOD source is detected, return empty response to use input URL as configured
+		if strings.HasPrefix(streamName, "tr_src_") {
+			w.Write([]byte(""))
+			return
+		}
+
 		latStr := fmt.Sprintf("%f", lat)
 		lonStr := fmt.Sprintf("%f", lon)
 		dtscURL, err := queryMistForClosestNodeSource(streamName, latStr, lonStr, "", true)
