@@ -16,7 +16,7 @@ func VerifySHA256Digest(directory, checksumFile string) error {
 	output, err := cmd.CombinedOutput()
 	glog.Infof("shasum output: %s", string(output))
 	if err != nil {
-		glog.Errorf("Failed to run shasum for %s", checksumFile)
+		glog.Errorf("Failed to run shasum for %s err=%v", checksumFile, err)
 		return err
 	}
 	return nil
