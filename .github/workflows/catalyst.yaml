@@ -16,11 +16,19 @@ concurrency:
 
 jobs:
   catalyst:
-    name: Build and publish docker image
+    name: Build and publish docker image for catalyst-${{ matrix.build.target }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          - suffix: strip
+            target: stripped
+          - suffix: ''
+            target: full
 
     steps:
       - name: Set up QEMU
@@ -46,6 +54,8 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
+          flavor: |
+            suffix=${{ matrix.build.suffix }},onlatest=true
           images: |
             livepeerci/catalyst
             ghcr.io/${{ github.repository }}
@@ -65,8 +75,10 @@ jobs:
         with:
           platforms: linux/amd64, linux/arm64
           push: true
+          target: catalyst
           build-args: |
             GIT_VERSION=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+            BUILD_TARGET=${{ matrix.build.target }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
