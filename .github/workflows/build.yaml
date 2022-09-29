@@ -64,8 +64,8 @@ jobs:
           go run cmd/downloader/downloader/downloader.go \
             --platform "${{ matrix.platform.name }}" \
             --architecture "${{ matrix.architecture }}" \
-            --path "./${CI_CATALYST_BIN_DIR}/"
-            --manifest "manifest.yaml"
+            --path "./${CI_CATALYST_BIN_DIR}/" \
+            --manifest "manifest.yaml" \
             --v 9
 
       - name: Set build environment
@@ -77,20 +77,24 @@ jobs:
         run: |
           go build \
             -o "./${CI_CATALYST_BIN_DIR}/livepeer-catalyst-node" \
-            -ldflags="-X 'main.Version=${{ github.ref_type == \'tag\' && github.ref_name || github.sha }}'" \
+            -ldflags="-X 'main.Version=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}'" \
             cmd/catalyst-node/catalyst-node.go
+
           go build \
-            -o "./${CI_CATALYST_BIN_DIR}/livepeer-log \
+            -o "./${CI_CATALYST_BIN_DIR}/livepeer-log" \
             -ldflags="-X 'main.Version=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}'" \
             cmd/livepeer-log/livepeer-log.go
+
           go build \
-            -o "./${CI_CATALYST_BIN_DIR}/livepeer-catalyst \
+            -o "./${CI_CATALYST_BIN_DIR}/livepeer-catalyst" \
             -ldflags="-X 'main.Version=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}'" \
             cmd/catalyst/catalyst.go
 
       - name: Strip binaries of debug symbols
+        if: matrix.platform.name == 'linux' && matrix.architecture == 'amd64'
         run: |
-          strip -s "${CI_CATALYST_BIN_DIR}/*"
+          cd "${CI_CATALYST_BIN_DIR}/"
+          strip --strip-all *
 
       - name: Archive binaries for linux/macos
         if: matrix.platform.name != 'windows'
@@ -98,7 +102,7 @@ jobs:
           cd "${CI_CATALYST_BIN_DIR}/"
           tar -cvzf "../releases/livepeer-catalyst-${GOOS}-${GOARCH}.tar.gz" *
 
-      - name: Upload artifacts for cutting release
+      - name: Upload artifacts
         uses: actions/upload-artifact@master
         with:
           name: release-artifacts
@@ -131,9 +135,8 @@ jobs:
         id: branch-manifest
         uses: livepeer/branch-manifest-action@latest
         with:
-          project-name: livepeer
-          bucket-key: ${{ github.event.repository.name }}
-          use-prefix: false
+          project-name: ${{ github.event.repository.name }}
+          platform: linux, darwin
 
       - name: Authenticate to Google Cloud
         id: auth
