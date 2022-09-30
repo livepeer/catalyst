@@ -510,7 +510,7 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 		}
 
 		rPath := fmt.Sprintf(pathTmpl, fullPlaybackID)
-		rURL := fmt.Sprintf("%s://%s%s", protocol(r), bestNode, rPath)
+		rURL := fmt.Sprintf("%s://%s%s?%s", protocol(r), bestNode, rPath, r.URL.RawQuery)
 		rURL, err = resolveNodeURL(rURL)
 		if err != nil {
 			glog.Errorf("failed to resolve node URL playbackID=%s err=%s", playbackID, err)
