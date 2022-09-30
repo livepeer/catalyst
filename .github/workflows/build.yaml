@@ -1,0 +1,162 @@
+name: Build and upload binaries to GCP
+
+on:
+  pull_request_target:
+  pull_request:
+  push:
+    paths:
+      - "cmd/*"
+      - .github/workflows/build.yaml
+      - manifest.yaml
+    branches:
+      - main
+      - staging
+    tags:
+      - "v*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  CI_CATALYST_BIN_DIR: "bin"
+
+jobs:
+  build:
+    name: Build and download binaries from manifest for ${{ matrix.platform.name }}-${{ matrix.architecture }}
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture:
+          - arm64
+          - amd64
+        platform:
+          - name: linux
+            os: ubuntu-latest
+          - name: darwin
+            os: macos-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          # Check https://github.com/livepeer/go-livepeer/pull/1891
+          # for ref value discussion
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up go
+        id: go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Install go modules
+        if: steps.go.outputs.cache-hit != 'true'
+        run: go mod download
+
+      - name: Run downloader script
+        run: |
+          mkdir -p "${CI_CATALYST_BIN_DIR}/" "releases/"
+          go run cmd/downloader/downloader/downloader.go \
+            --platform "${{ matrix.platform.name }}" \
+            --architecture "${{ matrix.architecture }}" \
+            --path "./${CI_CATALYST_BIN_DIR}/" \
+            --manifest "manifest.yaml" \
+            --v 9
+
+      - name: Set build environment
+        run: |
+          echo "GOARCH=${{ matrix.architecture }}" >> $GITHUB_ENV
+          echo "GOOS=${{ matrix.platform.name }}" >> $GITHUB_ENV
+
+      - name: Build binaries
+        run: |
+          go build \
+            -o "./${CI_CATALYST_BIN_DIR}/livepeer-catalyst-node" \
+            -ldflags="-X 'main.Version=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}'" \
+            cmd/catalyst-node/catalyst-node.go
+
+          go build \
+            -o "./${CI_CATALYST_BIN_DIR}/livepeer-log" \
+            -ldflags="-X 'main.Version=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}'" \
+            cmd/livepeer-log/livepeer-log.go
+
+          go build \
+            -o "./${CI_CATALYST_BIN_DIR}/livepeer-catalyst" \
+            -ldflags="-X 'main.Version=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}'" \
+            cmd/catalyst/catalyst.go
+
+      - name: Strip binaries of debug symbols
+        if: matrix.platform.name == 'linux' && matrix.architecture == 'amd64'
+        run: |
+          cd "${CI_CATALYST_BIN_DIR}/"
+          strip --strip-all *
+
+      - name: Archive binaries for linux/macos
+        if: matrix.platform.name != 'windows'
+        run: |
+          cd "${CI_CATALYST_BIN_DIR}/"
+          tar -cvzf "../releases/livepeer-catalyst-${GOOS}-${GOARCH}.tar.gz" *
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@master
+        with:
+          name: release-artifacts
+          path: releases/
+
+  upload:
+    name: Upload artifacts to google bucket
+    permissions:
+      contents: "read"
+      id-token: "write"
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: release-artifacts
+          path: releases/
+
+      - name: Generate sha256 checksum and gpg signatures for release artifacts
+        uses: livepeer/action-gh-checksum-and-gpg-sign@latest
+        with:
+          artifacts-dir: releases
+          release-name: ${{ (github.ref_type == 'tag' && github.ref_name) || github.sha }}
+          gpg-key: ${{ secrets.CI_GPG_SIGNING_KEY }}
+          gpg-key-passphrase: ${{ secrets.CI_GPG_SIGNING_PASSPHRASE }}
+
+      - name: Generate branch manifest
+        id: branch-manifest
+        uses: livepeer/branch-manifest-action@latest
+        with:
+          project-name: ${{ github.event.repository.name }}
+          platform: linux, darwin
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v0
+        with:
+          workload_identity_provider: ${{ secrets.CI_GOOGLE_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.CI_GOOGLE_SERVICE_ACCOUNT }}
+
+      - name: Upload release archives to Google Cloud
+        id: upload-archives
+        uses: google-github-actions/upload-cloud-storage@v0
+        with:
+          path: "releases"
+          destination: "build.livepeer.live/${{ github.event.repository.name }}/${{ (github.ref_type == 'tag' && github.ref_name) || github.sha }}"
+          parent: false
+
+      - name: Upload branch manifest file
+        id: upload-manifest
+        uses: google-github-actions/upload-cloud-storage@v0
+        with:
+          path: ${{ steps.branch-manifest.outputs.manifest-file }}
+          destination: "build.livepeer.live/${{ github.event.repository.name }}/"
+          parent: false
