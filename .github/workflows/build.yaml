@@ -4,10 +4,8 @@ on:
   pull_request_target:
   pull_request:
   push:
-    paths:
-      - "cmd/*"
-      - .github/workflows/build.yaml
-      - manifest.yaml
+    paths-ignore:
+      - "**/*.md"
     branches:
       - main
       - staging
