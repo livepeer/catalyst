@@ -90,10 +90,10 @@ func getJSURLs(proto, host string) []string {
 	return urls
 }
 
-func getHLSURLsWithSeg(proto, host, seg string) []string {
+func getHLSURLsWithSeg(proto, host, seg, query string) []string {
 	var urls []string
 	for _, prefix := range prefixes {
-		urls = append(urls, fmt.Sprintf("%s://%s/hls/%s+%s/%s/index.m3u8", proto, host, prefix, playbackID, seg))
+		urls = append(urls, fmt.Sprintf("%s://%s/hls/%s+%s/%s/index.m3u8?%s", proto, host, prefix, playbackID, seg, query))
 	}
 	return urls
 }
@@ -160,7 +160,7 @@ func TestRedirectHandlerHLS_SegmentInPath(t *testing.T) {
 	requireReq(t, path).
 		result(nil).
 		hasStatus(http.StatusFound).
-		hasHeader("Location", getHLSURLsWithSeg("http", closestNodeAddr, seg)...)
+		hasHeader("Location", getHLSURLsWithSeg("http", closestNodeAddr, seg, getParams)...)
 }
 
 func TestRedirectHandlerHLS_InvalidPath(t *testing.T) {
