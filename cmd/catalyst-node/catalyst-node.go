@@ -524,6 +524,8 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 
 func streamSourceHandler(lat, lon float64) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Workaround for https://github.com/DDVTECH/mistserver/issues/114
+		w.Header().Set("Transfer-Encoding", "chunked")
 		b, err := io.ReadAll(r.Body)
 		if err != nil {
 			glog.Errorf("error handling STREAM_SOURCE body=%s", err)
