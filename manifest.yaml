@@ -18,13 +18,13 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: b3c8705b879193d69a5e6a5507010861d235bf5f
-    release: v0.8.0
+      commit: a3d05c6872a7b3560c798eda2a842d0e8b8c8f4e
+    release: v0.8.1
   - name: catalyst-api
     strategy:
       download: bucket
       project: catalyst-api
-      commit: 2e7f91de3c7fdc122b6ef529afa1b8a0801a54f2
+      commit: 775a810614a8287e72c4044812be08e216f2c573
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: mist-api-connector
-      commit: 1c353dad809546a69ec43d960e34db2393f28f4d
+      commit: 4224672d3f1093c2b81f836f6d4967f4900a4420
     binary: livepeer-mist-api-connector
     release: master
     srcFilenames:
@@ -61,7 +61,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: dc6e79d1cbf50b2c5e3c4611b60cd7134017b30a
+      commit: 2a0432a28dc9b385ef5d42540bff79dbb04143c4
     binary: livepeer
     release: master
     archivePath: livepeer
@@ -76,7 +76,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: 824a0402382bba8cea853657445a24e8c1320410
+      commit: 04a3ad77e2e0a6f80dc3b973b5eff533375cd949
     release: catalyst
     skipGpg: true
     srcFilenames:
@@ -88,9 +88,9 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: b3c8705b879193d69a5e6a5507010861d235bf5f
+      commit: a3d05c6872a7b3560c798eda2a842d0e8b8c8f4e
     binary: livepeer-www
-    release: v0.8.0
+    release: v0.8.1
   - name: victoria-metrics
     strategy:
       download: github
