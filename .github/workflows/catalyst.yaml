@@ -1,7 +1,6 @@
 name: Build and publish catalyst docker images
 
 on:
-  pull_request_target:
   pull_request:
   push:
     branches:
