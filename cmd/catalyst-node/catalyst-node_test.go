@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	serfclient "github.com/hashicorp/serf/client"
 	"github.com/stretchr/testify/require"
 )
@@ -287,4 +290,91 @@ func (hc httpCheck) hasHeader(key string, values ...string) httpCheck {
 	header := hc.Header().Get(key)
 	require.Contains(hc, values, header)
 	return hc
+}
+
+type MockClient struct {
+	StatusCode int
+	Body       []byte
+	*http.Client
+}
+
+func TestUserNewAccessVerification(t *testing.T) {
+	playbackId := "1bbbqz6753hcli1t"
+	publicKey := "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFNzRoTHBSUkx0TzBQS01Vb08yV3ptY2xOemFBaQp6RTd2UnUrdmtHQXFEVzBEVzB5eW9LV3ZKakZNcWdOb0dCakpiZDM2c3ZiTzhVRnN6aXlSZzJYdXlnPT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
+	privateKey := "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgG1jxreAnbEd/RdtA\nNWIfTiwJzlU7KoBtKlllSMinLtChRANCAATviEulFEu07Q8oxSg7ZbOZyU3NoCLM\nTu9G76+QYCoNbQNbTLKgpa8mMUyqA2gYGMlt3fqy9s7xQWzOLJGDZe7K\n-----END PRIVATE KEY-----\n"
+	expiration := time.Now().Add(time.Duration(1 * time.Hour))
+	gateURL := "http://localhost:3004/api/access-control/gate"
+
+	// Successful playback with token
+	{
+		token, _ := craftToken(privateKey, publicKey, playbackId, expiration)
+		payload := []byte(fmt.Sprint(playbackId, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackId, "/index.m3u8?stream=", playbackId, "&token=", token, "\n5"))
+		queryGate = func(ac *PlaybackAccessControl, body []byte) (int, int64, int64, error) {
+			return 204, 120, 300, nil
+		}
+
+		result := executeTest(gateURL, token, payload, queryGate)
+		require.Equal(t, "true", result)
+	}
+
+	// Successful playback without token
+	{
+		token := ""
+		payload := []byte(fmt.Sprint(playbackId, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackId, "/index.m3u8?stream=", playbackId, "&token=", token, "\n5"))
+		queryGate = func(ac *PlaybackAccessControl, body []byte) (int, int64, int64, error) {
+			return 204, 120, 300, nil
+		}
+
+		result := executeTest(gateURL, token, payload, queryGate)
+		require.Equal(t, "true", result)
+	}
+
+	// Fails when token is invalid
+	{
+		token := "x"
+		payload := []byte(fmt.Sprint(playbackId, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackId, "/index.m3u8?stream=", playbackId, "&token=", token, "\n5"))
+		queryGate = func(ac *PlaybackAccessControl, body []byte) (int, int64, int64, error) {
+			return 204, 120, 300, nil
+		}
+
+		result := executeTest(gateURL, token, payload, queryGate)
+		require.Equal(t, "true", result)
+	}
+}
+
+func executeTest(gateURL, token string, payload []byte, request func(ac *PlaybackAccessControl, body []byte) (int, int64, int64, error)) string {
+	req, _ := http.NewRequest("POST", "/triggers", bytes.NewReader(payload))
+	req.Header.Add("X-Trigger", UserNewTrigger)
+
+	rr := httptest.NewRecorder()
+	handler := triggerHandler(gateURL)
+
+	originalQueryGate := queryGate
+	queryGate = request
+
+	handler.ServeHTTP(rr, req)
+
+	queryGate = originalQueryGate
+
+	return rr.Body.String()
+}
+
+func craftToken(sk, publicKey, playbackId string, expiration time.Time) (string, error) {
+	privateKey, err := jwt.ParseECPrivateKeyFromPEM([]byte(sk))
+	if err != nil {
+		return "", err
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
+		"sub": playbackId,
+		"pub": publicKey,
+		"exp": jwt.NewNumericDate(expiration),
+	})
+	ss, err := token.SignedString(privateKey)
+
+	if err != nil {
+		return "", err
+	}
+
+	return ss, nil
 }
