@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -15,11 +17,13 @@ import (
 	"os/signal"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	serfclient "github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"github.com/livepeer/livepeer-data/pkg/mistconnector"
@@ -58,6 +62,7 @@ type catalystNodeCliFlags struct {
 	NodeHost            string
 	NodeLatitude        float64
 	NodeLongitude       float64
+	GateURL             string
 }
 
 var mediaFilter = map[string]string{"node": "media"}
@@ -308,6 +313,9 @@ func main() {
 	fs.StringVar(&serfConfig.Profile, "profile", "", "Profile is used to control the timing profiles used in Serf. The default if not provided is wan.")
 	fs.StringVar(&serfConfig.NodeName, "node", "", "Name of this node. Must be unique in the cluster")
 
+	// Studio Api
+	fs.StringVar(&cliFlags.GateURL, "gate-url", "http://localhost:3004/api/access-control/gate", "Address to contact Studio API for access control verification")
+
 	ff.Parse(
 		fs, os.Args[1:],
 		ff.WithConfigFileFlag("config"),
@@ -341,7 +349,7 @@ func main() {
 
 	parseSerfConfig(&serfConfig, retryJoin, serfTags)
 
-	go startCatalystWebServer(cliFlags.HTTPAddress, cliFlags.RedirectPrefixes, cliFlags.NodeHost)
+	go startCatalystWebServer(cliFlags.RedirectPrefixes, cliFlags.HTTPAddress, cliFlags.NodeHost, cliFlags.GateURL)
 	go startInternalWebServer(cliFlags.HTTPInternalAddress, cliFlags.NodeLatitude, cliFlags.NodeLongitude)
 
 	config.serfTags = serfConfig.Tags
@@ -457,8 +465,9 @@ func writeSerfConfig(config *agent.Config) (string, error) {
 	return tmpFile.Name(), err
 }
 
-func startCatalystWebServer(httpAddr string, redirectPrefixes []string, nodeHost string) {
+func startCatalystWebServer(redirectPrefixes []string, httpAddr, nodeHost, gateURL string) {
 	http.Handle("/", redirectHandler(redirectPrefixes, nodeHost))
+	http.Handle("/triggers", triggerHandler(gateURL))
 	glog.Infof("HTTP server listening on %s", httpAddr)
 	glog.Fatal(http.ListenAndServe(httpAddr, nil))
 }
@@ -750,4 +759,204 @@ func queryMistForClosestNodeSource(playbackID, lat, lon, prefix string, source b
 		return "", fmt.Errorf("GET request '%s' returned 'FULL'", murl)
 	}
 	return string(body), nil
+}
+
+type PlaybackAccessControl struct {
+	gateURL string
+	cache   map[string]map[string]*PlaybackAccessControlEntry
+	*http.Client
+}
+
+type PlaybackAccessControlEntry struct {
+	Stale  time.Time
+	MaxAge time.Time
+	allow  bool
+}
+
+type PlaybackAccessControlRequest struct {
+	Type   string `json:"type"`
+	Pub    string `json:"pub"`
+	Stream string `json:"stream"`
+}
+
+const TriggerUserNew = "USER_NEW"
+
+func triggerHandler(gateURL string) http.Handler {
+	playbackAccessControl := PlaybackAccessControl{
+		gateURL,
+		make(map[string]map[string]*PlaybackAccessControlEntry),
+		&http.Client{},
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		payload, err := io.ReadAll(r.Body)
+
+		if err != nil {
+			w.Write([]byte("false"))
+			glog.Errorf("Unable to parse trigger body %v", err)
+			return
+		}
+
+		triggerName := r.Header.Get("X-Trigger")
+
+		switch triggerName {
+		case TriggerUserNew:
+			w.Write(playbackAccessControl.handleUserNew(payload))
+			return
+		default:
+			w.Write([]byte("false"))
+			glog.Errorf("Trigger not handled %v", triggerName)
+			return
+		}
+
+	})
+}
+
+func (ac *PlaybackAccessControl) handleUserNew(payload []byte) []byte {
+	lines := strings.Split(string(payload), "\n")
+
+	if len(lines) != 6 {
+		glog.Errorf("Malformed trigger payload")
+		return []byte("false")
+	}
+
+	requestURL, err := url.Parse(lines[4])
+	if err != nil {
+		glog.Errorf("Unable to parse URL %v", err)
+		return []byte("false")
+	}
+
+	playbackID := lines[0]
+	token := requestURL.Query().Get("token")
+
+	var pubKey string
+	if token != "" {
+		claims, err := decodeJwt(token)
+
+		if err != nil {
+			glog.Errorf("Unable to decode JWT token %v", err)
+			return []byte("false")
+		}
+
+		if playbackID != claims.(jwt.MapClaims)["sub"].(string) {
+			glog.Errorf("PlaybackId mismatch")
+			return []byte("false")
+		}
+
+		pubKey = claims.(jwt.MapClaims)["pub"].(string)
+		expiration := time.Unix(int64(claims.(jwt.MapClaims)["exp"].(float64)), 0)
+
+		if time.Now().After(expiration) {
+			glog.Errorf("Token expired %v", expiration)
+			return []byte("false")
+		}
+	}
+
+	playbackAccessControl, err := ac.getPlaybackAccessControlInfo(playbackID, pubKey)
+	if err != nil {
+		glog.Errorf("Unable to get playback access control info %v", err)
+		return []byte("false")
+	}
+
+	if playbackAccessControl[pubKey].allow {
+		return []byte("true")
+	}
+
+	return []byte("false")
+}
+
+func (ac *PlaybackAccessControl) getPlaybackAccessControlInfo(playbackID, pubKey string) (map[string]*PlaybackAccessControlEntry, error) {
+	if ac.cache[playbackID] == nil ||
+		ac.cache[playbackID][pubKey] == nil ||
+		time.Now().After(ac.cache[playbackID][pubKey].Stale) {
+
+		err := ac.cachePlaybackAccessControlInfo(playbackID, pubKey)
+		if err != nil {
+			return nil, err
+		}
+
+	} else if time.Now().After(ac.cache[playbackID][pubKey].MaxAge) {
+		go ac.cachePlaybackAccessControlInfo(playbackID, pubKey)
+	}
+
+	return ac.cache[playbackID], nil
+}
+
+func (ac *PlaybackAccessControl) cachePlaybackAccessControlInfo(playbackID, pubKey string) error {
+	body, err := json.Marshal(PlaybackAccessControlRequest{"jwt", pubKey, playbackID})
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", ac.gateURL, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := ac.Client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+
+	cacheControlDirectives := strings.Split(res.Header.Get("Cache-Control"), ",")
+
+	var maxAge, stale int64 = 0, 0
+	if len(cacheControlDirectives) == 2 {
+		maxAge, err = strconv.ParseInt(strings.Split(cacheControlDirectives[0], "=")[1], 10, 32)
+		if err != nil {
+			return err
+		}
+
+		stale, err = strconv.ParseInt(strings.Split(cacheControlDirectives[1], "=")[1], 10, 32)
+		if err != nil {
+			return err
+		}
+	}
+
+	var allow = res.StatusCode == 204
+	var maxAgeTime = time.Now().Add(time.Duration(maxAge) * time.Second)
+	var staleTime = time.Now().Add(time.Duration(stale) * time.Second)
+
+	if ac.cache[playbackID] == nil {
+		ac.cache[playbackID] = make(map[string]*PlaybackAccessControlEntry)
+	}
+
+	ac.cache[playbackID][pubKey] = &PlaybackAccessControlEntry{staleTime, maxAgeTime, allow}
+
+	return nil
+}
+
+type GatedStreamClaims struct {
+	Action string `json:"action"`
+	Video  string `json:"video"`
+	Pub    string `json:"pub"`
+	jwt.RegisteredClaims
+}
+
+func decodeJwt(tokenString string) (jwt.Claims, error) {
+	token, _ := jwt.Parse(tokenString, nil)
+
+	pub := token.Claims.(jwt.MapClaims)["pub"].(string)
+	decodedPubkey, err := base64.StdEncoding.DecodeString(pub)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey, err := jwt.ParseECPublicKeyFromPEM(decodedPubkey)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return publicKey, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return token.Claims, nil
 }
