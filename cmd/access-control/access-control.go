@@ -27,8 +27,8 @@ type PlaybackAccessControl struct {
 type PlaybackAccessControlEntry struct {
 	Stale  time.Time
 	MaxAge time.Time
-	Mutex  sync.Mutex
 	Allow  bool
+	mutex  sync.Mutex
 }
 
 type PlaybackAccessControlRequest struct {
@@ -129,11 +129,11 @@ func getPlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey 
 	} else if time.Now().After(ac.cache[playbackID][pubKey].MaxAge) {
 		ctx := context.TODO()
 		go func() {
-			ac.cache[playbackID][pubKey].Mutex.Lock()
-			if time.Now().After(ac.cache[playbackID][pubKey].Stale) {
+			ac.cache[playbackID][pubKey].mutex.Lock()
+			if time.Now().After(ac.cache[playbackID][pubKey].MaxAge) {
 				cachePlaybackAccessControlInfo(ac, playbackID, pubKey)
 			}
-			ac.cache[playbackID][pubKey].Mutex.Unlock()
+			ac.cache[playbackID][pubKey].mutex.Unlock()
 			ctx.Done()
 		}()
 	}
@@ -157,7 +157,7 @@ func cachePlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKe
 
 	if ac.cache[playbackID] == nil {
 		ac.cache[playbackID] = make(map[string]*PlaybackAccessControlEntry)
-		ac.cache[playbackID][pubKey] = &PlaybackAccessControlEntry{staleTime, maxAgeTime, sync.Mutex{}, allow}
+		ac.cache[playbackID][pubKey] = &PlaybackAccessControlEntry{staleTime, maxAgeTime, allow, sync.Mutex{}}
 	} else {
 		ac.cache[playbackID][pubKey].Allow = allow
 		ac.cache[playbackID][pubKey].MaxAge = maxAgeTime
