@@ -76,7 +76,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: e05df28de26d66ce58a3f0a69f2a90dd296492ad
+      commit: 55f99fcc83cd3eeb80072b86f46638952d1a8bb6
     release: eli/catalyst-rebase-2022-10-05
     skipGpg: true
     srcFilenames:
