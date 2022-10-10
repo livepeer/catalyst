@@ -137,13 +137,11 @@ func getPlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey 
 		}()
 	}
 
-	allow := false
+	ac.mutex.RLock()
+	entry = ac.cache[playbackID][pubKey]
+	ac.mutex.RUnlock()
 
-	if entry != nil {
-		allow = entry.Allow
-	}
-
-	return allow, nil
+	return entry.Allow, nil
 }
 
 func isStale(entry *PlaybackAccessControlEntry) bool {
