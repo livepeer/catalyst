@@ -2,7 +2,6 @@ package accesscontrol
 
 import (
 	"bytes"
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -20,15 +19,15 @@ import (
 
 type PlaybackAccessControl struct {
 	gateURL string
-	cache   map[string]map[string]*PlaybackAccessControlEntry
 	*http.Client
+	cache map[string]map[string]*PlaybackAccessControlEntry
+	mutex sync.RWMutex
 }
 
 type PlaybackAccessControlEntry struct {
 	Stale  time.Time
 	MaxAge time.Time
 	Allow  bool
-	mutex  sync.Mutex
 }
 
 type PlaybackAccessControlRequest struct {
@@ -42,8 +41,9 @@ const UserNewTrigger = "USER_NEW"
 func TriggerHandler(gateURL string) http.Handler {
 	playbackAccessControl := PlaybackAccessControl{
 		gateURL,
-		make(map[string]map[string]*PlaybackAccessControlEntry),
 		&http.Client{},
+		make(map[string]map[string]*PlaybackAccessControlEntry),
+		sync.RWMutex{},
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -103,42 +103,46 @@ func handleUserNew(ac *PlaybackAccessControl, payload []byte) []byte {
 		pubKey = claims.PublicKey
 	}
 
-	playbackAccessControl, err := getPlaybackAccessControlInfo(ac, playbackID, pubKey)
+	playbackAccessControlAllowed, err := getPlaybackAccessControlInfo(ac, playbackID, pubKey)
 	if err != nil {
 		glog.Errorf("Unable to get playback access control info %v", err)
 		return []byte("false")
 	}
 
-	if playbackAccessControl[pubKey].Allow {
+	if playbackAccessControlAllowed {
 		return []byte("true")
 	}
 
 	return []byte("false")
 }
 
-func getPlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey string) (map[string]*PlaybackAccessControlEntry, error) {
+func getPlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey string) (bool, error) {
+	ac.mutex.RLock()
+
 	if ac.cache[playbackID] == nil ||
 		ac.cache[playbackID][pubKey] == nil ||
 		time.Now().After(ac.cache[playbackID][pubKey].Stale) {
-
+		ac.mutex.RUnlock()
 		err := cachePlaybackAccessControlInfo(ac, playbackID, pubKey)
+
 		if err != nil {
-			return nil, err
+			return false, err
 		}
 
 	} else if time.Now().After(ac.cache[playbackID][pubKey].MaxAge) {
-		ctx := context.TODO()
 		go func() {
-			ac.cache[playbackID][pubKey].mutex.Lock()
-			if time.Now().After(ac.cache[playbackID][pubKey].MaxAge) {
+			ac.mutex.RLock()
+			stillStale := time.Now().After(ac.cache[playbackID][pubKey].MaxAge)
+			ac.mutex.RUnlock()
+			if stillStale {
 				cachePlaybackAccessControlInfo(ac, playbackID, pubKey)
 			}
-			ac.cache[playbackID][pubKey].mutex.Unlock()
-			ctx.Done()
 		}()
 	}
 
-	return ac.cache[playbackID], nil
+	defer ac.mutex.RUnlock()
+
+	return ac.cache[playbackID][pubKey].Allow, nil
 }
 
 func cachePlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey string) error {
@@ -154,15 +158,16 @@ func cachePlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKe
 
 	var maxAgeTime = time.Now().Add(time.Duration(maxAge) * time.Second)
 	var staleTime = time.Now().Add(time.Duration(stale) * time.Second)
-
+	ac.mutex.Lock()
 	if ac.cache[playbackID] == nil {
 		ac.cache[playbackID] = make(map[string]*PlaybackAccessControlEntry)
-		ac.cache[playbackID][pubKey] = &PlaybackAccessControlEntry{staleTime, maxAgeTime, allow, sync.Mutex{}}
+		ac.cache[playbackID][pubKey] = &PlaybackAccessControlEntry{staleTime, maxAgeTime, allow}
 	} else {
 		ac.cache[playbackID][pubKey].Allow = allow
 		ac.cache[playbackID][pubKey].MaxAge = maxAgeTime
 		ac.cache[playbackID][pubKey].Stale = staleTime
 	}
+	ac.mutex.Unlock()
 
 	return nil
 }
