@@ -115,10 +115,22 @@
       {
         "connector": "livepeer-victoria-metrics",
         "promscrape.config": "./config/scrape_config.yaml"
+      },
+      {
+        "connector": "livepeer-mist-api-connector"
       }
     ],
     "serverid": null,
-    "triggers": {},
+    "triggers": {
+      "USER_NEW": [
+        {
+          "default": "true",
+          "handler":"http://127.0.0.1:8090/triggers",
+          "streams":[],
+          "sync":true
+        }
+      ]
+    },
     "trustedproxy": []
   },
   "push_settings": {

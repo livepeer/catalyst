@@ -22,6 +22,7 @@ import (
 
 	serfclient "github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
+	accesscontrol "github.com/livepeer/catalyst/cmd/catalyst-node/handlers/access-control"
 	"github.com/livepeer/livepeer-data/pkg/mistconnector"
 	glog "github.com/magicsong/color-glog"
 	"github.com/mitchellh/cli"
@@ -58,6 +59,7 @@ type catalystNodeCliFlags struct {
 	NodeHost            string
 	NodeLatitude        float64
 	NodeLongitude       float64
+	GateURL             string
 }
 
 var mediaFilter = map[string]string{"node": "media"}
@@ -308,6 +310,9 @@ func main() {
 	fs.StringVar(&serfConfig.Profile, "profile", "", "Profile is used to control the timing profiles used in Serf. The default if not provided is wan.")
 	fs.StringVar(&serfConfig.NodeName, "node", "", "Name of this node. Must be unique in the cluster")
 
+	// Playback gating Api
+	fs.StringVar(&cliFlags.GateURL, "gate-url", "http://localhost:3004/api/access-control/gate", "Address to contact playback gating API for access control verification")
+
 	ff.Parse(
 		fs, os.Args[1:],
 		ff.WithConfigFileFlag("config"),
@@ -341,7 +346,7 @@ func main() {
 
 	parseSerfConfig(&serfConfig, retryJoin, serfTags)
 
-	go startCatalystWebServer(cliFlags.HTTPAddress, cliFlags.RedirectPrefixes, cliFlags.NodeHost)
+	go startCatalystWebServer(cliFlags.RedirectPrefixes, cliFlags.HTTPAddress, cliFlags.NodeHost, cliFlags.GateURL)
 	go startInternalWebServer(cliFlags.HTTPInternalAddress, cliFlags.NodeLatitude, cliFlags.NodeLongitude)
 
 	config.serfTags = serfConfig.Tags
@@ -457,8 +462,9 @@ func writeSerfConfig(config *agent.Config) (string, error) {
 	return tmpFile.Name(), err
 }
 
-func startCatalystWebServer(httpAddr string, redirectPrefixes []string, nodeHost string) {
+func startCatalystWebServer(redirectPrefixes []string, httpAddr, nodeHost, gateURL string) {
 	http.Handle("/", redirectHandler(redirectPrefixes, nodeHost))
+	http.Handle("/triggers", accesscontrol.TriggerHandler(gateURL))
 	glog.Infof("HTTP server listening on %s", httpAddr)
 	glog.Fatal(http.ListenAndServe(httpAddr, nil))
 }
