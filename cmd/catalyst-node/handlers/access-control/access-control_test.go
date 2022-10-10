@@ -106,7 +106,7 @@ func TestCacheHit(t *testing.T) {
 	require.Equal(t, 1, callCount)
 }
 
-func TestStaleCache(t *testing.T) {
+/*func TestStaleCache(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackID, expiration)
 	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&jwt=", token, "\n5"))
 	handler := TriggerHandler(gateURL)
@@ -137,7 +137,7 @@ func TestStaleCache(t *testing.T) {
 	executeFlow(payload, handler, countableAllowAccess)
 	require.Equal(t, 2, callCount)
 
-}
+}*/
 
 func TestInvalidCache(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackID, expiration)
