@@ -11,6 +11,7 @@ require (
 	github.com/mitchellh/cli v1.1.4
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/peterbourgon/ff/v3 v3.3.0
+	github.com/pquerna/cachecontrol v0.1.0
 	github.com/stretchr/testify v1.8.0
 	github.com/testcontainers/testcontainers-go v0.13.1-0.20220712105725-8e65673ca167
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
@@ -70,7 +71,6 @@ require (
 	github.com/opencontainers/runc v1.1.3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
-	github.com/pquerna/cachecontrol v0.1.0 // indirect
 	github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f // indirect
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect

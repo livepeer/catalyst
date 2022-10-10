@@ -22,7 +22,7 @@ import (
 
 	serfclient "github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
-	accesscontrol "github.com/livepeer/catalyst/cmd/access-control"
+	accesscontrol "github.com/livepeer/catalyst/cmd/catalyst-node/handlers/access-control"
 	"github.com/livepeer/livepeer-data/pkg/mistconnector"
 	glog "github.com/magicsong/color-glog"
 	"github.com/mitchellh/cli"
