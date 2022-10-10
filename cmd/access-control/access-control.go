@@ -9,13 +9,13 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	glog "github.com/magicsong/color-glog"
+	"github.com/pquerna/cachecontrol/cacheobject"
 )
 
 type PlaybackAccessControl struct {
@@ -167,7 +167,7 @@ func cachePlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKe
 	return nil
 }
 
-var queryGate = func(ac *PlaybackAccessControl, body []byte) (bool, int64, int64, error) {
+var queryGate = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error) {
 	req, err := http.NewRequest("POST", ac.gateURL, bytes.NewReader(body))
 	if err != nil {
 		return false, 0, 0, err
@@ -181,23 +181,12 @@ var queryGate = func(ac *PlaybackAccessControl, body []byte) (bool, int64, int64
 	}
 
 	defer res.Body.Close()
-
-	cacheControlDirectives := strings.Split(res.Header.Get("Cache-Control"), ",")
-
-	var maxAge, stale int64 = 0, 0
-	if len(cacheControlDirectives) == 2 {
-		maxAge, err = strconv.ParseInt(strings.Split(cacheControlDirectives[0], "=")[1], 10, 64)
-		if err != nil {
-			return res.StatusCode/100 == 2, 120, 600, nil
-		}
-
-		stale, err = strconv.ParseInt(strings.Split(cacheControlDirectives[1], "=")[1], 10, 64)
-		if err != nil {
-			return res.StatusCode/100 == 2, 120, 600, nil
-		}
+	cc, err := cacheobject.ParseResponseCacheControl(res.Header.Get("Cache-Control"))
+	if err != nil {
+		return false, 0, 0, err
 	}
 
-	return res.StatusCode/100 == 2, maxAge, stale, nil
+	return res.StatusCode/100 == 2, int32(cc.MaxAge), int32(cc.StaleWhileRevalidate), nil
 }
 
 type PlaybackGateClaims struct {

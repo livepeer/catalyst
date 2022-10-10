@@ -70,6 +70,7 @@ require (
 	github.com/opencontainers/runc v1.1.3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/posener/complete v1.2.3 // indirect
+	github.com/pquerna/cachecontrol v0.1.0 // indirect
 	github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f // indirect
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect

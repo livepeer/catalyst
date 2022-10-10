@@ -24,11 +24,11 @@ var privateKey = "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49A
 var expiration = time.Now().Add(time.Duration(1 * time.Hour))
 var gateURL = "http://localhost:3000/api/access-control/gate"
 
-var allowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int64, int64, error) {
+var allowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error) {
 	return true, 120, 300, nil
 }
 
-var denyAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int64, int64, error) {
+var denyAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error) {
 	return false, 120, 300, nil
 }
 
@@ -86,7 +86,7 @@ func TestCacheHit(t *testing.T) {
 	handler := TriggerHandler(gateURL)
 
 	var callCount = 0
-	var countableAllowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int64, int64, error) {
+	var countableAllowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error) {
 		callCount++
 		return true, 10, 20, nil
 	}
@@ -104,7 +104,7 @@ func TestStaleCache(t *testing.T) {
 	handler := TriggerHandler(gateURL)
 
 	var callCount = 0
-	var countableAllowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int64, int64, error) {
+	var countableAllowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error) {
 		callCount++
 		return true, -10, 20, nil
 	}
@@ -137,7 +137,7 @@ func TestInvalidCache(t *testing.T) {
 	handler := TriggerHandler(gateURL)
 
 	var callCount = 0
-	var countableAllowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int64, int64, error) {
+	var countableAllowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error) {
 		callCount++
 		return true, -10, -20, nil
 	}
@@ -148,7 +148,7 @@ func TestInvalidCache(t *testing.T) {
 	require.Equal(t, 2, callCount)
 }
 
-func executeFlow(token string, payload []byte, handler http.Handler, request func(ac *PlaybackAccessControl, body []byte) (bool, int64, int64, error)) string {
+func executeFlow(token string, payload []byte, handler http.Handler, request func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error)) string {
 	original := queryGate
 	queryGate = request
 
