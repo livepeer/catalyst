@@ -44,7 +44,7 @@ func TestAllowedAccessValidToken(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackID, expiration)
 	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&token=", token, "\n5"))
 
-	result := executeFlow(token, payload, TriggerHandler(gateURL), allowAccess)
+	result := executeFlow(payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "true", result)
 }
 
@@ -52,7 +52,7 @@ func TestAllowdAccessAbsentToken(t *testing.T) {
 	token := ""
 	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&token=", token, "\n5"))
 
-	result := executeFlow(token, payload, TriggerHandler(gateURL), allowAccess)
+	result := executeFlow(payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "true", result)
 }
 
@@ -60,7 +60,7 @@ func TestDeniedAccessInvalidToken(t *testing.T) {
 	token := "x"
 	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&jwt=", token, "\n5"))
 
-	result := executeFlow(token, payload, TriggerHandler(gateURL), allowAccess)
+	result := executeFlow(payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "false", result)
 }
 
@@ -68,7 +68,7 @@ func TestDeniedAccess(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackID, expiration)
 	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&jwt=", token, "\n5"))
 
-	result := executeFlow(token, payload, TriggerHandler(gateURL), denyAccess)
+	result := executeFlow(payload, TriggerHandler(gateURL), denyAccess)
 	require.Equal(t, "false", result)
 }
 
@@ -76,7 +76,7 @@ func TestDeniedAccessForMissingClaims(t *testing.T) {
 	token, _ := craftToken(privateKey, "", playbackID, expiration)
 	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&jwt=", token, "\n5"))
 
-	result := executeFlow(token, payload, TriggerHandler(gateURL), allowAccess)
+	result := executeFlow(payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "false", result)
 }
 
@@ -84,7 +84,7 @@ func TestExpiredToken(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackID, time.Now().Add(time.Second*-10))
 	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&jwt=", token, "\n5"))
 
-	result := executeFlow(token, payload, TriggerHandler(gateURL), allowAccess)
+	result := executeFlow(payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "false", result)
 }
 
@@ -99,10 +99,10 @@ func TestCacheHit(t *testing.T) {
 		return true, 10, 20, nil
 	}
 
-	executeFlow(token, payload, handler, countableAllowAccess)
+	executeFlow(payload, handler, countableAllowAccess)
 	require.Equal(t, 1, callCount)
 
-	executeFlow(token, payload, handler, countableAllowAccess)
+	executeFlow(payload, handler, countableAllowAccess)
 	require.Equal(t, 1, callCount)
 }
 
@@ -118,9 +118,9 @@ func TestStaleCache(t *testing.T) {
 	}
 
 	// Cache entry is absent and a first remote call is done
-	executeFlow(token, payload, handler, countableAllowAccess)
+	executeFlow(payload, handler, countableAllowAccess)
 	// Flow is executed a second time, cache is used but a remote call is scheduled
-	executeFlow(token, payload, handler, countableAllowAccess)
+	executeFlow(payload, handler, countableAllowAccess)
 	// Remote call count is still 1
 	require.Equal(t, 1, callCount)
 
@@ -134,7 +134,7 @@ func TestStaleCache(t *testing.T) {
 
 	queryGate = original
 
-	executeFlow(token, payload, handler, countableAllowAccess)
+	executeFlow(payload, handler, countableAllowAccess)
 	require.Equal(t, 2, callCount)
 
 }
@@ -150,13 +150,13 @@ func TestInvalidCache(t *testing.T) {
 		return true, -10, -20, nil
 	}
 
-	executeFlow(token, payload, handler, countableAllowAccess)
-	executeFlow(token, payload, handler, countableAllowAccess)
+	executeFlow(payload, handler, countableAllowAccess)
+	executeFlow(payload, handler, countableAllowAccess)
 
 	require.Equal(t, 2, callCount)
 }
 
-func executeFlow(token string, payload []byte, handler http.Handler, request func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error)) string {
+func executeFlow(payload []byte, handler http.Handler, request func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error)) string {
 	original := queryGate
 	queryGate = request
 
