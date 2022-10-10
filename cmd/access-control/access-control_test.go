@@ -1,4 +1,4 @@
-package main
+package accesscontrol
 
 import (
 	"bytes"
@@ -36,7 +36,7 @@ func TestAllowedAccessValidToken(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackId, expiration)
 	payload := []byte(fmt.Sprint(playbackId, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackId, "/index.m3u8?stream=", playbackId, "&token=", token, "\n5"))
 
-	result := executeFlow(token, payload, triggerHandler(gateURL), allowAccess)
+	result := executeFlow(token, payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "true", result)
 }
 
@@ -44,7 +44,7 @@ func TestAllowdAccessAbsentToken(t *testing.T) {
 	token := ""
 	payload := []byte(fmt.Sprint(playbackId, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackId, "/index.m3u8?stream=", playbackId, "&token=", token, "\n5"))
 
-	result := executeFlow(token, payload, triggerHandler(gateURL), allowAccess)
+	result := executeFlow(token, payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "true", result)
 }
 
@@ -52,7 +52,7 @@ func TestDeniedAccessInvalidToken(t *testing.T) {
 	token := "x"
 	payload := []byte(fmt.Sprint(playbackId, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackId, "/index.m3u8?stream=", playbackId, "&jwt=", token, "\n5"))
 
-	result := executeFlow(token, payload, triggerHandler(gateURL), allowAccess)
+	result := executeFlow(token, payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "false", result)
 }
 
@@ -60,7 +60,7 @@ func TestDeniedAccess(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackId, expiration)
 	payload := []byte(fmt.Sprint(playbackId, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackId, "/index.m3u8?stream=", playbackId, "&jwt=", token, "\n5"))
 
-	result := executeFlow(token, payload, triggerHandler(gateURL), denyAccess)
+	result := executeFlow(token, payload, TriggerHandler(gateURL), denyAccess)
 	require.Equal(t, "false", result)
 }
 
@@ -68,7 +68,7 @@ func TestDeniedAccessForMissingClaims(t *testing.T) {
 	token, _ := craftToken(privateKey, "", playbackId, expiration)
 	payload := []byte(fmt.Sprint(playbackId, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackId, "/index.m3u8?stream=", playbackId, "&jwt=", token, "\n5"))
 
-	result := executeFlow(token, payload, triggerHandler(gateURL), allowAccess)
+	result := executeFlow(token, payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "false", result)
 }
 
@@ -76,14 +76,14 @@ func TestExpiredToken(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackId, time.Now().Add(time.Second*-10))
 	payload := []byte(fmt.Sprint(playbackId, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackId, "/index.m3u8?stream=", playbackId, "&jwt=", token, "\n5"))
 
-	result := executeFlow(token, payload, triggerHandler(gateURL), allowAccess)
+	result := executeFlow(token, payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "false", result)
 }
 
 func TestCacheHit(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackId, expiration)
 	payload := []byte(fmt.Sprint(playbackId, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackId, "/index.m3u8?stream=", playbackId, "&jwt=", token, "\n5"))
-	handler := triggerHandler(gateURL)
+	handler := TriggerHandler(gateURL)
 
 	var callCount = 0
 	var countableAllowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int64, int64, error) {
@@ -100,7 +100,7 @@ func TestCacheHit(t *testing.T) {
 func TestInvalidCache(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackId, expiration)
 	payload := []byte(fmt.Sprint(playbackId, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackId, "/index.m3u8?stream=", playbackId, "&jwt=", token, "\n5"))
-	handler := triggerHandler(gateURL)
+	handler := TriggerHandler(gateURL)
 
 	var callCount = 0
 	var countableAllowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int64, int64, error) {

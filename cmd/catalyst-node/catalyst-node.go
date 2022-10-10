@@ -22,6 +22,7 @@ import (
 
 	serfclient "github.com/hashicorp/serf/client"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
+	accesscontrol "github.com/livepeer/catalyst/cmd/access-control"
 	"github.com/livepeer/livepeer-data/pkg/mistconnector"
 	glog "github.com/magicsong/color-glog"
 	"github.com/mitchellh/cli"
@@ -463,7 +464,7 @@ func writeSerfConfig(config *agent.Config) (string, error) {
 
 func startCatalystWebServer(redirectPrefixes []string, httpAddr, nodeHost, gateURL string) {
 	http.Handle("/", redirectHandler(redirectPrefixes, nodeHost))
-	http.Handle("/triggers", triggerHandler(gateURL))
+	http.Handle("/triggers", accesscontrol.TriggerHandler(gateURL))
 	glog.Infof("HTTP server listening on %s", httpAddr)
 	glog.Fatal(http.ListenAndServe(httpAddr, nil))
 }

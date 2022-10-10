@@ -1,4 +1,4 @@
-package main
+package accesscontrol
 
 import (
 	"bytes"
@@ -39,7 +39,7 @@ type PlaybackAccessControlRequest struct {
 
 const UserNewTrigger = "USER_NEW"
 
-func triggerHandler(gateURL string) http.Handler {
+func TriggerHandler(gateURL string) http.Handler {
 	playbackAccessControl := PlaybackAccessControl{
 		gateURL,
 		make(map[string]map[string]*PlaybackAccessControlEntry),
