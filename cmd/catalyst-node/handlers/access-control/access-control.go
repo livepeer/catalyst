@@ -137,7 +137,13 @@ func getPlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey 
 		}()
 	}
 
-	return entry.Allow, nil
+	allow := false
+
+	if entry != nil {
+		allow = entry.Allow
+	}
+
+	return allow, nil
 }
 
 func isStale(entry *PlaybackAccessControlEntry) bool {
