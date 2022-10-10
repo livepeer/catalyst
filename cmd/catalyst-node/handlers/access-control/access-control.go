@@ -159,6 +159,7 @@ func cachePlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKe
 	var maxAgeTime = time.Now().Add(time.Duration(maxAge) * time.Second)
 	var staleTime = time.Now().Add(time.Duration(stale) * time.Second)
 	ac.mutex.Lock()
+	defer ac.mutex.Unlock()
 	if ac.cache[playbackID] == nil {
 		ac.cache[playbackID] = make(map[string]*PlaybackAccessControlEntry)
 		ac.cache[playbackID][pubKey] = &PlaybackAccessControlEntry{staleTime, maxAgeTime, allow}
@@ -167,7 +168,6 @@ func cachePlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKe
 		ac.cache[playbackID][pubKey].MaxAge = maxAgeTime
 		ac.cache[playbackID][pubKey].Stale = staleTime
 	}
-	ac.mutex.Unlock()
 
 	return nil
 }
