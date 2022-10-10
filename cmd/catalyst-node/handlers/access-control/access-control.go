@@ -118,21 +118,18 @@ func handleUserNew(ac *PlaybackAccessControl, payload []byte) []byte {
 
 func getPlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey string) (bool, error) {
 	ac.mutex.RLock()
+	entry := ac.cache[playbackID][pubKey]
+	ac.mutex.RUnlock()
 
-	if ac.cache[playbackID] == nil ||
-		ac.cache[playbackID][pubKey] == nil ||
-		time.Now().After(ac.cache[playbackID][pubKey].Stale) {
-		ac.mutex.RUnlock()
+	if isStale(entry) {
 		err := cachePlaybackAccessControlInfo(ac, playbackID, pubKey)
-
 		if err != nil {
 			return false, err
 		}
-
-	} else if time.Now().After(ac.cache[playbackID][pubKey].MaxAge) {
+	} else if time.Now().After(entry.MaxAge) {
 		go func() {
 			ac.mutex.RLock()
-			stillStale := time.Now().After(ac.cache[playbackID][pubKey].MaxAge)
+			stillStale := isStale(ac.cache[playbackID][pubKey])
 			ac.mutex.RUnlock()
 			if stillStale {
 				cachePlaybackAccessControlInfo(ac, playbackID, pubKey)
@@ -140,9 +137,11 @@ func getPlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey 
 		}()
 	}
 
-	defer ac.mutex.RUnlock()
+	return entry.Allow, nil
+}
 
-	return ac.cache[playbackID][pubKey].Allow, nil
+func isStale(entry *PlaybackAccessControlEntry) bool {
+	return entry == nil || time.Now().After(entry.Stale)
 }
 
 func cachePlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey string) error {
@@ -162,13 +161,8 @@ func cachePlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKe
 	defer ac.mutex.Unlock()
 	if ac.cache[playbackID] == nil {
 		ac.cache[playbackID] = make(map[string]*PlaybackAccessControlEntry)
-		ac.cache[playbackID][pubKey] = &PlaybackAccessControlEntry{staleTime, maxAgeTime, allow}
-	} else {
-		ac.cache[playbackID][pubKey].Allow = allow
-		ac.cache[playbackID][pubKey].MaxAge = maxAgeTime
-		ac.cache[playbackID][pubKey].Stale = staleTime
 	}
-
+	ac.cache[playbackID][pubKey] = &PlaybackAccessControlEntry{staleTime, maxAgeTime, allow}
 	return nil
 }
 
