@@ -209,17 +209,21 @@ type PlaybackGateClaims struct {
 
 func (c *PlaybackGateClaims) Valid() error {
 	if err := c.RegisteredClaims.Valid(); err != nil {
+		glog.Errorf("Invalid registered claims %v", err)
 		return err
 	}
 	if c.Subject == "" {
+		glog.Errorf("Missing subject claim for playbackId=%v", c.Subject)
 		return errors.New("missing sub claim")
 	}
 	if c.PublicKey == "" {
+		glog.Infof("Missing pub claim for playbackId %v", c.Subject)
 		return errors.New("missing pub claim")
 	}
 	if c.ExpiresAt == nil {
 		return errors.New("missing exp claim")
 	} else if time.Until(c.ExpiresAt.Time) > 7*24*time.Hour {
+		glog.Errorf("exp claim is too far in the future for playbackId=%v", c.Subject)
 		return errors.New("exp claim too far in the future")
 	}
 	return nil
