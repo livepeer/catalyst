@@ -237,10 +237,13 @@ func decodeJwt(tokenString string) (*PlaybackGateClaims, error) {
 	})
 
 	if err != nil {
+		glog.Errorf("Unable to parse jwt token %v", err)
 		return nil, err
 	} else if err = token.Claims.Valid(); err != nil {
+		glog.Errorf("Invalid claims: %v", err)
 		return nil, err
 	} else if !token.Valid {
+		glog.Errorf("Invalid token %v for playbackId %v", tokenString, token.Claims.(*PlaybackGateClaims).Subject)
 		return nil, errors.New("invalid token")
 	}
 	return token.Claims.(*PlaybackGateClaims), nil
