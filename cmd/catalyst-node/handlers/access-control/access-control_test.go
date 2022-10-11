@@ -19,9 +19,10 @@ type MockClient struct {
 }
 
 const (
-	playbackID = "1bbbqz6753hcli1t"
-	publicKey  = `LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFNzRoTHBSUkx0TzBQS01Vb08yV3ptY2xOemFBaQp6RTd2UnUrdmtHQXFEVzBEVzB5eW9LV3ZKakZNcWdOb0dCakpiZDM2c3ZiTzhVRnN6aXlSZzJYdXlnPT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==`
-	privateKey = `-----BEGIN PRIVATE KEY-----
+	playbackID     = "1bbbqz6753hcli1t"
+	plusPlaybackID = "video+1bbbqz6753hcli1t"
+	publicKey      = `LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFNzRoTHBSUkx0TzBQS01Vb08yV3ptY2xOemFBaQp6RTd2UnUrdmtHQXFEVzBEVzB5eW9LV3ZKakZNcWdOb0dCakpiZDM2c3ZiTzhVRnN6aXlSZzJYdXlnPT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg==`
+	privateKey     = `-----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgG1jxreAnbEd/RdtA
 NWIfTiwJzlU7KoBtKlllSMinLtChRANCAATviEulFEu07Q8oxSg7ZbOZyU3NoCLM
 Tu9G76+QYCoNbQNbTLKgpa8mMUyqA2gYGMlt3fqy9s7xQWzOLJGDZe7K
@@ -42,7 +43,15 @@ var denyAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int3
 
 func TestAllowedAccessValidToken(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackID, expiration)
-	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&token=", token, "\n5"))
+	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&jwt=", token, "\n5"))
+
+	result := executeFlow(payload, TriggerHandler(gateURL), allowAccess)
+	require.Equal(t, "true", result)
+}
+
+func TestAllowedAccessValidTokenWithPrefix(t *testing.T) {
+	token, _ := craftToken(privateKey, publicKey, playbackID, expiration)
+	payload := []byte(fmt.Sprint(plusPlaybackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", plusPlaybackID, "/index.m3u8?stream=", plusPlaybackID, "&jwt=", token, "\n5"))
 
 	result := executeFlow(payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "true", result)
@@ -50,7 +59,7 @@ func TestAllowedAccessValidToken(t *testing.T) {
 
 func TestAllowdAccessAbsentToken(t *testing.T) {
 	token := ""
-	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&token=", token, "\n5"))
+	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&jwt=", token, "\n5"))
 
 	result := executeFlow(payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "true", result)
