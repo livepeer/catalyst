@@ -115,7 +115,7 @@ func TestCacheHit(t *testing.T) {
 	require.Equal(t, 1, callCount)
 }
 
-/*func TestStaleCache(t *testing.T) {
+func TestStaleCache(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackID, expiration)
 	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&jwt=", token, "\n5"))
 	handler := TriggerHandler(gateURL)
@@ -126,16 +126,17 @@ func TestCacheHit(t *testing.T) {
 		return true, -10, 20, nil
 	}
 
+	// Assign testable function ourselves so executeFlow() can't restore original
+	original := queryGate
+	queryGate = countableAllowAccess
+	defer func() { queryGate = original }()
+
 	// Cache entry is absent and a first remote call is done
 	executeFlow(payload, handler, countableAllowAccess)
 	// Flow is executed a second time, cache is used but a remote call is scheduled
 	executeFlow(payload, handler, countableAllowAccess)
 	// Remote call count is still 1
 	require.Equal(t, 1, callCount)
-
-	// Assign testable function again since executeFlow() restores it
-	original := queryGate
-	queryGate = countableAllowAccess
 
 	// After the scheduled call is executed and call count is incremented
 	time.Sleep(1 * time.Second)
@@ -145,8 +146,7 @@ func TestCacheHit(t *testing.T) {
 
 	executeFlow(payload, handler, countableAllowAccess)
 	require.Equal(t, 2, callCount)
-
-}*/
+}
 
 func TestInvalidCache(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackID, expiration)
