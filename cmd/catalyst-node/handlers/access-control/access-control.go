@@ -96,7 +96,8 @@ func handleUserNew(ac *PlaybackAccessControl, payload []byte) []byte {
 		}
 
 		if playbackID != claims.Subject {
-			glog.Errorf("PlaybackId mismatch playbackId=%v != claimed=%v", playbackID, claims.Subject)
+			cleanPlaybackId := playbackID[strings.Index(playbackID, "+")+1:]
+			glog.Errorf("PlaybackId mismatch playbackId=%v != claimed=%v", cleanPlaybackId, claims.Subject)
 			return []byte("false")
 		}
 

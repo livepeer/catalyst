@@ -42,7 +42,7 @@ var denyAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int3
 
 func TestAllowedAccessValidToken(t *testing.T) {
 	token, _ := craftToken(privateKey, publicKey, playbackID, expiration)
-	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&token=", token, "\n5"))
+	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&jwt=", token, "\n5"))
 
 	result := executeFlow(payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "true", result)
@@ -50,7 +50,7 @@ func TestAllowedAccessValidToken(t *testing.T) {
 
 func TestAllowdAccessAbsentToken(t *testing.T) {
 	token := ""
-	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&token=", token, "\n5"))
+	payload := []byte(fmt.Sprint(playbackID, "\n1\n2\n3\nhttp://localhost:8080/hls/", playbackID, "/index.m3u8?stream=", playbackID, "&jwt=", token, "\n5"))
 
 	result := executeFlow(payload, TriggerHandler(gateURL), allowAccess)
 	require.Equal(t, "true", result)
