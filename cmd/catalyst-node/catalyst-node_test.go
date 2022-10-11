@@ -24,7 +24,7 @@ var fakeSerfMember = &serfclient.Member{
 	},
 }
 
-var prefixes = [...]string{"video", "videorec", "stream", "playback"}
+var prefixes = [...]string{"video", "videorec", "stream", "playback", "vod"}
 
 func randomPlaybackID(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
@@ -40,7 +40,7 @@ func TestPlaybackIDParserWithPrefix(t *testing.T) {
 	for i := 0; i < rand.Int()%16+1; i++ {
 		id := randomPlaybackID(rand.Int()%24 + 1)
 		path := fmt.Sprintf("/hls/%s+%s/index.m3u8", prefixes[rand.Intn(len(prefixes))], id)
-		playbackID, _, parsed := parsePlaybackID(path)
+		_, playbackID, _, parsed := parsePlaybackID(path)
 		if !parsed {
 			t.Fail()
 		}
@@ -53,7 +53,7 @@ func TestPlaybackIDParserWithSegment(t *testing.T) {
 		id := randomPlaybackID(rand.Int()%24 + 1)
 		seg := "2_1"
 		path := fmt.Sprintf("/hls/%s+%s/%s/index.m3u8", prefixes[rand.Intn(len(prefixes))], id, seg)
-		playbackID, suffix, parsed := parsePlaybackID(path)
+		_, playbackID, suffix, parsed := parsePlaybackID(path)
 		if !parsed {
 			t.Fail()
 		}
@@ -66,7 +66,7 @@ func TestPlaybackIDParserWithoutPrefix(t *testing.T) {
 	for i := 0; i < rand.Int()%16+1; i++ {
 		id := randomPlaybackID(rand.Int()%24 + 1)
 		path := fmt.Sprintf("/hls/%s/index.m3u8", id)
-		playbackID, _, parsed := parsePlaybackID(path)
+		_, playbackID, _, parsed := parsePlaybackID(path)
 		if !parsed {
 			t.Fail()
 		}
@@ -125,7 +125,9 @@ func TestRedirectHandler404(t *testing.T) {
 
 func TestRedirectHandlerHLS_Correct(t *testing.T) {
 	defaultFunc := getClosestNode
-	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
+	getClosestNode = func(string, string, string, string) (string, error) {
+		return closestNodeAddr, fmt.Errorf("No node found")
+	}
 	defer func() { getClosestNode = defaultFunc }()
 	defaultSerf := getSerfMember
 	getSerfMember = func(string) (*serfclient.Member, error) { return fakeSerfMember, nil }
@@ -143,6 +145,43 @@ func TestRedirectHandlerHLS_Correct(t *testing.T) {
 		result(nil).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getHLSURLs("https", closestNodeAddr)...)
+}
+
+func TestRedirectHandlerHLSVOD_Correct(t *testing.T) {
+	defaultFunc := getClosestNode
+	getClosestNode = func(string, string, string, string) (string, error) {
+		return closestNodeAddr, fmt.Errorf("No node found")
+	}
+	defer func() { getClosestNode = defaultFunc }()
+	defaultSerf := getSerfMember
+	getSerfMember = func(string) (*serfclient.Member, error) { return fakeSerfMember, nil }
+	defer func() { getSerfMember = defaultSerf }()
+
+	pathHLS := fmt.Sprintf("/hls/vod+%s/index.m3u8", playbackID)
+
+	requireReq(t, pathHLS).
+		result(nil).
+		hasStatus(http.StatusFound).
+		hasHeader("Location", fmt.Sprintf("http://%s/hls/vod+%s/index.m3u8", closestNodeAddr, playbackID))
+
+	requireReq(t, pathHLS).
+		withHeader("X-Forwarded-Proto", "https").
+		result(nil).
+		hasStatus(http.StatusFound).
+		hasHeader("Location", fmt.Sprintf("https://%s/hls/vod+%s/index.m3u8", closestNodeAddr, playbackID))
+
+	pathJS := fmt.Sprintf("/json_vod+%s.js", playbackID)
+
+	requireReq(t, pathJS).
+		result(nil).
+		hasStatus(http.StatusFound).
+		hasHeader("Location", fmt.Sprintf("http://%s/json_vod+%s.js", closestNodeAddr, playbackID))
+
+	requireReq(t, pathJS).
+		withHeader("X-Forwarded-Proto", "https").
+		result(nil).
+		hasStatus(http.StatusFound).
+		hasHeader("Location", fmt.Sprintf("https://%s/json_vod+%s.js", closestNodeAddr, playbackID))
 }
 
 func TestRedirectHandlerHLS_SegmentInPath(t *testing.T) {
