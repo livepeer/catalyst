@@ -499,7 +499,7 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 			}
 		}
 
-		playbackID, pathTmpl, isValid := parsePlaybackID(r.URL.Path)
+		prefix, playbackID, pathTmpl, isValid := parsePlaybackID(r.URL.Path)
 		if !isValid {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -508,7 +508,7 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 		lat := r.Header.Get("X-Latitude")
 		lon := r.Header.Get("X-Longitude")
 
-		bestNode, fullPlaybackID, err := getBestNode(redirectPrefixes, playbackID, lat, lon)
+		bestNode, fullPlaybackID, err := getBestNode(redirectPrefixes, playbackID, lat, lon, prefix)
 		if err != nil {
 			glog.Errorf("failed to find either origin or fallback server for playbackID=%s err=%s", playbackID, err)
 			w.WriteHeader(http.StatusBadGateway)
@@ -612,7 +612,7 @@ func querySerfForMember(name string) (*serfclient.Member, error) {
 var getSerfMember = querySerfForMember
 
 // return the best node available for a given stream. will return any node if nobody has the stream.
-func getBestNode(redirectPrefixes []string, playbackID, lat, lon string) (string, string, error) {
+func getBestNode(redirectPrefixes []string, playbackID, lat, lon, fallbackPrefix string) (string, string, error) {
 	var nodeAddr, fullPlaybackID, fallbackAddr string
 	var mu sync.Mutex
 	var err error
@@ -647,11 +647,30 @@ func getBestNode(redirectPrefixes []string, playbackID, lat, lon string) (string
 
 	// bad path: nobody has the stream, but we did find a server which can handle the 404 for us.
 	if fallbackAddr != "" {
-		return fallbackAddr, redirectPrefixes[0] + "+" + playbackID, nil
+		if fallbackPrefix == "" {
+			fallbackPrefix = redirectPrefixes[0]
+		}
+		return fallbackAddr, fallbackPrefix + "+" + playbackID, nil
 	}
 
 	// ugly path: we couldn't find ANY servers. yikes.
 	return "", "", err
+}
+
+func parsePlus(plusString string) (string, string) {
+	slice := strings.Split(plusString, "+")
+	prefix := ""
+	playbackID := ""
+	if len(slice) > 2 {
+		return "", ""
+	}
+	if len(slice) == 2 {
+		prefix = slice[0]
+		playbackID = slice[1]
+	} else {
+		playbackID = slice[0]
+	}
+	return prefix, playbackID
 }
 
 // Incoming requests might come with some prefix attached to the
@@ -659,36 +678,42 @@ func getBestNode(redirectPrefixes []string, playbackID, lat, lon string) (string
 // picking the last piece. For eg.
 // incoming path = '/hls/video+4712oox4msvs9qsf/index.m3u8'
 // playbackID = '4712oox4msvs9qsf'
-func parsePlaybackIDHLS(path string) (string, string, bool) {
+func parsePlaybackIDHLS(path string) (string, string, string, bool) {
 	r := regexp.MustCompile(`^/hls/([\w+-]+)/(.*index.m3u8.*)$`)
 	m := r.FindStringSubmatch(path)
 	if len(m) < 3 {
-		return "", "", false
+		return "", "", "", false
 	}
-	slice := strings.Split(m[1], "+")
+	prefix, playbackID := parsePlus(m[1])
+	if playbackID == "" {
+		return "", "", "", false
+	}
 	pathTmpl := "/hls/%s/" + m[2]
-	return slice[len(slice)-1], pathTmpl, true
+	return prefix, playbackID, pathTmpl, true
 }
 
-func parsePlaybackIDJS(path string) (string, string, bool) {
+func parsePlaybackIDJS(path string) (string, string, string, bool) {
 	r := regexp.MustCompile(`^/json_([\w+-]+).js$`)
 	m := r.FindStringSubmatch(path)
 	if len(m) < 2 {
-		return "", "", false
+		return "", "", "", false
 	}
-	slice := strings.Split(m[1], "+")
-	return slice[len(slice)-1], "/json_%s.js", true
+	prefix, playbackID := parsePlus(m[1])
+	if playbackID == "" {
+		return "", "", "", false
+	}
+	return prefix, playbackID, "/json_%s.js", true
 }
 
-func parsePlaybackID(path string) (string, string, bool) {
-	parsers := []func(string) (string, string, bool){parsePlaybackIDHLS, parsePlaybackIDJS}
+func parsePlaybackID(path string) (string, string, string, bool) {
+	parsers := []func(string) (string, string, string, bool){parsePlaybackIDHLS, parsePlaybackIDJS}
 	for _, parser := range parsers {
-		playbackID, suffix, isValid := parser(path)
+		prefix, playbackID, suffix, isValid := parser(path)
 		if isValid {
-			return playbackID, suffix, isValid
+			return prefix, playbackID, suffix, isValid
 		}
 	}
-	return "", "", false
+	return "", "", "", false
 }
 
 func protocol(r *http.Request) string {
