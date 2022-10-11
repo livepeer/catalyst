@@ -85,6 +85,8 @@ func handleUserNew(ac *PlaybackAccessControl, payload []byte) []byte {
 	}
 
 	playbackID := lines[0]
+	playbackID = playbackID[strings.Index(playbackID, "+")+1:]
+
 	jwtToken := requestURL.Query().Get("jwt")
 
 	var pubKey string
@@ -96,8 +98,8 @@ func handleUserNew(ac *PlaybackAccessControl, payload []byte) []byte {
 		}
 
 		if playbackID != claims.Subject {
-			cleanPlaybackId := playbackID[strings.Index(playbackID, "+")+1:]
-			glog.Errorf("PlaybackId mismatch playbackId=%v != claimed=%v", cleanPlaybackId, claims.Subject)
+
+			glog.Errorf("PlaybackId mismatch playbackId=%v != claimed=%v", playbackID, claims.Subject)
 			return []byte("false")
 		}
 
