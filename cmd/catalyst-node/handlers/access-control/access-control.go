@@ -128,14 +128,14 @@ func getPlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey 
 	entry := ac.cache[playbackID][pubKey]
 	ac.mutex.RUnlock()
 
-	if isStale(entry) {
-		glog.Infof("Cache stale for playbackId=%v pubkey=%v", playbackID, pubKey)
+	if isExpired(entry) {
+		glog.Infof("Cache expired for playbackId=%v pubkey=%v", playbackID, pubKey)
 		err := cachePlaybackAccessControlInfo(ac, playbackID, pubKey)
 		if err != nil {
 			return false, err
 		}
-	} else if time.Now().After(entry.MaxAge) {
-		glog.Infof("Cache expired for playbackId=%v pubkey=%v", playbackID, pubKey)
+	} else if isStale(entry) {
+		glog.Infof("Cache stale for playbackId=%v pubkey=%v\n", playbackID, pubKey)
 		go func() {
 			ac.mutex.RLock()
 			stillStale := isStale(ac.cache[playbackID][pubKey])
@@ -157,8 +157,12 @@ func getPlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey 
 	return entry.Allow, nil
 }
 
-func isStale(entry *PlaybackAccessControlEntry) bool {
+func isExpired(entry *PlaybackAccessControlEntry) bool {
 	return entry == nil || time.Now().After(entry.Stale)
+}
+
+func isStale(entry *PlaybackAccessControlEntry) bool {
+	return entry != nil && time.Now().After(entry.MaxAge) && !isExpired(entry)
 }
 
 func cachePlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey string) error {
