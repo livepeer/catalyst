@@ -45,7 +45,7 @@ jobs:
           force: true
 
       - name: Create pull request
-        uses: devops-infra/action-pull-request@v0.5.0
+        uses: devops-infra/action-pull-request@v0.5.1
         with:
           github_token: ${{ github.token }}
           source_branch: ${{ steps.branch-commit.outputs.branch_name }}
