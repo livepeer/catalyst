@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: mist-api-connector
-      commit: 4224672d3f1093c2b81f836f6d4967f4900a4420
+      commit: ccd50e8debb5569637e7a0f6676d3ce9cbc18f18
     binary: livepeer-mist-api-connector
     release: master
     srcFilenames:
@@ -49,7 +49,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-uploader
-      commit: 2f9ead715afcb6b69ba3731be7db8b2b23fc5d8c
+      commit: 1cc69cd124a0ef245741bed37992123163778716
     binary: livepeer-catalyst-uploader
     release: main
     srcFilenames:
@@ -88,7 +88,6 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: a3d05c6872a7b3560c798eda2a842d0e8b8c8f4e
     binary: livepeer-www
     release: v0.8.1
   - name: victoria-metrics
