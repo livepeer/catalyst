@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: mist-api-connector
-      commit: 4b8980bd3c6f0dfd0dff50bd3ae9033ad470dd84
+      commit: 82207dc3bf20dfa8d11fd01f7e7499ca86a962b3
     binary: livepeer-mist-api-connector
     release: master
     srcFilenames:
@@ -61,7 +61,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: 12358f5082b18a3e200dd99534ea92f91baea258
+      commit: 2298436423e657ffb987a80153175da94a242de3
     binary: livepeer
     release: master
     archivePath: livepeer
@@ -76,7 +76,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: e064f8951738fc89605844891605e1150dd636b6
+      commit: dfbfe7f71713abb37d2810f223cd80615fbb289a
     release: catalyst
     skipGpg: true
     srcFilenames:
