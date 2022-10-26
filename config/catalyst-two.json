@@ -91,7 +91,8 @@
       },
       {
         "connector": "livepeer-catalyst-node",
-        "retry-join": "catalyst-one",
+        "advertise": "catalyst-two:9935",
+        "retry-join": "catalyst-one:9935",
         "redirect-prefixes": "stream"
       }
     ],

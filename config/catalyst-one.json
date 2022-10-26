@@ -91,7 +91,8 @@
       },
       {
         "connector": "livepeer-catalyst-node",
-        "retry-join": "catalyst-two",
+        "advertise": "catalyst-one:9935",
+        "retry-join": "catalyst-two:9935",
         "rpc-addr": "0.0.0.0:7373",
         "redirect-prefixes": "stream"
       }
