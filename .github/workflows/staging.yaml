@@ -22,7 +22,7 @@ jobs:
         id: go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.17
+          go-version-file: go.mod
           cache: true
           cache-dependency-path: go.sum
 
@@ -38,7 +38,7 @@ jobs:
         id: branch-commit
         uses: devops-infra/action-commit-push@v0.9.0
         with:
-          github_token: ${{ github.token }}
+          github_token: ${{ secrets.PUSH_TOKEN }}
           target_branch: staging
           commit_prefix: "[AUTO-COMMIT] "
           commit_message: 'Update `manifest.yaml`'
@@ -51,7 +51,6 @@ jobs:
           source_branch: ${{ steps.branch-commit.outputs.branch_name }}
           target_branch: main
           title: '[BOT] Update `manifest.yaml` for staging'
-          body: "**Automated pull request**"
           reviewer: iameli
           assignee: hjpotter92
           label: enhancement
