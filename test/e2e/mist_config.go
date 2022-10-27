@@ -8,6 +8,7 @@ import (
 )
 
 const serfPort = "7373"
+const advertisePort = "9935"
 
 type account struct {
 	Password string `json:"password"`
@@ -21,8 +22,10 @@ type bandwidth struct {
 type protocol struct {
 	Connector        string `json:"connector"`
 	RetryJoin        string `json:"retry-join,omitempty"`
+	Advertise        string `json:"advertise,omitempty"`
 	RPCAddr          string `json:"rpc-addr,omitempty"`
 	RedirectPrefixes string `json:"redirect-prefixes,omitempty"`
+	Debug            string `json:"debug,omitempty"`
 }
 
 type config struct {
@@ -40,17 +43,17 @@ type config struct {
 		Lon  float64 `json:"lon"`
 		Name string  `json:"name"`
 	} `json:"location"`
-	Prometheus             string      `json:"prometheus"`
-	Protocols              []protocol  `json:"protocols"`
-	ServerID               interface{} `json:"serverid"`
-	SessionInputMode       string      `json:"sessionInputMode"`
-	SessionOutputMode      string      `json:"sessionOutputMode"`
-	SessionStreamInfoMode  string      `json:"sessionStreamInfoMode"`
-	SessionUnspecifiedMode string      `json:"sessionUnspecifiedMode"`
-	SessionViewerMode      string      `json:"sessionViewerMode"`
-	SidMode                string      `json:"sidMode"`
-	Triggers               interface{} `json:"triggers"`
-	Trustedproxy           []string    `json:"trustedproxy"`
+	Prometheus             string               `json:"prometheus"`
+	Protocols              []protocol           `json:"protocols"`
+	ServerID               interface{}          `json:"serverid"`
+	SessionInputMode       string               `json:"sessionInputMode"`
+	SessionOutputMode      string               `json:"sessionOutputMode"`
+	SessionStreamInfoMode  string               `json:"sessionStreamInfoMode"`
+	SessionUnspecifiedMode string               `json:"sessionUnspecifiedMode"`
+	SessionViewerMode      string               `json:"sessionViewerMode"`
+	SidMode                string               `json:"sidMode"`
+	Triggers               map[string][]trigger `json:"triggers"`
+	Trustedproxy           []string             `json:"trustedproxy"`
 }
 
 type stream struct {
@@ -59,6 +62,13 @@ type stream struct {
 	Realtime     bool     `json:"realtime"`
 	Source       string   `json:"source"`
 	StopSessions bool     `json:"stop_sessions"`
+}
+
+type trigger struct {
+	Handler string   `json:"handler"`
+	Sync    bool     `json:"sync"`
+	Default string   `json:"default"`
+	Streams []string `json:"streams"`
 }
 
 type mistConfig struct {
@@ -74,7 +84,7 @@ type mistConfig struct {
 	UISettings interface{}       `json:"ui_settings"`
 }
 
-func defaultMistConfig() mistConfig {
+func defaultMistConfig(host string) mistConfig {
 	return mistConfig{
 		Account: map[string]account{
 			"test": {
@@ -109,7 +119,13 @@ func defaultMistConfig() mistConfig {
 				{Connector: "TSSRT"},
 				{Connector: "WAV"},
 				{Connector: "WebRTC"},
-				{Connector: "livepeer-catalyst-node", RPCAddr: fmt.Sprintf("0.0.0.0:%s", serfPort), RedirectPrefixes: "stream"},
+				{
+					Connector:        "livepeer-catalyst-node",
+					Advertise:        fmt.Sprintf("%s:%s", host, advertisePort),
+					RPCAddr:          fmt.Sprintf("0.0.0.0:%s", serfPort),
+					RedirectPrefixes: "stream",
+					Debug:            "6",
+				},
 			},
 			SessionInputMode:       "14",
 			SessionOutputMode:      "14",
@@ -118,13 +134,23 @@ func defaultMistConfig() mistConfig {
 			SessionViewerMode:      "14",
 			SidMode:                "0",
 			Trustedproxy:           []string{},
+			Triggers: map[string][]trigger{
+				"STREAM_SOURCE": []trigger{
+					{
+						Handler: "http://localhost:8091/STREAM_SOURCE",
+						Sync:    true,
+						Default: "push://",
+						Streams: []string{},
+					},
+				},
+			},
 		},
 		Streams: map[string]stream{
 			"stream": {
 				Name:         "stream",
 				Processes:    []string{},
 				Realtime:     false,
-				Source:       "balance:http://localhost:8042/?fallback=push://",
+				Source:       "push://",
 				StopSessions: false,
 			},
 		},
