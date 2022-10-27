@@ -104,7 +104,16 @@
     "sessionUnspecifiedMode": "0",
     "sessionViewerMode": "14",
     "sidMode": "0",
-    "triggers": null,
+    "triggers": {
+      "STREAM_SOURCE": [
+        {
+          "handler": "http://localhost:8091/STREAM_SOURCE",
+          "sync": true,
+          "default": "push://",
+          "streams": []
+        }
+      ]
+    },
     "trustedproxy": []
   },
   "push_settings": {
@@ -116,7 +125,7 @@
       "name": "stream",
       "processes": [],
       "realtime": false,
-      "source": "balance:http://localhost:8042/?fallback=push://",
+      "source": "push://",
       "stop_sessions": false
     }
   },
