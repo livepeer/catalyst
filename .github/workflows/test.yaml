@@ -52,7 +52,7 @@ jobs:
         uses: FedericoCarboni/setup-ffmpeg@v1
 
       - name: Build Docker image
-        run: make docker
+        run: make docker CATALYST_TAG=catalyst-e2e-test
 
       - name: Run tests with coverage
         run: go test ./... --covermode=atomic --coverprofile=coverage.out
