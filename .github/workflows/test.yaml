@@ -48,8 +48,10 @@ jobs:
       - name: misspell
         uses: reviewdog/action-misspell@v1
 
-      - name: Run tests with coverage
+      - name: Install FFMPEG
         uses: FedericoCarboni/setup-ffmpeg@v1
+
+      - name: Run tests with coverage
         run: go test ./... --covermode=atomic --coverprofile=coverage.out
 
       - name: Upload coverage reports
