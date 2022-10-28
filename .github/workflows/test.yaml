@@ -48,8 +48,17 @@ jobs:
       - name: misspell
         uses: reviewdog/action-misspell@v1
 
+      - name: Install FFMPEG
+        uses: FedericoCarboni/setup-ffmpeg@v1
+
       - name: Run tests with coverage
-        run: go test ./... --short --covermode=atomic --coverprofile=coverage.out
+        run: go test --covermode=atomic --coverprofile=coverage.out $(go list ./... | grep -v 'test/e2e')
+
+      - name: Build Docker image
+        run: make docker DOCKER_TAG=catalyst-e2e-test
+
+      - name: Run E2E tests
+        run: go test $(go list ./... | grep 'test/e2e') --timeout 15m --image catalyst-e2e-test
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
