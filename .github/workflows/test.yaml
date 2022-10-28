@@ -55,7 +55,7 @@ jobs:
         run: make docker CATALYST_TAG=catalyst-e2e-test
 
       - name: Run tests with coverage
-        run: go test ./... --covermode=atomic --coverprofile=coverage.out
+        run: go test ./... --covermode=atomic --coverprofile=coverage.out --image=catalyst-e2e-test
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
