@@ -49,6 +49,7 @@ jobs:
         uses: reviewdog/action-misspell@v1
 
       - name: Run tests with coverage
+        uses: FedericoCarboni/setup-ffmpeg@v1
         run: go test ./... --covermode=atomic --coverprofile=coverage.out
 
       - name: Upload coverage reports
