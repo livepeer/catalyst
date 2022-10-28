@@ -55,7 +55,7 @@ jobs:
         run: go test --covermode=atomic --coverprofile=coverage.out $(go list ./... | grep -v 'test/e2e')
 
       - name: Build Docker image
-        run: make docker CATALYST_TAG=catalyst-e2e-test
+        run: make docker DOCKER_TAG=catalyst-e2e-test
 
       - name: Run E2E tests
         run: go test $(go list ./... | grep 'test/e2e') --timeout 15m --image catalyst-e2e-test
