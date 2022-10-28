@@ -51,6 +51,9 @@ jobs:
       - name: Install FFMPEG
         uses: FedericoCarboni/setup-ffmpeg@v1
 
+      - name: Build Docker image
+        run: make docker
+
       - name: Run tests with coverage
         run: go test ./... --covermode=atomic --coverprofile=coverage.out
 
