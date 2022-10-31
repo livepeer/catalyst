@@ -66,7 +66,7 @@ type catalystContainer struct {
 	serf         string
 	http         string
 	httpCatalyst string
-	catalystApi  string
+	catalystAPI  string
 	rtmp         string
 	ip           string
 	hostname     string
@@ -153,7 +153,7 @@ func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network s
 	}
 	req := testcontainers.ContainerRequest{
 		Image:        params.ImageName,
-		ExposedPorts: []string{tcp(webConsolePort), tcp(serfPort), tcp(httpPort), tcp(httpCatalystPort), tcp(catalystApiPort), tcp(rtmpPort)},
+		ExposedPorts: []string{tcp(webConsolePort), tcp(serfPort), tcp(httpPort), tcp(httpCatalystPort), tcp(catalystAPIPort), tcp(rtmpPort)},
 		Hostname:     hostname,
 		Name:         hostname,
 		Networks:     []string{network},
@@ -202,9 +202,9 @@ func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network s
 	require.NoError(t, err)
 	catalyst.httpCatalyst = mappedPort.Port()
 
-	mappedPort, err = container.MappedPort(ctx, catalystApiPort)
+	mappedPort, err = container.MappedPort(ctx, catalystAPIPort)
 	require.NoError(t, err)
-	catalyst.catalystApi = mappedPort.Port()
+	catalyst.catalystAPI = mappedPort.Port()
 
 	mappedPort, err = container.MappedPort(ctx, rtmpPort)
 	require.NoError(t, err)

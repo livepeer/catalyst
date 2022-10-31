@@ -10,7 +10,7 @@ import (
 const (
 	serfPort        = "7373"
 	advertisePort   = "9935"
-	catalystApiPort = "7979"
+	catalystAPIPort = "7979"
 )
 
 type account struct {
@@ -132,7 +132,7 @@ func defaultMistConfig(host string) mistConfig {
 				},
 				{
 					Connector: "livepeer-catalyst-api",
-					Port:      catalystApiPort,
+					Port:      catalystAPIPort,
 				},
 			},
 			SessionInputMode:       "14",

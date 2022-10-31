@@ -44,7 +44,7 @@ func TestVod(t *testing.T) {
 	h := randomString("catalyst-")
 	c := startCatalyst(ctx, t, h, network.name, defaultMistConfig(h))
 	defer c.Terminate(ctx)
-	waitForCatalystApi(t, c)
+	waitForCatalystAPI(t, c)
 
 	// when
 	processVod(t, m, c)
@@ -136,19 +136,19 @@ func minioClient(t *testing.T, m *minioContainer) *minio.Client {
 	return cli
 }
 
-func waitForCatalystApi(t *testing.T, c *catalystContainer) {
-	catalystApiStarted := func() bool {
-		url := fmt.Sprintf("http://localhost:%s/ok", c.catalystApi)
+func waitForCatalystAPI(t *testing.T, c *catalystContainer) {
+	catalystAPIStarted := func() bool {
+		url := fmt.Sprintf("http://localhost:%s/ok", c.catalystAPI)
 		resp, err := http.Get(url)
 		return err == nil && resp.StatusCode == http.StatusOK
 	}
 
-	require.Eventually(t, catalystApiStarted, 5*time.Minute, time.Second)
+	require.Eventually(t, catalystAPIStarted, 5*time.Minute, time.Second)
 }
 
 func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
-	sourceVideoUrl := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/%s", username, password, m.hostname, inBucket, source)
-	destUrl := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/output.m3u8", username, password, m.hostname, outBucket)
+	sourceVideoURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/%s", username, password, m.hostname, inBucket, source)
+	destURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/output.m3u8", username, password, m.hostname, outBucket)
 	var jsonData = fmt.Sprintf(`{
 		"url": "%s",
 		"callback_url": "http://todo-callback.com",
@@ -161,9 +161,9 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 									}
 							}
 		]
-	}`, sourceVideoUrl, destUrl)
+	}`, sourceVideoURL, destURL)
 
-	url := fmt.Sprintf("http://localhost:%s/api/vod", c.catalystApi)
+	url := fmt.Sprintf("http://localhost:%s/api/vod", c.catalystAPI)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(jsonData)))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
