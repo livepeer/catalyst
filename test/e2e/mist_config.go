@@ -7,8 +7,11 @@ import (
 	"os"
 )
 
-const serfPort = "7373"
-const advertisePort = "9935"
+const (
+	serfPort        = "7373"
+	advertisePort   = "9935"
+	catalystApiPort = "7979"
+)
 
 type account struct {
 	Password string `json:"password"`
@@ -26,6 +29,7 @@ type protocol struct {
 	RPCAddr          string `json:"rpc-addr,omitempty"`
 	RedirectPrefixes string `json:"redirect-prefixes,omitempty"`
 	Debug            string `json:"debug,omitempty"`
+	Port             string `json:"port,omitempty"`
 }
 
 type config struct {
@@ -125,6 +129,10 @@ func defaultMistConfig(host string) mistConfig {
 					RPCAddr:          fmt.Sprintf("0.0.0.0:%s", serfPort),
 					RedirectPrefixes: "stream",
 					Debug:            "6",
+				},
+				{
+					Connector: "livepeer-catalyst-api",
+					Port:      catalystApiPort,
 				},
 			},
 			SessionInputMode:       "14",
