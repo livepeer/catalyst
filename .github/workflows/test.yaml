@@ -49,7 +49,7 @@ jobs:
         uses: reviewdog/action-misspell@v1
 
       - name: Install FFMPEG
-        uses: FedericoCarboni/setup-ffmpeg@v1
+        uses: FedericoCarboni/setup-ffmpeg@v2
 
       - name: Run tests with coverage
         run: go test --covermode=atomic --coverprofile=coverage.out $(go list ./... | grep -v 'test/e2e')
