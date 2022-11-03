@@ -173,4 +173,4 @@ docker-local:
 	tar ch ./bin Dockerfile.local | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=full -
 
 test: docker
-	go test ./test/e2e/* -v --logtostderr
+	go test ./test/e2e/*.go -v --logtostderr
