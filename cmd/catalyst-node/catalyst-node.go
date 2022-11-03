@@ -80,7 +80,6 @@ func runClient(config catalystConfig) error {
 	}
 	defer client.Stop(streamHandle)
 
-	event := <-eventCh
 	inbox := make(chan map[string]interface{}, 1)
 	go func() {
 		for {
@@ -107,7 +106,7 @@ func runClient(config catalystConfig) error {
 	}()
 
 	for {
-		<-inbox
+		event := <-inbox
 		glog.V(5).Infof("got event: %v", event)
 
 		members, err := client.MembersFiltered(mediaFilter, ".*", ".*")
