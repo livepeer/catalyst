@@ -62,9 +62,7 @@ box:
       download: bucket
       project: go-livepeer
       commit: 372b0d389954cc3312754ea81d5b0a1bccee0eb0
-    binary: livepeer
     release: master
-    archivePath: livepeer
     srcFilenames:
       darwin-amd64: livepeer-darwin-amd64.tar.gz
       darwin-arm64: livepeer-darwin-arm64.tar.gz

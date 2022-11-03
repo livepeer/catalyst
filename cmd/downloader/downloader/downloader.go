@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -155,9 +156,13 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service *types.Servi
 		if err != nil {
 			return err
 		}
+		if strings.HasSuffix(header.Name, "/") {
+			glog.V(9).Infof("skpping directory %s", header.Name)
+			continue
+		}
 		if strings.HasSuffix(header.Name, service.ArchivePath) {
 			if output == "" {
-				output = filepath.Join(extractPath, header.Name)
+				output = filepath.Join(extractPath, path.Base(header.Name))
 			}
 			glog.V(9).Infof("extracting to %q", output)
 			outfile, err := os.Create(output)
