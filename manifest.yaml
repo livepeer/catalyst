@@ -65,6 +65,7 @@ box:
     binary: livepeer
     release: master
     skipGpg: true
+    skipChecksum: true
     archivePath: livepeer
     srcFilenames:
       darwin-amd64: livepeer-darwin-amd64.tar.gz
