@@ -61,7 +61,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: 0.5.35-c9979b61
+      commit: 0.5.35-7ae72aed
     binary: livepeer
     release: master
     skipGpg: true
