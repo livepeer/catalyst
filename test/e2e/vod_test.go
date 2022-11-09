@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
-	"net/http"
-	"testing"
-	"time"
 )
 
 const (
@@ -177,10 +178,15 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 func requireSegmentingOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 	cli := minioClient(t, m)
 	var files []string
-	for o := range cli.ListObjects(ctx, outBucket, minio.ListObjectsOptions{}) {
+	for o := range cli.ListObjects(ctx, outBucket, minio.ListObjectsOptions{Recursive: true}) {
 		files = append(files, o.Key)
 	}
 
-	require.Contains(t, files, "output.m3u8")
-	require.Contains(t, files, "0.ts")
+	require.Contains(t, files, "source/output.m3u8")
+	require.Contains(t, files, "source/0.ts")
+	require.Contains(t, files, "source/11000.ts")
+	require.Contains(t, files, "source/17000.ts")
+	require.Contains(t, files, "source/23000.ts")
+	require.Contains(t, files, "source/29000.ts")
+	require.Contains(t, files, "source/5000.ts")
 }
