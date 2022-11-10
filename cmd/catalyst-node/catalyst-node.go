@@ -574,7 +574,7 @@ func resolveNodeURL(streamURL string) (string, error) {
 	nodeName := u.Host
 	protocol := u.Scheme
 
-	member, err := getSerfMember(nodeName)
+	member, err := getSerfMember(map[string]string{}, "alive", nodeName)
 	if err != nil {
 		return "", err
 	}
@@ -594,8 +594,12 @@ func resolveNodeURL(streamURL string) (string, error) {
 	return u2.String(), nil
 }
 
-func querySerfForMember(name string) (*serfclient.Member, error) {
-	members, err := serfClient.MembersFiltered(map[string]string{}, "alive", name)
+func membersFiltered(filter map[string]string, status, name string) ([]serfclient.Member, error) {
+	return serfClient.MembersFiltered(filter, status, name)
+}
+
+func member(filter map[string]string, status, name string) (*serfclient.Member, error) {
+	members, err := membersFiltered(map[string]string{}, status, name)
 	if err != nil {
 		return nil, err
 	}
@@ -608,7 +612,7 @@ func querySerfForMember(name string) (*serfclient.Member, error) {
 	return &members[0], nil
 }
 
-var getSerfMember = querySerfForMember
+var getSerfMember = member
 
 // return the best node available for a given stream. will return any node if nobody has the stream.
 func getBestNode(redirectPrefixes []string, playbackID, lat, lon, fallbackPrefix string) (string, string, error) {

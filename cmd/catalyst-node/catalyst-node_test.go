@@ -106,7 +106,7 @@ func TestRedirectHandler404(t *testing.T) {
 	defer func() { getClosestNode = defaultFunc }()
 
 	defaultSerf := getSerfMember
-	getSerfMember = func(string) (*serfclient.Member, error) { return fakeSerfMember, nil }
+	getSerfMember = func(map[string]string, string, string) (*serfclient.Member, error) { return fakeSerfMember, nil }
 	defer func() { getSerfMember = defaultSerf }()
 
 	path := fmt.Sprintf("/hls/%s/index.m3u8", playbackID)
@@ -130,7 +130,7 @@ func TestRedirectHandlerHLS_Correct(t *testing.T) {
 	}
 	defer func() { getClosestNode = defaultFunc }()
 	defaultSerf := getSerfMember
-	getSerfMember = func(string) (*serfclient.Member, error) { return fakeSerfMember, nil }
+	getSerfMember = func(map[string]string, string, string) (*serfclient.Member, error) { return fakeSerfMember, nil }
 	defer func() { getSerfMember = defaultSerf }()
 
 	path := fmt.Sprintf("/hls/%s/index.m3u8", playbackID)
@@ -154,7 +154,7 @@ func TestRedirectHandlerHLSVOD_Correct(t *testing.T) {
 	}
 	defer func() { getClosestNode = defaultFunc }()
 	defaultSerf := getSerfMember
-	getSerfMember = func(string) (*serfclient.Member, error) { return fakeSerfMember, nil }
+	getSerfMember = func(map[string]string, string, string) (*serfclient.Member, error) { return fakeSerfMember, nil }
 	defer func() { getSerfMember = defaultSerf }()
 
 	pathHLS := fmt.Sprintf("/hls/vod+%s/index.m3u8", playbackID)
@@ -189,7 +189,7 @@ func TestRedirectHandlerHLS_SegmentInPath(t *testing.T) {
 	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
 	defer func() { getClosestNode = defaultFunc }()
 	defaultSerf := getSerfMember
-	getSerfMember = func(string) (*serfclient.Member, error) { return fakeSerfMember, nil }
+	getSerfMember = func(map[string]string, string, string) (*serfclient.Member, error) { return fakeSerfMember, nil }
 	defer func() { getSerfMember = defaultSerf }()
 
 	seg := "4_1"
@@ -215,7 +215,7 @@ func TestRedirectHandlerJS_Correct(t *testing.T) {
 	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
 	defer func() { getClosestNode = defaultFunc }()
 	defaultSerf := getSerfMember
-	getSerfMember = func(string) (*serfclient.Member, error) { return fakeSerfMember, nil }
+	getSerfMember = func(map[string]string, string, string) (*serfclient.Member, error) { return fakeSerfMember, nil }
 	defer func() { getSerfMember = defaultSerf }()
 
 	path := fmt.Sprintf("/json_%s.js", playbackID)
