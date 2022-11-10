@@ -12,12 +12,10 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"os/signal"
 	"regexp"
 	"runtime"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	serfclient "github.com/hashicorp/serf/client"
@@ -109,11 +107,11 @@ func runClient(config catalystConfig) error {
 		event := <-inbox
 		glog.V(5).Infof("got event: %v", event)
 
-		members, err := client.MembersFiltered(mediaFilter, ".*", ".*")
+		members, err := membersFiltered(mediaFilter, ".*", ".*")
 
 		if err != nil {
-			glog.Errorf("Error getting serf, will retry: %v\n", err)
-			continue
+			glog.Errorf("Error getting serf, crashing: %v\n", err)
+			break
 		}
 
 		balancedServers, err := getMistLoadBalancerServers(config.mistLoadBalancerEndpoint)
@@ -164,6 +162,8 @@ func runClient(config catalystConfig) error {
 			}
 		}
 	}
+
+	return nil
 }
 
 func connectSerfAgent(serfRPCAddress, serfRPCAuthKey string) (*serfclient.RPCClient, error) {
@@ -240,7 +240,7 @@ func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error)
 	return mistResponse, nil
 }
 
-func execBalancer(balancerArgs []string) error {
+func execBalancer(balancerArgs []string) (chan any, error) {
 	args := append(balancerArgs, "-p", fmt.Sprintf("%d", mistUtilLoadPort))
 	glog.Infof("Running MistUtilLoad with %v", args)
 	cmd := exec.Command("MistUtilLoad", args...)
@@ -248,27 +248,25 @@ func execBalancer(balancerArgs []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
+	killchan := make(chan any, 1)
+
 	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
-		for {
-			s := <-c
-			glog.Errorf("caught signal=%v killing MistUtilLoad", s)
-			cmd.Process.Kill()
-		}
+		<-killchan
+		glog.Infof("killing MistUtilLoad")
+		cmd.Process.Kill()
 	}()
 
 	err := cmd.Start()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = cmd.Wait()
-	if err != nil {
-		return err
-	}
+	go func() {
+		err = cmd.Wait()
+		panic(fmt.Sprintf("MistUtilLoad exited err=%s", err))
+	}()
 
-	return fmt.Errorf("MistUtilLoad exited cleanly")
+	return killchan, nil
 }
 
 func main() {
@@ -349,11 +347,12 @@ func main() {
 	go startInternalWebServer(cliFlags.HTTPInternalAddress, cliFlags.NodeLatitude, cliFlags.NodeLongitude)
 
 	config.serfTags = serfConfig.Tags
+	var killchan chan any
 
 	if cliFlags.RunBalancer {
 		go func() {
-
-			err := execBalancer(strings.Split(cliFlags.BalancerArgs, " "))
+			var err error
+			killchan, err = execBalancer(strings.Split(cliFlags.BalancerArgs, " "))
 			if err != nil {
 				glog.Fatal(err)
 			}
@@ -367,8 +366,12 @@ func main() {
 			err := runClient(*config)
 			if err != nil {
 				glog.Errorf("Error starting client: %v", err)
+				time.Sleep(1 * time.Second)
+				continue
 			}
-			time.Sleep(1 * time.Second)
+			// nil error means we're shutting down
+			glog.Infof("Shutting down on Serf client failure")
+			killchan <- true
 		}
 	}()
 
@@ -599,7 +602,7 @@ func membersFiltered(filter map[string]string, status, name string) ([]serfclien
 }
 
 func member(filter map[string]string, status, name string) (*serfclient.Member, error) {
-	members, err := membersFiltered(map[string]string{}, status, name)
+	members, err := membersFiltered(filter, status, name)
 	if err != nil {
 		return nil, err
 	}
