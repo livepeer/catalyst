@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -101,8 +100,9 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	// then
 	requireMembersJoined(t, c1, c2)
 
-	p := startStream(t, c1)
-	defer p.Kill()
+	hs := randomString("ffmpeg-")
+	s := startStream(ctx, t, hs, network.name, fmt.Sprintf("rtmp://%s/live/stream+foo", c1.hostname))
+	defer s.Terminate(ctx)
 
 	requireReplicatedStream(t, c2)
 	requireStreamRedirection(t, c1, c2)
@@ -241,14 +241,44 @@ func requireMembersJoined(t *testing.T, containers ...*catalystContainer) {
 	require.Eventually(t, correctMembersNumber, 5*time.Minute, time.Second)
 }
 
-func startStream(t *testing.T, c *catalystContainer) *os.Process {
-	ffmpegParams := []string{"-re", "-f", "lavfi", "-i", "testsrc=size=1920x1080:rate=30,format=yuv420p", "-f", "lavfi", "-i", "sine", "-c:v", "libx264", "-b:v", "1000k", "-x264-params", "keyint=60", "-c:a", "aac", "-f", "flv"}
-	ffmpegParams = append(ffmpegParams, fmt.Sprintf("rtmp://localhost:%s/live/stream+foo", c.rtmp))
-	cmd := exec.Command("ffmpeg", ffmpegParams...)
-	glog.Info("Spawning ffmpeg stream to ingest")
-	err := cmd.Start()
+func startStream(ctx context.Context, t *testing.T, hostname, network, target string) *catalystContainer {
+	ffmpegParams := []string{"-re", "/BigBuckBunny.mp4", "-c", "copy", "-f", "flv", target}
+
+	req := testcontainers.ContainerRequest{
+		Image:    "iameli/ffmpeg-and-bunny",
+		Hostname: hostname,
+		Name:     hostname,
+		Networks: []string{network},
+		Cmd:      ffmpegParams,
+		ShmSize:  1000000000,
+	}
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          false,
+	})
 	require.NoError(t, err)
-	return cmd.Process
+
+	// Redirect container logs to the standard logger
+	lc := logConsumer{name: hostname}
+	err = container.StartLogProducer(ctx)
+	require.NoError(t, err)
+	container.FollowOutput(&lc)
+
+	// Store mapped ports
+	catalyst := &catalystContainer{
+		Container: container,
+		hostname:  hostname,
+	}
+
+	// container IP
+	cid := container.GetContainerID()
+	dockerClient, _, _, err := testcontainers.NewDockerClient()
+	require.NoError(t, err)
+	inspect, err := dockerClient.ContainerInspect(ctx, cid)
+	require.NoError(t, err)
+	catalyst.ip = inspect.NetworkSettings.Networks[network].IPAddress
+
+	return catalyst
 }
 
 func requireReplicatedStream(t *testing.T, c *catalystContainer) {
