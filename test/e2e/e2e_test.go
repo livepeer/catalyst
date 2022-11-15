@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -100,12 +101,21 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	// then
 	requireMembersJoined(t, c1, c2)
 
-	hs := randomString("ffmpeg-")
-	s := startStream(ctx, t, hs, network.name, fmt.Sprintf("rtmp://%s/live/stream+foo", c1.hostname))
-	defer s.Terminate(ctx)
+	wg := sync.WaitGroup{}
+	for i := 0; i < 5; i += 1 {
+		wg.Add(1)
+		go func(i int) {
+			hs := randomString("ffmpeg-")
+			stream := randomString("stream+")
+			s := startStream(ctx, t, hs, network.name, fmt.Sprintf("rtmp://%s/live/%s", c1.hostname, stream))
+			defer s.Terminate(ctx)
 
-	requireReplicatedStream(t, c2)
-	requireStreamRedirection(t, c1, c2)
+			requireReplicatedStream(t, c2, stream)
+			requireStreamRedirection(t, c1, c2, stream)
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
 }
 
 func createNetwork(ctx context.Context, t *testing.T) *network {
@@ -281,9 +291,9 @@ func startStream(ctx context.Context, t *testing.T, hostname, network, target st
 	return catalyst
 }
 
-func requireReplicatedStream(t *testing.T, c *catalystContainer) {
+func requireReplicatedStream(t *testing.T, c *catalystContainer, stream string) {
 	correctStream := func() bool {
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c.http))
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%s/hls/%s/index.m3u8", c.http, stream))
 		if err != nil {
 			return false
 		}
@@ -323,15 +333,16 @@ func requireNotReplicatedStream(t *testing.T, c *catalystContainer) {
 	}
 }
 
-func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
+func requireStreamRedirection(t *testing.T, c1, c2 *catalystContainer, stream string) {
 	require := require.New(t)
+	wildcard := strings.Split(stream, "+")[1]
 	redirect := func() bool {
 		client := &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
 		}
-		resp, err := client.Get(fmt.Sprintf("http://localhost:%s/hls/foo/index.m3u8", c1.httpCatalyst))
+		resp, err := client.Get(fmt.Sprintf("http://localhost:%s/hls/%s/index.m3u8", c1.httpCatalyst, wildcard))
 		if err != nil {
 			return false
 		}
@@ -341,8 +352,8 @@ func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystC
 			return false
 		}
 
-		c1URL := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c1.hostname)
-		c2URL := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c2.hostname)
+		c1URL := fmt.Sprintf("http://%s/hls/%s/index.m3u8", c1.hostname, stream)
+		c2URL := fmt.Sprintf("http://%s/hls/%s/index.m3u8", c2.hostname, stream)
 		rURL := resp.Header.Get("Location")
 		glog.Infof("c1URL=%s c2URL=%s rURL=%s", c1URL, c2URL, rURL)
 		return strings.Contains(rURL, c1URL) || strings.Contains(rURL, c2URL)
