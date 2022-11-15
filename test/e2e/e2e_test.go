@@ -242,7 +242,7 @@ func requireMembersJoined(t *testing.T, containers ...*catalystContainer) {
 }
 
 func startStream(ctx context.Context, t *testing.T, hostname, network, target string) *catalystContainer {
-	ffmpegParams := []string{"-re", "/BigBuckBunny.mp4", "-c", "copy", "-f", "flv", target}
+	ffmpegParams := []string{"-re", "-i", "/BigBuckBunny.mp4", "-c", "copy", "-f", "flv", target}
 
 	req := testcontainers.ContainerRequest{
 		Image:    "iameli/ffmpeg-and-bunny",
@@ -254,7 +254,7 @@ func startStream(ctx context.Context, t *testing.T, hostname, network, target st
 	}
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
-		Started:          false,
+		Started:          true,
 	})
 	require.NoError(t, err)
 
@@ -293,7 +293,7 @@ func requireReplicatedStream(t *testing.T, c *catalystContainer) {
 			return false
 		}
 		content := string(body)
-		for _, expected := range []string{"RESOLUTION=1920x1080", "FRAME-RATE=30", "index.m3u8"} {
+		for _, expected := range []string{"RESOLUTION=1280x720", "FRAME-RATE=30", "index.m3u8"} {
 			if !strings.Contains(content, expected) {
 				glog.Info("Failed to get HLS manifest")
 				return false
