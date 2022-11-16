@@ -186,7 +186,7 @@ func requireSegmentingOutputFiles(ctx context.Context, t *testing.T, m *minioCon
 		for o := range cli.ListObjects(ctx, outBucket, minio.ListObjectsOptions{Recursive: true}) {
 			files = append(files, o.Key)
 		}
-		fmt.Println("Waiting for 7 files, got:" , len(files))
+		fmt.Println("Waiting for 7 files, got:", len(files))
 		if len(files) < 7 {
 			time.Sleep(100 * time.Millisecond)
 			continue
