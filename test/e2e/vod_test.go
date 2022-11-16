@@ -178,8 +178,21 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 func requireSegmentingOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 	cli := minioClient(t, m)
 	var files []string
-	for o := range cli.ListObjects(ctx, outBucket, minio.ListObjectsOptions{Recursive: true}) {
-		files = append(files, o.Key)
+	timeoutAt := time.Now().Add(5 * time.Second)
+
+	for {
+		if timeoutAt.Before(time.Now()) {
+			t.Error("Timed out while waiting for segmented output files to appear")
+		}
+		objects := cli.ListObjects(ctx, outBucket, minio.ListObjectsOptions{Recursive: true})
+		if len(objects) < 7 {
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		for o := range objects {
+			files = append(files, o.Key)
+		}
+		break
 	}
 
 	require.Contains(t, files, "source/output.m3u8")
