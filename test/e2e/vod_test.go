@@ -181,13 +181,12 @@ func requireSegmentingOutputFiles(ctx context.Context, t *testing.T, m *minioCon
 	timeoutAt := time.Now().Add(5 * time.Second)
 
 	for {
-		if timeoutAt.Before(time.Now()) {
-			t.Error("Timed out while waiting for segmented output files to appear")
-		}
+		require.True(t, timeoutAt.After(time.Now()), "Timed out while waiting for segmented output files to appear")
 		files = []string{}
 		for o := range cli.ListObjects(ctx, outBucket, minio.ListObjectsOptions{Recursive: true}) {
 			files = append(files, o.Key)
 		}
+		fmt.Println("Waiting for 7 files, got:" , len(files))
 		if len(files) < 7 {
 			time.Sleep(100 * time.Millisecond)
 			continue
