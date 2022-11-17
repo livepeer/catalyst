@@ -5,7 +5,7 @@ box:
     strategy:
       download: bucket
       project: livepeer-data
-      commit: b9617f97a4d9e5227d60eaa708b3b4aaa1c8500c
+      commit: 9ee2ceb502980bf338f7d2c3077c413af70c4dae
     release: main
     srcFilenames:
       darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
@@ -76,7 +76,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: ffefaa7bde8c23798babb72661d00ced32dfdc63
+      commit: faeff24765b6fa15072e9840fc3f99d3be8960e4
     release: catalyst
     skipGpg: true
     srcFilenames:
