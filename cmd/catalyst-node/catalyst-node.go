@@ -12,10 +12,12 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"os/signal"
 	"regexp"
 	"runtime"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	serfclient "github.com/hashicorp/serf/client"
@@ -371,6 +373,16 @@ func main() {
 			}
 			// nil error means we're shutting down
 			glog.Infof("Shutting down on Serf client failure")
+			killchan <- true
+		}
+	}()
+
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
+		for {
+			s := <-c
+			glog.Errorf("caught signal=%v killing MistUtilLoad", s)
 			killchan <- true
 		}
 	}()
