@@ -178,21 +178,7 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 func requireSegmentingOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 	cli := minioClient(t, m)
 	var files []string
-	var expectedNumFiles = 7
 	timeoutAt := time.Now().Add(5 * time.Minute)
-
-	for {
-		require.True(t, timeoutAt.After(time.Now()), "Timed out while waiting for segmented output files to appear. Expected %d files but got %d", expectedNumFiles, len(files))
-		files = []string{}
-		for o := range cli.ListObjects(ctx, outBucket, minio.ListObjectsOptions{Recursive: true}) {
-			files = append(files, o.Key)
-		}
-		if len(files) < 7 {
-			time.Sleep(500 * time.Millisecond)
-			continue
-		}
-		break
-	}
 
 	expectedFiles := []string{
 		"source/output.m3u8",
@@ -203,7 +189,21 @@ func requireSegmentingOutputFiles(ctx context.Context, t *testing.T, m *minioCon
 		"source/29000.ts",
 		"source/5000.ts",
 	}
-	require.Equal(t, expectedNumFiles, len(files), "Expected %v but got %v", expectedFiles, files)
+
+	for {
+		require.True(t, timeoutAt.After(time.Now()), "Timed out while waiting for segmented output files to appear. Expected %d files but got %d", expectedNumFiles, len(files))
+		files = []string{}
+		for o := range cli.ListObjects(ctx, outBucket, minio.ListObjectsOptions{Recursive: true}) {
+			files = append(files, o.Key)
+		}
+		if len(files) < len(expectedFiles) {
+			time.Sleep(500 * time.Millisecond)
+			continue
+		}
+		break
+	}
+
+	require.Equal(t, len(expectedFiles), len(files), "Expected %v but got %v", expectedFiles, files)
 	for _, expectedFile := range expectedFiles {
 		require.Contains(t, files, expectedFile)
 	}
