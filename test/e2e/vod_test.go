@@ -194,12 +194,17 @@ func requireSegmentingOutputFiles(ctx context.Context, t *testing.T, m *minioCon
 		break
 	}
 
-	require.Equal(t, expectedNumFiles, len(files))
-	require.Contains(t, files, "source/output.m3u8")
-	require.Contains(t, files, "source/0.ts")
-	require.Contains(t, files, "source/11000.ts")
-	require.Contains(t, files, "source/17000.ts")
-	require.Contains(t, files, "source/23000.ts")
-	require.Contains(t, files, "source/29000.ts")
-	require.Contains(t, files, "source/5000.ts")
+	expectedFiles := []string{
+		"source/output.m3u8",
+		"source/0.ts",
+		"source/11000.ts",
+		"source/17000.ts",
+		"source/23000.ts",
+		"source/29000.ts",
+		"source/5000.ts",
+	}
+	require.Equal(t, expectedNumFiles, len(files), "Expected %v but got %v", expectedFiles, files)
+	for _, expectedFile := range expectedFiles {
+		require.Contains(t, files, expectedFile)
+	}
 }
