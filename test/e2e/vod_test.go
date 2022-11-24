@@ -15,13 +15,14 @@ import (
 )
 
 const (
-	minioPort = "9000"
-	username  = "ROOTNAME"
-	password  = "CHANGEME123"
-	region    = "us-east-1"
-	inBucket  = "inbucket"
-	source    = "source.mp4"
-	outBucket = "outbucket"
+	minioPort     = "9000"
+	username      = "<access_key>"
+	password      = "<secret_key>"
+	region        = "us-east-1"
+	inBucket      = "inputbucket"
+	source        = "source.mp4"
+	outBucket     = "outputbucket"
+	storjEndpoint = "gateway.storjshare.io"
 )
 
 func TestVod(t *testing.T) {
@@ -148,8 +149,8 @@ func waitForCatalystAPI(t *testing.T, c *catalystContainer) {
 }
 
 func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
-	sourceVideoURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/%s", username, password, m.hostname, inBucket, source)
-	destURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/output.m3u8", username, password, m.hostname, outBucket)
+	sourceVideoURL := fmt.Sprintf("s3+https://%s:%s@%s/%s/%s", username, password, storjEndpoint, inBucket, source)
+	destURL := fmt.Sprintf("s3+https://%s:%s@%s/%s/output.m3u8", username, password, storjEndpoint, outBucket)
 	var jsonData = fmt.Sprintf(`{
 		"url": "%s",
 		"callback_url": "http://todo-callback.com",

@@ -35,7 +35,7 @@ type cliParams struct {
 var params cliParams
 
 func init() {
-	flag.StringVar(&params.ImageName, "image", "livepeer/catalyst", "Docker image to use when loading container")
+	flag.StringVar(&params.ImageName, "image", "catalyst-e2e-test", "Docker image to use when loading container")
 	flag.StringVar(&params.NetworkName, "network", randomString("catalyst-test-"), "Docker network name to use when starting")
 }
 
