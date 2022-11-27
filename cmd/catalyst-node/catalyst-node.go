@@ -44,7 +44,6 @@ type catalystNodeCliFlags struct {
 	Verbosity           int
 	MistJSON            bool
 	Version             bool
-	RunBalancer         bool
 	BalancerArgs        string
 	HTTPAddress         string
 	HTTPInternalAddress string
@@ -88,7 +87,6 @@ func main() {
 	fs.BoolVar(&cliFlags.MistJSON, "j", false, "Print application info as json")
 	fs.IntVar(&cliFlags.Verbosity, "v", 3, "Log verbosity.  {4|5|6}")
 	fs.BoolVar(&cliFlags.Version, "version", false, "Print out the version")
-	fs.BoolVar(&cliFlags.RunBalancer, "run-balancer", true, "run MistUtilLoad")
 	fs.StringVar(&cliFlags.BalancerArgs, "balancer-args", "", "arguments passed to MistUtilLoad")
 	fs.StringVar(&cliFlags.NodeHost, "node-host", "", "Hostname this node should handle requests for. Requests on any other domain will trigger a redirect. Useful as a 404 handler to send users to another node.")
 	fs.Float64Var(&cliFlags.NodeLatitude, "node-latitude", 0, "Latitude of this Catalyst node. Used for load balancing.")
@@ -155,32 +153,32 @@ func main() {
 	// Start cluster
 	clusterConfig.SerfRPCAddress = config.serfRPCAddress
 	clusterConfig.SerfRPCAuthKey = config.serfRPCAuthKey
+	memberChan := make(chan *[]serfclient.Member)
+	clusterConfig.MemberChan = memberChan
 	c := cluster.NewCluster(&clusterConfig)
 	go func() {
 		err := c.Start()
 		// TODO: graceful shutdown upon error
+		bal.Kill()
 		panic(fmt.Errorf("error in cluster connection: %w", err))
 	}()
 
 	// Start balancer
-	if cliFlags.RunBalancer {
-		bal = balancer.NewBalancer(&balancer.Config{
-			Args:             balancerArgs,
-			MistUtilLoadPort: uint32(config.mistLoadBalancerPort),
-		})
-		go func() {
-			err := bal.Start()
-			if err != nil {
-				glog.Fatal(err)
-			}
-		}()
-	}
+	bal = balancer.NewBalancer(&balancer.Config{
+		Args:                     balancerArgs,
+		MistUtilLoadPort:         uint32(config.mistLoadBalancerPort),
+		MistLoadBalancerTemplate: config.mistLoadBalancerTemplate,
+	})
+	go func() {
+		err := bal.Start()
+		if err != nil {
+			glog.Fatal(err)
+		}
+	}()
 
 	// Start HTTP servers
 	go startCatalystWebServer(cliFlags.RedirectPrefixes, cliFlags.HTTPAddress, cliFlags.NodeHost, cliFlags.GateURL)
 	go startInternalWebServer(cliFlags.HTTPInternalAddress, cliFlags.NodeLatitude, cliFlags.NodeLongitude)
-
-	var killchan chan any
 
 	go func() {
 		c := make(chan os.Signal, 1)
@@ -188,9 +186,15 @@ func main() {
 		for {
 			s := <-c
 			glog.Errorf("caught signal=%v killing MistUtilLoad", s)
-			killchan <- true
+			bal.Kill()
 		}
 	}()
+
+	// Start main reconcillation loop - get members from serf and update MistUtilLoad
+	for {
+		members := <-memberChan
+		bal.UpdateMembers(members)
+	}
 }
 
 func startCatalystWebServer(redirectPrefixes []string, httpAddr, nodeHost, gateURL string) {

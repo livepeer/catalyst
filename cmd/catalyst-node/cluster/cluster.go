@@ -18,6 +18,7 @@ type Config struct {
 	agent.Config
 	SerfRPCAddress string
 	SerfRPCAuthKey string
+	MemberChan     chan *[]serfclient.Member
 }
 
 type Cluster struct {
@@ -162,62 +163,28 @@ func (c *Cluster) runClient() error {
 			break
 		}
 
-		balancedServers, err := getMistLoadBalancerServers(config.mistLoadBalancerEndpoint)
-
-		if err != nil {
-			glog.Errorf("Error getting mist load balancer servers, will retry: %v\n", err)
-			continue
-		}
-
-		membersMap := make(map[string]bool)
-
-		for _, member := range members {
-			memberHost := member.Name
-
-			// commented out as for now the load balancer does not return ports
-			//if member.Port != 0 {
-			//	memberHost = fmt.Sprintf("%s:%d", memberHost, member.Port)
-			//}
-
-			membersMap[memberHost] = true
-		}
-
-		glog.V(5).Infof("current members in cluster: %v\n", membersMap)
-		glog.V(5).Infof("current members in load balancer: %v\n", balancedServers)
-
-		// compare membersMap and balancedServers
-		// del all servers not present in membersMap but present in balancedServers
-		// add all servers not present in balancedServers but present in membersMap
-
-		// note: untested as per MistUtilLoad ports
-		for k := range balancedServers {
-			if _, ok := membersMap[k]; !ok {
-				glog.Infof("deleting server %s from load balancer\n", k)
-				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, config.mistLoadBalancerTemplate, k, "del")
-				if err != nil {
-					glog.Errorf("Error deleting server %s from load balancer: %v\n", k, err)
-				}
-			}
-		}
-
-		for k := range membersMap {
-			if _, ok := balancedServers[k]; !ok {
-				glog.Infof("adding server %s to load balancer\n", k)
-				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, config.mistLoadBalancerTemplate, k, "add")
-				if err != nil {
-					glog.Errorf("Error adding server %s to load balancer: %v\n", k, err)
-				}
-			}
-		}
+		c.config.MemberChan <- &members
+		continue
 	}
 
 	return nil
 }
 
 func (c *Cluster) writeSerfConfig() (string, error) {
+	serfConfig := &agent.Config{
+		BindAddr:      c.config.BindAddr,
+		AdvertiseAddr: c.config.AdvertiseAddr,
+		RPCAddr:       c.config.RPCAddr,
+		EncryptKey:    c.config.EncryptKey,
+		Profile:       c.config.Profile,
+		NodeName:      c.config.NodeName,
+		RetryJoin:     c.config.RetryJoin,
+		Tags:          c.config.Tags,
+	}
+
 	// Two steps to properly serialize this as JSON: https://github.com/spf13/viper/issues/816#issuecomment-1149732004
 	items := map[string]interface{}{}
-	if err := mapstructure.Decode(c.config, &items); err != nil {
+	if err := mapstructure.Decode(serfConfig, &items); err != nil {
 		return "", err
 	}
 	b, err := json.Marshal(items)

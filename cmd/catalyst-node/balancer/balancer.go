@@ -11,24 +11,28 @@ import (
 	"os/exec"
 	"sync"
 
+	serfclient "github.com/hashicorp/serf/client"
 	glog "github.com/magicsong/color-glog"
 )
 
 type Config struct {
-	Args             []string
-	MistUtilLoadPort uint32
+	Args                     []string
+	MistUtilLoadPort         uint32
+	MistLoadBalancerTemplate string
 }
 
 type Balancer struct {
-	config *Config
-	cmd    *exec.Cmd
+	config   *Config
+	cmd      *exec.Cmd
+	endpoint string
 }
 
 // create a new load balancer instance
 func NewBalancer(config *Config) *Balancer {
 	return &Balancer{
-		config: config,
-		cmd:    nil,
+		config:   config,
+		cmd:      nil,
+		endpoint: fmt.Sprintf("http://127.0.0.1:%d", config.MistUtilLoadPort),
 	}
 }
 
@@ -37,9 +41,60 @@ func (b *Balancer) Start() error {
 	return b.execBalancer(b.config.Args)
 }
 
-func (b *Balancer) changeLoadBalancerServers(endpoint, tmpl, server, action string) ([]byte, error) {
-	serverTmpl := fmt.Sprintf(tmpl, server)
-	actionURL := endpoint + "?" + action + "server=" + url.QueryEscape(serverTmpl)
+func (b *Balancer) UpdateMembers(members *[]serfclient.Member) error {
+	balancedServers, err := b.getMistLoadBalancerServers()
+
+	if err != nil {
+		glog.Errorf("Error getting mist load balancer servers: %v\n", err)
+		return err
+	}
+
+	membersMap := make(map[string]bool)
+
+	for _, member := range *members {
+		memberHost := member.Name
+
+		// commented out as for now the load balancer does not return ports
+		//if member.Port != 0 {
+		//	memberHost = fmt.Sprintf("%s:%d", memberHost, member.Port)
+		//}
+
+		membersMap[memberHost] = true
+	}
+
+	glog.V(5).Infof("current members in cluster: %v\n", membersMap)
+	glog.V(5).Infof("current members in load balancer: %v\n", balancedServers)
+
+	// compare membersMap and balancedServers
+	// del all servers not present in membersMap but present in balancedServers
+	// add all servers not present in balancedServers but present in membersMap
+
+	// note: untested as per MistUtilLoad ports
+	for k := range balancedServers {
+		if _, ok := membersMap[k]; !ok {
+			glog.Infof("deleting server %s from load balancer\n", k)
+			_, err := b.changeLoadBalancerServers(k, "del")
+			if err != nil {
+				glog.Errorf("Error deleting server %s from load balancer: %v\n", k, err)
+			}
+		}
+	}
+
+	for k := range membersMap {
+		if _, ok := balancedServers[k]; !ok {
+			glog.Infof("adding server %s to load balancer\n", k)
+			_, err := b.changeLoadBalancerServers(k, "add")
+			if err != nil {
+				glog.Errorf("Error adding server %s to load balancer: %v\n", k, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (b *Balancer) changeLoadBalancerServers(server, action string) ([]byte, error) {
+	serverTmpl := fmt.Sprintf(b.config.MistLoadBalancerTemplate, server)
+	actionURL := b.endpoint + "?" + action + "server=" + url.QueryEscape(serverTmpl)
 	req, err := http.NewRequest("POST", actionURL, nil)
 	if err != nil {
 		glog.Errorf("Error creating request: %v", err)
@@ -70,8 +125,8 @@ func (b *Balancer) changeLoadBalancerServers(endpoint, tmpl, server, action stri
 	return bytes, nil
 }
 
-func (b *Balancer) getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error) {
-	url := endpoint + "?lstservers=1"
+func (b *Balancer) getMistLoadBalancerServers() (map[string]interface{}, error) {
+	url := b.endpoint + "?lstservers=1"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		glog.Errorf("Error creating request: %v", err)
