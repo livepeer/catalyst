@@ -1,32 +1,25 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"os/signal"
 	"regexp"
 	"runtime"
 	"strings"
-	"sync"
 	"syscall"
-	"time"
 
 	serfclient "github.com/hashicorp/serf/client"
-	"github.com/hashicorp/serf/cmd/serf/command/agent"
+	"github.com/livepeer/catalyst/cmd/catalyst-node/balancer"
+	"github.com/livepeer/catalyst/cmd/catalyst-node/cluster"
 	accesscontrol "github.com/livepeer/catalyst/cmd/catalyst-node/handlers/access-control"
 	"github.com/livepeer/livepeer-data/pkg/mistconnector"
 	glog "github.com/magicsong/color-glog"
-	"github.com/mitchellh/cli"
-	"github.com/mitchellh/mapstructure"
 	"github.com/peterbourgon/ff/v3"
 )
 
@@ -43,7 +36,7 @@ type catalystConfig struct {
 	serfRPCAddress           string
 	serfRPCAuthKey           string
 	serfTags                 map[string]string
-	mistLoadBalancerEndpoint string
+	mistLoadBalancerPort     int
 	mistLoadBalancerTemplate string
 }
 
@@ -62,214 +55,27 @@ type catalystNodeCliFlags struct {
 	GateURL             string
 }
 
-var mediaFilter = map[string]string{"node": "media"}
-
-func runClient(config catalystConfig) error {
-	client, err := connectSerfAgent(config.serfRPCAddress, config.serfRPCAuthKey)
-
-	if err != nil {
-		return err
+func parseSerfConfig(config *cluster.Config, retryJoin, serfTags *string) {
+	if *retryJoin != "" {
+		config.RetryJoin = strings.Split(*retryJoin, ",")
 	}
-	serfClient = client
-	defer client.Close()
-
-	eventCh := make(chan map[string]interface{})
-	streamHandle, err := client.Stream("*", eventCh)
-	if err != nil {
-		return fmt.Errorf("error starting stream: %w", err)
-	}
-	defer client.Stop(streamHandle)
-
-	inbox := make(chan map[string]interface{}, 1)
-	go func() {
-		for {
-			e := <-eventCh
-			select {
-			case inbox <- e:
-				// Event is now in the inbox
-			default:
-				// Overflow event gets dropped
-			}
+	if *serfTags != "" {
+		if config.Tags == nil {
+			config.Tags = make(map[string]string)
 		}
-	}()
-
-	// Ping the inbox initially and then every few seconds to retry on the load balancer
-	go func() {
-		for {
-			e := map[string]interface{}{}
-			select {
-			case inbox <- e:
-			default:
-			}
-			time.Sleep(5 * time.Second)
-		}
-	}()
-
-	for {
-		event := <-inbox
-		glog.V(5).Infof("got event: %v", event)
-
-		members, err := membersFiltered(mediaFilter, ".*", ".*")
-
-		if err != nil {
-			glog.Errorf("Error getting serf, crashing: %v\n", err)
-			break
-		}
-
-		balancedServers, err := getMistLoadBalancerServers(config.mistLoadBalancerEndpoint)
-
-		if err != nil {
-			glog.Errorf("Error getting mist load balancer servers, will retry: %v\n", err)
-			continue
-		}
-
-		membersMap := make(map[string]bool)
-
-		for _, member := range members {
-			memberHost := member.Name
-
-			// commented out as for now the load balancer does not return ports
-			//if member.Port != 0 {
-			//	memberHost = fmt.Sprintf("%s:%d", memberHost, member.Port)
-			//}
-
-			membersMap[memberHost] = true
-		}
-
-		glog.V(5).Infof("current members in cluster: %v\n", membersMap)
-		glog.V(5).Infof("current members in load balancer: %v\n", balancedServers)
-
-		// compare membersMap and balancedServers
-		// del all servers not present in membersMap but present in balancedServers
-		// add all servers not present in balancedServers but present in membersMap
-
-		// note: untested as per MistUtilLoad ports
-		for k := range balancedServers {
-			if _, ok := membersMap[k]; !ok {
-				glog.Infof("deleting server %s from load balancer\n", k)
-				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, config.mistLoadBalancerTemplate, k, "del")
-				if err != nil {
-					glog.Errorf("Error deleting server %s from load balancer: %v\n", k, err)
-				}
-			}
-		}
-
-		for k := range membersMap {
-			if _, ok := balancedServers[k]; !ok {
-				glog.Infof("adding server %s to load balancer\n", k)
-				_, err := changeLoadBalancerServers(config.mistLoadBalancerEndpoint, config.mistLoadBalancerTemplate, k, "add")
-				if err != nil {
-					glog.Errorf("Error adding server %s to load balancer: %v\n", k, err)
-				}
+		for _, t := range strings.Split(*serfTags, ",") {
+			kv := strings.Split(t, "=")
+			if len(kv) == 2 {
+				k, v := kv[0], kv[1]
+				config.Tags[k] = v
+			} else {
+				glog.Fatalf("failed to parse serf tag, --serf-tag=k1=v1,k2=v2 format required: %s", t)
 			}
 		}
 	}
-
-	return nil
 }
 
-func connectSerfAgent(serfRPCAddress, serfRPCAuthKey string) (*serfclient.RPCClient, error) {
-	return serfclient.ClientFromConfig(&serfclient.Config{
-		Addr:    serfRPCAddress,
-		AuthKey: serfRPCAuthKey,
-	})
-}
-
-func changeLoadBalancerServers(endpoint, tmpl, server, action string) ([]byte, error) {
-	serverTmpl := fmt.Sprintf(tmpl, server)
-	actionURL := endpoint + "?" + action + "server=" + url.QueryEscape(serverTmpl)
-	req, err := http.NewRequest("POST", actionURL, nil)
-	if err != nil {
-		glog.Errorf("Error creating request: %v", err)
-		return nil, err
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		glog.Errorf("Error making request: %v", err)
-		return nil, err
-	}
-
-	b, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		glog.Errorf("Error reading response: %v", err)
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		glog.Errorf("Error response from load balancer changing servers: %s\n", string(b))
-		return b, errors.New(string(b))
-	}
-
-	glog.V(6).Infof("requested mist to %s server %s to the load balancer\n", action, server)
-	glog.V(6).Info(string(b))
-	return b, nil
-}
-
-func getMistLoadBalancerServers(endpoint string) (map[string]interface{}, error) {
-	url := endpoint + "?lstservers=1"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		glog.Errorf("Error creating request: %v", err)
-		return nil, err
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		glog.Errorf("Error making request: %v", err)
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		b, _ := ioutil.ReadAll(resp.Body)
-		glog.Errorf("Error response from load balancer listing servers: %s\n", string(b))
-		return nil, errors.New(string(b))
-	}
-	b, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		glog.Errorf("Error reading response: %v", err)
-		return nil, err
-	}
-
-	var mistResponse map[string]interface{}
-
-	json.Unmarshal([]byte(string(b)), &mistResponse)
-
-	return mistResponse, nil
-}
-
-func execBalancer(balancerArgs []string) (chan any, error) {
-	args := append(balancerArgs, "-p", fmt.Sprintf("%d", mistUtilLoadPort))
-	glog.Infof("Running MistUtilLoad with %v", args)
-	cmd := exec.Command("MistUtilLoad", args...)
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	killchan := make(chan any, 1)
-
-	go func() {
-		<-killchan
-		glog.Infof("killing MistUtilLoad")
-		cmd.Process.Kill()
-	}()
-
-	err := cmd.Start()
-	if err != nil {
-		return nil, err
-	}
-
-	go func() {
-		err = cmd.Wait()
-		panic(fmt.Sprintf("MistUtilLoad exited err=%s", err))
-	}()
-
-	return killchan, nil
-}
+var bal *balancer.Balancer
 
 func main() {
 	var cliFlags = &catalystNodeCliFlags{}
@@ -296,18 +102,18 @@ func main() {
 	fs.StringVar(&config.serfRPCAddress, "serf-rpc-address", "127.0.0.1:7373", "Serf RPC address")
 	fs.StringVar(&config.serfRPCAuthKey, "serf-rpc-auth-key", "", "Serf RPC auth key")
 	serfTags := fs.String("serf-tags", "node=media", "Serf tags for Catalyst nodes")
-	fs.StringVar(&config.mistLoadBalancerEndpoint, "mist-load-balancer-endpoint", fmt.Sprintf("http://127.0.0.1:%d/", mistUtilLoadPort), "Mist util load endpoint")
+	fs.IntVar(&config.mistLoadBalancerPort, "mist-load-balancer-port", mistUtilLoadPort, "MistUtilLoad port (default random)")
 	fs.StringVar(&config.mistLoadBalancerTemplate, "mist-load-balancer-template", "http://%s:4242", "template for specifying the host that should be queried for Prometheus stat output for this node")
 
 	// Serf commands passed straight through to the agent
-	serfConfig := agent.Config{}
-	fs.StringVar(&serfConfig.BindAddr, "bind", "0.0.0.0:9935", "Address to bind network listeners to. To use an IPv6 address, specify [::1] or [::1]:7946.")
-	fs.StringVar(&serfConfig.AdvertiseAddr, "advertise", "0.0.0.0", "Address to advertise to the other cluster members")
-	fs.StringVar(&serfConfig.RPCAddr, "rpc-addr", "127.0.0.1:7373", "Address to bind the RPC listener.")
+	clusterConfig := cluster.Config{}
+	fs.StringVar(&clusterConfig.BindAddr, "bind", "0.0.0.0:9935", "Address to bind network listeners to. To use an IPv6 address, specify [::1] or [::1]:7946.")
+	fs.StringVar(&clusterConfig.AdvertiseAddr, "advertise", "0.0.0.0", "Address to advertise to the other cluster members")
+	fs.StringVar(&clusterConfig.RPCAddr, "rpc-addr", "127.0.0.1:7373", "Address to bind the RPC listener.")
 	retryJoin := fs.String("retry-join", "", "An agent to join with. This flag be specified multiple times. Does not exit on failure like -join, used to retry until success.")
-	fs.StringVar(&serfConfig.EncryptKey, "encrypt", "", "Key for encrypting network traffic within Serf. Must be a base64-encoded 32-byte key.")
-	fs.StringVar(&serfConfig.Profile, "profile", "", "Profile is used to control the timing profiles used in Serf. The default if not provided is wan.")
-	fs.StringVar(&serfConfig.NodeName, "node", "", "Name of this node. Must be unique in the cluster")
+	fs.StringVar(&clusterConfig.EncryptKey, "encrypt", "", "Key for encrypting network traffic within Serf. Must be a base64-encoded 32-byte key.")
+	fs.StringVar(&clusterConfig.Profile, "profile", "", "Profile is used to control the timing profiles used in Serf. The default if not provided is wan.")
+	fs.StringVar(&clusterConfig.NodeName, "node", "", "Name of this node. Must be unique in the cluster")
 
 	// Playback gating Api
 	fs.StringVar(&cliFlags.GateURL, "gate-url", "http://localhost:3004/api/access-control/gate", "Address to contact playback gating API for access control verification")
@@ -340,42 +146,41 @@ func main() {
 		return
 	}
 
+	// Handle converting CLI flags into correct format
 	cliFlags.RedirectPrefixes = strings.Split(*prefixes, ",")
 	glog.V(4).Infof("found redirectPrefixes=%v", cliFlags.RedirectPrefixes)
+	parseSerfConfig(&clusterConfig, retryJoin, serfTags)
+	balancerArgs := strings.Split(cliFlags.BalancerArgs, " ")
 
-	parseSerfConfig(&serfConfig, retryJoin, serfTags)
+	// Start cluster
+	clusterConfig.SerfRPCAddress = config.serfRPCAddress
+	clusterConfig.SerfRPCAuthKey = config.serfRPCAuthKey
+	c := cluster.NewCluster(&clusterConfig)
+	go func() {
+		err := c.Start()
+		// TODO: graceful shutdown upon error
+		panic(fmt.Errorf("error in cluster connection: %w", err))
+	}()
 
-	go startCatalystWebServer(cliFlags.RedirectPrefixes, cliFlags.HTTPAddress, cliFlags.NodeHost, cliFlags.GateURL)
-	go startInternalWebServer(cliFlags.HTTPInternalAddress, cliFlags.NodeLatitude, cliFlags.NodeLongitude)
-
-	config.serfTags = serfConfig.Tags
-	var killchan chan any
-
+	// Start balancer
 	if cliFlags.RunBalancer {
+		bal = balancer.NewBalancer(&balancer.Config{
+			Args:             balancerArgs,
+			MistUtilLoadPort: uint32(config.mistLoadBalancerPort),
+		})
 		go func() {
-			var err error
-			killchan, err = execBalancer(strings.Split(cliFlags.BalancerArgs, " "))
+			err := bal.Start()
 			if err != nil {
 				glog.Fatal(err)
 			}
 		}()
 	}
 
-	go func() {
-		// eli note: i put this in a loop in case client boots before server.
-		// doesn't seem to happen in practice.
-		for {
-			err := runClient(*config)
-			if err != nil {
-				glog.Errorf("Error starting client: %v", err)
-				time.Sleep(1 * time.Second)
-				continue
-			}
-			// nil error means we're shutting down
-			glog.Infof("Shutting down on Serf client failure")
-			killchan <- true
-		}
-	}()
+	// Start HTTP servers
+	go startCatalystWebServer(cliFlags.RedirectPrefixes, cliFlags.HTTPAddress, cliFlags.NodeHost, cliFlags.GateURL)
+	go startInternalWebServer(cliFlags.HTTPInternalAddress, cliFlags.NodeLatitude, cliFlags.NodeLongitude)
+
+	var killchan chan any
 
 	go func() {
 		c := make(chan os.Signal, 1)
@@ -386,94 +191,6 @@ func main() {
 			killchan <- true
 		}
 	}()
-
-	// Everything past this is booting up Serf
-	tmpFile, err := writeSerfConfig(&serfConfig)
-	if err != nil {
-		glog.Fatalf("Error writing serf config: %s", err)
-	}
-	defer os.Remove(tmpFile)
-	glog.V(6).Infof("Wrote serf config to %s", tmpFile)
-
-	ui := &cli.BasicUi{Writer: os.Stdout}
-
-	// copied from:
-	// https://github.com/hashicorp/serf/blob/a2bba5676d6e37953715ea10e583843793a0c507/cmd/serf/commands.go#L20-L25
-	// we should consider invoking serf directly instead of wrapping their CLI helper
-	commands := map[string]cli.CommandFactory{
-		"agent": func() (cli.Command, error) {
-			a := &agent.Command{
-				Ui:         ui,
-				ShutdownCh: make(chan struct{}),
-			}
-			return a, nil
-		},
-	}
-
-	cli := &cli.CLI{
-		Args:     []string{"agent", "-config-file", tmpFile},
-		Commands: commands,
-		HelpFunc: cli.BasicHelpFunc("catalyst-node"),
-	}
-
-	exitCode, err := cli.Run()
-	if err != nil {
-		glog.Fatalf("Error executing CLI: %s\n", err.Error())
-		os.Exit(1)
-	}
-
-	os.Exit(exitCode)
-}
-
-func parseSerfConfig(config *agent.Config, retryJoin, serfTags *string) {
-	if *retryJoin != "" {
-		config.RetryJoin = strings.Split(*retryJoin, ",")
-	}
-	if *serfTags != "" {
-		if config.Tags == nil {
-			config.Tags = make(map[string]string)
-		}
-		for _, t := range strings.Split(*serfTags, ",") {
-			kv := strings.Split(t, "=")
-			if len(kv) == 2 {
-				k, v := kv[0], kv[1]
-				config.Tags[k] = v
-			} else {
-				glog.Fatalf("failed to parse serf tag, --serf-tag=k1=v1,k2=v2 format required: %s", t)
-			}
-		}
-	}
-}
-
-func writeSerfConfig(config *agent.Config) (string, error) {
-	// Two steps to properly serialize this as JSON: https://github.com/spf13/viper/issues/816#issuecomment-1149732004
-	items := map[string]interface{}{}
-	if err := mapstructure.Decode(config, &items); err != nil {
-		return "", err
-	}
-	b, err := json.Marshal(items)
-
-	if err != nil {
-		return "", err
-	}
-
-	// Everything after this is booting up serf with our provided config flags:
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "serf-config-*.json")
-	if err != nil {
-		return "", err
-	}
-
-	// Example writing to the file
-	if _, err = tmpFile.Write(b); err != nil {
-		return "", err
-	}
-
-	// Close the file
-	if err := tmpFile.Close(); err != nil {
-		return "", err
-	}
-
-	return tmpFile.Name(), err
 }
 
 func startCatalystWebServer(redirectPrefixes []string, httpAddr, nodeHost, gateURL string) {
@@ -488,8 +205,6 @@ func startInternalWebServer(internalAddr string, lat, lon float64) {
 	glog.Infof("Internal HTTP server listening on %s", internalAddr)
 	glog.Fatal(http.ListenAndServe(internalAddr, nil))
 }
-
-var getClosestNode = queryMistForClosestNode
 
 func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -522,7 +237,7 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 		lat := r.Header.Get("X-Latitude")
 		lon := r.Header.Get("X-Longitude")
 
-		bestNode, fullPlaybackID, err := getBestNode(redirectPrefixes, playbackID, lat, lon, prefix)
+		bestNode, fullPlaybackID, err := bal.GetBestNode(redirectPrefixes, playbackID, lat, lon, prefix)
 		if err != nil {
 			glog.Errorf("failed to find either origin or fallback server for playbackID=%s err=%s", playbackID, err)
 			w.WriteHeader(http.StatusBadGateway)
@@ -563,7 +278,7 @@ func streamSourceHandler(lat, lon float64) http.Handler {
 
 		latStr := fmt.Sprintf("%f", lat)
 		lonStr := fmt.Sprintf("%f", lon)
-		dtscURL, err := queryMistForClosestNodeSource(streamName, latStr, lonStr, "", true)
+		dtscURL, err := bal.QueryMistForClosestNodeSource(streamName, latStr, lonStr, "", true)
 		if err != nil {
 			glog.Errorf("error querying mist for STREAM_SOURCE: %s", err)
 			w.Write([]byte("push://"))
@@ -629,52 +344,6 @@ func member(filter map[string]string, status, name string) (*serfclient.Member, 
 
 var getSerfMember = member
 
-// return the best node available for a given stream. will return any node if nobody has the stream.
-func getBestNode(redirectPrefixes []string, playbackID, lat, lon, fallbackPrefix string) (string, string, error) {
-	var nodeAddr, fullPlaybackID, fallbackAddr string
-	var mu sync.Mutex
-	var err error
-	var waitGroup sync.WaitGroup
-
-	for _, prefix := range redirectPrefixes {
-		waitGroup.Add(1)
-		go func(prefix string) {
-			addr, e := getClosestNode(playbackID, lat, lon, prefix)
-			mu.Lock()
-			defer mu.Unlock()
-			if e != nil {
-				err = e
-				glog.V(8).Infof("error finding origin server playbackID=%s prefix=%s error=%s", playbackID, prefix, e)
-				// If we didn't find a stream but we did find a server, keep that so we can use it to handle a 404
-				if addr != "" {
-					fallbackAddr = addr
-				}
-			} else {
-				nodeAddr = addr
-				fullPlaybackID = prefix + "+" + playbackID
-			}
-			waitGroup.Done()
-		}(prefix)
-	}
-	waitGroup.Wait()
-
-	// good path: we found the stream and a good node to play it back, yay!
-	if nodeAddr != "" {
-		return nodeAddr, fullPlaybackID, nil
-	}
-
-	// bad path: nobody has the stream, but we did find a server which can handle the 404 for us.
-	if fallbackAddr != "" {
-		if fallbackPrefix == "" {
-			fallbackPrefix = redirectPrefixes[0]
-		}
-		return fallbackAddr, fallbackPrefix + "+" + playbackID, nil
-	}
-
-	// ugly path: we couldn't find ANY servers. yikes.
-	return "", "", err
-}
-
 func parsePlus(plusString string) (string, string) {
 	slice := strings.Split(plusString, "+")
 	prefix := ""
@@ -739,64 +408,4 @@ func protocol(r *http.Request) string {
 		return "https"
 	}
 	return "http"
-}
-
-func queryMistForClosestNode(playbackID, lat, lon, prefix string) (string, error) {
-	// First, check to see if any server has this stream
-	_, err1 := queryMistForClosestNodeSource(playbackID, lat, lon, prefix, true)
-	// Then, check the best playback server
-	node, err2 := queryMistForClosestNodeSource(playbackID, lat, lon, prefix, false)
-	// If we can't get a playback server, error
-	if err2 != nil {
-		return "", err2
-	}
-	// If we didn't find the stream but we did find a node, return it with the error for 404s
-	if err1 != nil {
-		return node, err1
-	}
-	// Good path, we found the stream and a playback nodew!
-	return node, nil
-}
-
-func queryMistForClosestNodeSource(playbackID, lat, lon, prefix string, source bool) (string, error) {
-	if prefix != "" {
-		prefix += "+"
-	}
-	var murl string
-	enc := url.QueryEscape(fmt.Sprintf("%s%s", prefix, playbackID))
-	if source {
-		murl = fmt.Sprintf("http://localhost:%d/?source=%s", mistUtilLoadPort, enc)
-	} else {
-		murl = fmt.Sprintf("http://localhost:%d/%s", mistUtilLoadPort, enc)
-	}
-	glog.V(8).Infof("MistUtilLoad started request=%s", murl)
-	req, err := http.NewRequest("GET", murl, nil)
-	if err != nil {
-		return "", err
-	}
-	if lat != "" && lon != "" {
-		req.Header.Set("X-Latitude", lat)
-		req.Header.Set("X-Longitude", lon)
-	} else {
-		glog.Warningf("Incoming request missing X-Latitude/X-Longitude, response will not be geolocated")
-	}
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("GET request '%s' failed with http status code %d", murl, resp.StatusCode)
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("GET request '%s' failed while reading response body", murl)
-	}
-	glog.V(8).Infof("MistUtilLoad responded request=%s response=%s", murl, body)
-	if string(body) == "FULL" {
-		return "", fmt.Errorf("GET request '%s' returned 'FULL'", murl)
-	}
-	return string(body), nil
 }
