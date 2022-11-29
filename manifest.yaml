@@ -18,8 +18,8 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: 965c5b169da23b5d66dcc5a6a07b2f6920b51c77
-    release: v0.11.2
+      commit: 89e5ec9e60c87c3c788717d2d55425a683011726
+    release: v0.11.3
   - name: catalyst-api
     strategy:
       download: bucket
@@ -61,7 +61,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: fa3564565e7aa7d40be14502b8a217c7a541b740
+      commit: b3d931f741f04b77adeb1bfa21547827f5e1ee69
     binary: livepeer
     release: master
     archivePath: livepeer
@@ -88,9 +88,9 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: 965c5b169da23b5d66dcc5a6a07b2f6920b51c77
+      commit: 89e5ec9e60c87c3c788717d2d55425a683011726
     binary: livepeer-www
-    release: v0.11.2
+    release: v0.11.3
   - name: victoria-metrics
     strategy:
       download: github
