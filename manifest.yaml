@@ -61,7 +61,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: 0dc5f344803ed425a1219313310e337263a9c6c0
+      commit: 1e1faaac5cd73ebe40484a03ba3f2174d78c752a
     binary: livepeer
     release: master
     archivePath: livepeer
