@@ -123,3 +123,4 @@ box:
       linux-arm64: vmutils-linux-arm64-v1.80.0.tar.gz
     outputPath: livepeer-vmagent
     skipManifestUpdate: true
+
