@@ -30,6 +30,7 @@ const (
 
 var Version = "unknown"
 var serfClient *serfclient.RPCClient
+var c *cluster.Cluster
 var mistUtilLoadPort = rand.Intn(10000) + 40000
 
 type catalystConfig struct {
@@ -155,7 +156,7 @@ func main() {
 	clusterConfig.SerfRPCAuthKey = config.serfRPCAuthKey
 	memberChan := make(chan *[]serfclient.Member)
 	clusterConfig.MemberChan = memberChan
-	c := cluster.NewCluster(&clusterConfig)
+	c = cluster.NewCluster(&clusterConfig)
 	go func() {
 		err := c.Start()
 		// TODO: graceful shutdown upon error
@@ -308,7 +309,7 @@ func resolveNodeURL(streamURL string) (string, error) {
 	nodeName := u.Host
 	protocol := u.Scheme
 
-	member, err := getSerfMember(map[string]string{}, "alive", nodeName)
+	member, err := c.Member(map[string]string{}, "alive", nodeName)
 	if err != nil {
 		return "", err
 	}
@@ -327,26 +328,6 @@ func resolveNodeURL(streamURL string) (string, error) {
 	u2.RawQuery = u.RawQuery
 	return u2.String(), nil
 }
-
-func membersFiltered(filter map[string]string, status, name string) ([]serfclient.Member, error) {
-	return serfClient.MembersFiltered(filter, status, name)
-}
-
-func member(filter map[string]string, status, name string) (*serfclient.Member, error) {
-	members, err := membersFiltered(filter, status, name)
-	if err != nil {
-		return nil, err
-	}
-	if len(members) < 1 {
-		return nil, fmt.Errorf("could not find serf member name=%s", name)
-	}
-	if len(members) > 1 {
-		glog.Errorf("found multiple serf members with the same name! this shouldn't happen! name=%s count=%d", name, len(members))
-	}
-	return &members[0], nil
-}
-
-var getSerfMember = member
 
 func parsePlus(plusString string) (string, string) {
 	slice := strings.Split(plusString, "+")

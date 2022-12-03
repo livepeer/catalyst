@@ -66,6 +66,26 @@ func (c *Cluster) Start() error {
 	return <-errchan
 }
 
+func (c *Cluster) MembersFiltered(filter map[string]string, status, name string) ([]serfclient.Member, error) {
+	return c.client.MembersFiltered(filter, status, name)
+}
+
+func (c *Cluster) Member(filter map[string]string, status, name string) (*serfclient.Member, error) {
+	members, err := c.MembersFiltered(filter, status, name)
+	if err != nil {
+		return nil, err
+	}
+	if len(members) < 1 {
+		return nil, fmt.Errorf("could not find serf member name=%s", name)
+	}
+	if len(members) > 1 {
+		glog.Errorf("found multiple serf members with the same name! this shouldn't happen! name=%s count=%d", name, len(members))
+	}
+	return &members[0], nil
+}
+
+// var getSerfMember = member
+
 func (c *Cluster) runServer() error {
 	// Everything past this is booting up Serf
 	tmpFile, err := c.writeSerfConfig()
