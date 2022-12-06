@@ -29,9 +29,11 @@ const (
 )
 
 var Version = "unknown"
-var serfClient *serfclient.RPCClient
-var c *cluster.Cluster
 var mistUtilLoadPort = rand.Intn(10000) + 40000
+
+type Node struct {
+	Cluster *cluster.Cluster
+}
 
 type catalystConfig struct {
 	serfRPCAddress           string
@@ -39,20 +41,17 @@ type catalystConfig struct {
 	serfTags                 map[string]string
 	mistLoadBalancerPort     int
 	mistLoadBalancerTemplate string
-}
-
-type catalystNodeCliFlags struct {
-	Verbosity           int
-	MistJSON            bool
-	Version             bool
-	BalancerArgs        string
-	HTTPAddress         string
-	HTTPInternalAddress string
-	RedirectPrefixes    []string
-	NodeHost            string
-	NodeLatitude        float64
-	NodeLongitude       float64
-	GateURL             string
+	Verbosity                int
+	MistJSON                 bool
+	Version                  bool
+	BalancerArgs             string
+	HTTPAddress              string
+	HTTPInternalAddress      string
+	RedirectPrefixes         []string
+	NodeHost                 string
+	NodeLatitude             float64
+	NodeLongitude            float64
+	GateURL                  string
 }
 
 func parseSerfConfig(config *cluster.Config, retryJoin, serfTags *string) {
@@ -78,25 +77,24 @@ func parseSerfConfig(config *cluster.Config, retryJoin, serfTags *string) {
 var bal *balancer.Balancer
 
 func main() {
-	var cliFlags = &catalystNodeCliFlags{}
 	var config = &catalystConfig{}
 
 	flag.Set("logtostderr", "true")
 	vFlag := flag.Lookup("v")
 	fs := flag.NewFlagSet("catalyst-node-connected", flag.ExitOnError)
 
-	fs.BoolVar(&cliFlags.MistJSON, "j", false, "Print application info as json")
-	fs.IntVar(&cliFlags.Verbosity, "v", 3, "Log verbosity.  {4|5|6}")
-	fs.BoolVar(&cliFlags.Version, "version", false, "Print out the version")
-	fs.StringVar(&cliFlags.BalancerArgs, "balancer-args", "", "arguments passed to MistUtilLoad")
-	fs.StringVar(&cliFlags.NodeHost, "node-host", "", "Hostname this node should handle requests for. Requests on any other domain will trigger a redirect. Useful as a 404 handler to send users to another node.")
-	fs.Float64Var(&cliFlags.NodeLatitude, "node-latitude", 0, "Latitude of this Catalyst node. Used for load balancing.")
-	fs.Float64Var(&cliFlags.NodeLongitude, "node-longitude", 0, "Longitude of this Catalyst node. Used for load balancing.")
+	fs.BoolVar(&config.MistJSON, "j", false, "Print application info as json")
+	fs.IntVar(&config.Verbosity, "v", 3, "Log verbosity.  {4|5|6}")
+	fs.BoolVar(&config.Version, "version", false, "Print out the version")
+	fs.StringVar(&config.BalancerArgs, "balancer-args", "", "arguments passed to MistUtilLoad")
+	fs.StringVar(&config.NodeHost, "node-host", "", "Hostname this node should handle requests for. Requests on any other domain will trigger a redirect. Useful as a 404 handler to send users to another node.")
+	fs.Float64Var(&config.NodeLatitude, "node-latitude", 0, "Latitude of this Catalyst node. Used for load balancing.")
+	fs.Float64Var(&config.NodeLongitude, "node-longitude", 0, "Longitude of this Catalyst node. Used for load balancing.")
 	prefixes := fs.String("redirect-prefixes", "", "Set of valid prefixes of playback id which are handled by mistserver")
 
 	// Catalyst web server
-	fs.StringVar(&cliFlags.HTTPAddress, "http-addr", fmt.Sprintf("127.0.0.1:%d", httpPort), "Address to bind for external-facing Catalyst HTTP handling")
-	fs.StringVar(&cliFlags.HTTPInternalAddress, "http-internal-addr", fmt.Sprintf("127.0.0.1:%d", httpInternalPort), "Address to bind for internal privileged HTTP commands")
+	fs.StringVar(&config.HTTPAddress, "http-addr", fmt.Sprintf("127.0.0.1:%d", httpPort), "Address to bind for external-facing Catalyst HTTP handling")
+	fs.StringVar(&config.HTTPInternalAddress, "http-internal-addr", fmt.Sprintf("127.0.0.1:%d", httpInternalPort), "Address to bind for internal privileged HTTP commands")
 
 	fs.StringVar(&config.serfRPCAddress, "serf-rpc-address", "127.0.0.1:7373", "Serf RPC address")
 	fs.StringVar(&config.serfRPCAuthKey, "serf-rpc-auth-key", "", "Serf RPC auth key")
@@ -115,7 +113,7 @@ func main() {
 	fs.StringVar(&clusterConfig.NodeName, "node", "", "Name of this node. Must be unique in the cluster")
 
 	// Playback gating Api
-	fs.StringVar(&cliFlags.GateURL, "gate-url", "http://localhost:3004/api/access-control/gate", "Address to contact playback gating API for access control verification")
+	fs.StringVar(&config.GateURL, "gate-url", "http://localhost:3004/api/access-control/gate", "Address to contact playback gating API for access control verification")
 
 	ff.Parse(
 		fs, os.Args[1:],
@@ -123,10 +121,10 @@ func main() {
 		ff.WithConfigFileParser(ff.PlainParser),
 		ff.WithEnvVarPrefix("CATALYST_NODE"),
 	)
-	vFlag.Value.Set(fmt.Sprint(cliFlags.Verbosity))
+	vFlag.Value.Set(fmt.Sprint(config.Verbosity))
 	flag.CommandLine.Parse(nil)
 
-	if cliFlags.MistJSON {
+	if config.MistJSON {
 		mistconnector.PrintMistConfigJson(
 			"catalyst-node",
 			"Catalyst multi-node server. Coordinates stream replication and load balancing to multiple catalyst nodes.",
@@ -137,7 +135,7 @@ func main() {
 		return
 	}
 
-	if cliFlags.Version {
+	if config.Version {
 		fmt.Println("catalyst-node version: " + Version)
 		fmt.Printf("golang runtime version: %s %s\n", runtime.Compiler, runtime.Version())
 		fmt.Printf("architecture: %s\n", runtime.GOARCH)
@@ -146,19 +144,22 @@ func main() {
 	}
 
 	// Handle converting CLI flags into correct format
-	cliFlags.RedirectPrefixes = strings.Split(*prefixes, ",")
-	glog.V(4).Infof("found redirectPrefixes=%v", cliFlags.RedirectPrefixes)
+	config.RedirectPrefixes = strings.Split(*prefixes, ",")
+	glog.V(4).Infof("found redirectPrefixes=%v", config.RedirectPrefixes)
 	parseSerfConfig(&clusterConfig, retryJoin, serfTags)
-	balancerArgs := strings.Split(cliFlags.BalancerArgs, " ")
+	balancerArgs := strings.Split(config.BalancerArgs, " ")
+
+	// Create main node object
+	n := &Node{}
 
 	// Start cluster
 	clusterConfig.SerfRPCAddress = config.serfRPCAddress
 	clusterConfig.SerfRPCAuthKey = config.serfRPCAuthKey
 	memberChan := make(chan *[]serfclient.Member)
 	clusterConfig.MemberChan = memberChan
-	c = cluster.NewCluster(&clusterConfig)
+	n.Cluster = cluster.NewCluster(&clusterConfig)
 	go func() {
-		err := c.Start()
+		err := n.Cluster.Start()
 		// TODO: graceful shutdown upon error
 		bal.Kill()
 		panic(fmt.Errorf("error in cluster connection: %w", err))
@@ -178,8 +179,8 @@ func main() {
 	}()
 
 	// Start HTTP servers
-	go startCatalystWebServer(cliFlags.RedirectPrefixes, cliFlags.HTTPAddress, cliFlags.NodeHost, cliFlags.GateURL)
-	go startInternalWebServer(cliFlags.HTTPInternalAddress, cliFlags.NodeLatitude, cliFlags.NodeLongitude)
+	go n.startCatalystWebServer(config.RedirectPrefixes, config.HTTPAddress, config.NodeHost, config.GateURL)
+	go n.startInternalWebServer(config.HTTPInternalAddress, config.NodeLatitude, config.NodeLongitude)
 
 	go func() {
 		c := make(chan os.Signal, 1)
@@ -198,20 +199,20 @@ func main() {
 	}
 }
 
-func startCatalystWebServer(redirectPrefixes []string, httpAddr, nodeHost, gateURL string) {
-	http.Handle("/", redirectHandler(redirectPrefixes, nodeHost))
+func (n *Node) startCatalystWebServer(redirectPrefixes []string, httpAddr, nodeHost, gateURL string) {
+	http.Handle("/", n.redirectHandler(redirectPrefixes, nodeHost))
 	http.Handle("/triggers", accesscontrol.TriggerHandler(gateURL))
 	glog.Infof("HTTP server listening on %s", httpAddr)
 	glog.Fatal(http.ListenAndServe(httpAddr, nil))
 }
 
-func startInternalWebServer(internalAddr string, lat, lon float64) {
-	http.Handle("/STREAM_SOURCE", streamSourceHandler(lat, lon))
+func (n *Node) startInternalWebServer(internalAddr string, lat, lon float64) {
+	http.Handle("/STREAM_SOURCE", n.streamSourceHandler(lat, lon))
 	glog.Infof("Internal HTTP server listening on %s", internalAddr)
 	glog.Fatal(http.ListenAndServe(internalAddr, nil))
 }
 
-func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
+func (n *Node) redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
@@ -251,7 +252,7 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 
 		rPath := fmt.Sprintf(pathTmpl, fullPlaybackID)
 		rURL := fmt.Sprintf("%s://%s%s?%s", protocol(r), bestNode, rPath, r.URL.RawQuery)
-		rURL, err = resolveNodeURL(rURL)
+		rURL, err = n.resolveNodeURL(rURL)
 		if err != nil {
 			glog.Errorf("failed to resolve node URL playbackID=%s err=%s", playbackID, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -262,7 +263,7 @@ func redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
 	})
 }
 
-func streamSourceHandler(lat, lon float64) http.Handler {
+func (n *Node) streamSourceHandler(lat, lon float64) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Workaround for https://github.com/DDVTECH/mistserver/issues/114
 		w.Header().Set("Transfer-Encoding", "chunked")
@@ -289,7 +290,7 @@ func streamSourceHandler(lat, lon float64) http.Handler {
 			w.Write([]byte("push://"))
 			return
 		}
-		outURL, err := resolveNodeURL(dtscURL)
+		outURL, err := n.resolveNodeURL(dtscURL)
 		if err != nil {
 			glog.Errorf("error finding STREAM_SOURCE: %s", err)
 			w.Write([]byte("push://"))
@@ -301,7 +302,7 @@ func streamSourceHandler(lat, lon float64) http.Handler {
 }
 
 // Given a dtsc:// or https:// url, resolve the proper address of the node via serf tags
-func resolveNodeURL(streamURL string) (string, error) {
+func (n *Node) resolveNodeURL(streamURL string) (string, error) {
 	u, err := url.Parse(streamURL)
 	if err != nil {
 		return "", err
@@ -309,7 +310,7 @@ func resolveNodeURL(streamURL string) (string, error) {
 	nodeName := u.Host
 	protocol := u.Scheme
 
-	member, err := c.Member(map[string]string{}, "alive", nodeName)
+	member, err := n.Cluster.Member(map[string]string{}, "alive", nodeName)
 	if err != nil {
 		return "", err
 	}
