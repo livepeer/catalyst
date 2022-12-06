@@ -122,22 +122,6 @@
     ],
     "serverid": null,
     "triggers": {
-      "CONN_CLOSE": [
-        {
-          "handler": "http://localhost:7933/",
-          "sync": false
-        }
-      ],
-      "LIVE_TRACK_LIST": [
-        {
-          "handler": "http://localhost:7979/api/mist/trigger",
-          "sync": false
-        },
-        {
-          "handler": "http://localhost:7933/",
-          "sync": false
-        }
-      ],
       "PUSH_END": [
         {
           "handler": "http://localhost:7979/api/mist/trigger",
@@ -146,19 +130,6 @@
         {
           "handler": "http://localhost:7933/",
           "sync": false
-        }
-      ],
-      "PUSH_OUT_START": [
-        {
-          "handler": "http://localhost:7933/",
-          "sync": false
-        }
-      ],
-      "PUSH_REWRITE": [
-        {
-          "default": "000reallylongnonexistenstreamnamethatreallyshouldntexist000",
-          "handler": "http://localhost:7933/",
-          "sync": true
         }
       ],
       "RECORDING_END": [
