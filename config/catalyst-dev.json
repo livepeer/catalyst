@@ -126,10 +126,6 @@
         {
           "handler": "http://localhost:7979/api/mist/trigger",
           "sync": false
-        },
-        {
-          "handler": "http://localhost:7933/",
-          "sync": false
         }
       ],
       "RECORDING_END": [
