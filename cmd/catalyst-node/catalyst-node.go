@@ -32,10 +32,12 @@ var Version = "unknown"
 var mistUtilLoadPort = rand.Intn(10000) + 40000
 
 type Node struct {
-	Cluster *cluster.Cluster
+	Cluster  cluster.ClusterIface
+	Balancer balancer.BalancerIface
+	Config   *Config
 }
 
-type catalystConfig struct {
+type Config struct {
 	serfRPCAddress           string
 	serfRPCAuthKey           string
 	serfTags                 map[string]string
@@ -74,10 +76,8 @@ func parseSerfConfig(config *cluster.Config, retryJoin, serfTags *string) {
 	}
 }
 
-var bal *balancer.Balancer
-
 func main() {
-	var config = &catalystConfig{}
+	var config = &Config{}
 
 	flag.Set("logtostderr", "true")
 	vFlag := flag.Lookup("v")
@@ -150,7 +150,9 @@ func main() {
 	balancerArgs := strings.Split(config.BalancerArgs, " ")
 
 	// Create main node object
-	n := &Node{}
+	n := &Node{
+		Config: config,
+	}
 
 	// Start cluster
 	clusterConfig.SerfRPCAddress = config.serfRPCAddress
@@ -161,26 +163,26 @@ func main() {
 	go func() {
 		err := n.Cluster.Start()
 		// TODO: graceful shutdown upon error
-		bal.Kill()
+		n.Balancer.Kill()
 		panic(fmt.Errorf("error in cluster connection: %w", err))
 	}()
 
 	// Start balancer
-	bal = balancer.NewBalancer(&balancer.Config{
+	n.Balancer = balancer.NewBalancer(&balancer.Config{
 		Args:                     balancerArgs,
 		MistUtilLoadPort:         uint32(config.mistLoadBalancerPort),
 		MistLoadBalancerTemplate: config.mistLoadBalancerTemplate,
 	})
 	go func() {
-		err := bal.Start()
+		err := n.Balancer.Start()
 		if err != nil {
 			glog.Fatal(err)
 		}
 	}()
 
 	// Start HTTP servers
-	go n.startCatalystWebServer(config.RedirectPrefixes, config.HTTPAddress, config.NodeHost, config.GateURL)
-	go n.startInternalWebServer(config.HTTPInternalAddress, config.NodeLatitude, config.NodeLongitude)
+	go n.startCatalystWebServer()
+	go n.startInternalWebServer()
 
 	go func() {
 		c := make(chan os.Signal, 1)
@@ -188,28 +190,28 @@ func main() {
 		for {
 			s := <-c
 			glog.Errorf("caught signal=%v killing MistUtilLoad", s)
-			bal.Kill()
+			n.Balancer.Kill()
 		}
 	}()
 
 	// Start main reconcillation loop - get members from serf and update MistUtilLoad
 	for {
 		members := <-memberChan
-		bal.UpdateMembers(members)
+		n.Balancer.UpdateMembers(members)
 	}
 }
 
-func (n *Node) startCatalystWebServer(redirectPrefixes []string, httpAddr, nodeHost, gateURL string) {
-	http.Handle("/", n.redirectHandler(redirectPrefixes, nodeHost))
-	http.Handle("/triggers", accesscontrol.TriggerHandler(gateURL))
-	glog.Infof("HTTP server listening on %s", httpAddr)
-	glog.Fatal(http.ListenAndServe(httpAddr, nil))
+func (n *Node) startCatalystWebServer() {
+	http.Handle("/", n.redirectHandler(n.Config.RedirectPrefixes, n.Config.NodeHost))
+	http.Handle("/triggers", accesscontrol.TriggerHandler(n.Config.GateURL))
+	glog.Infof("HTTP server listening on %s", n.Config.HTTPAddress)
+	glog.Fatal(http.ListenAndServe(n.Config.HTTPAddress, nil))
 }
 
-func (n *Node) startInternalWebServer(internalAddr string, lat, lon float64) {
-	http.Handle("/STREAM_SOURCE", n.streamSourceHandler(lat, lon))
-	glog.Infof("Internal HTTP server listening on %s", internalAddr)
-	glog.Fatal(http.ListenAndServe(internalAddr, nil))
+func (n *Node) startInternalWebServer() {
+	http.Handle("/STREAM_SOURCE", n.streamSourceHandler(n.Config.NodeLatitude, n.Config.NodeLongitude))
+	glog.Infof("Internal HTTP server listening on %s", n.Config.HTTPInternalAddress)
+	glog.Fatal(http.ListenAndServe(n.Config.HTTPInternalAddress, nil))
 }
 
 func (n *Node) redirectHandler(redirectPrefixes []string, nodeHost string) http.Handler {
@@ -243,7 +245,7 @@ func (n *Node) redirectHandler(redirectPrefixes []string, nodeHost string) http.
 		lat := r.Header.Get("X-Latitude")
 		lon := r.Header.Get("X-Longitude")
 
-		bestNode, fullPlaybackID, err := bal.GetBestNode(redirectPrefixes, playbackID, lat, lon, prefix)
+		bestNode, fullPlaybackID, err := n.Balancer.GetBestNode(redirectPrefixes, playbackID, lat, lon, prefix)
 		if err != nil {
 			glog.Errorf("failed to find either origin or fallback server for playbackID=%s err=%s", playbackID, err)
 			w.WriteHeader(http.StatusBadGateway)
@@ -284,7 +286,7 @@ func (n *Node) streamSourceHandler(lat, lon float64) http.Handler {
 
 		latStr := fmt.Sprintf("%f", lat)
 		lonStr := fmt.Sprintf("%f", lon)
-		dtscURL, err := bal.QueryMistForClosestNodeSource(streamName, latStr, lonStr, "", true)
+		dtscURL, err := n.Balancer.QueryMistForClosestNodeSource(streamName, latStr, lonStr, "", true)
 		if err != nil {
 			glog.Errorf("error querying mist for STREAM_SOURCE: %s", err)
 			w.Write([]byte("push://"))

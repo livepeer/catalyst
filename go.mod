@@ -6,6 +6,7 @@ require (
 	github.com/ProtonMail/gopenpgp/v2 v2.4.10
 	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/golang/glog v1.0.0
+	github.com/golang/mock v1.6.0
 	github.com/hashicorp/serf v0.9.8
 	github.com/magicsong/color-glog v0.0.1
 	github.com/minio/minio-go/v7 v7.0.46

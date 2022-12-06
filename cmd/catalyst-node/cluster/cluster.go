@@ -14,6 +14,12 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+type ClusterIface interface {
+	Start() error
+	MembersFiltered(filter map[string]string, status, name string) ([]serfclient.Member, error)
+	Member(filter map[string]string, status, name string) (*serfclient.Member, error)
+}
+
 type Config struct {
 	agent.Config
 	SerfRPCAddress string

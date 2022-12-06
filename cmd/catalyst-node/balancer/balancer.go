@@ -15,6 +15,14 @@ import (
 	glog "github.com/magicsong/color-glog"
 )
 
+type BalancerIface interface {
+	Start() error
+	UpdateMembers(members *[]serfclient.Member) error
+	Kill()
+	GetBestNode(redirectPrefixes []string, playbackID, lat, lon, fallbackPrefix string) (string, string, error)
+	QueryMistForClosestNodeSource(playbackID, lat, lon, prefix string, source bool) (string, error)
+}
+
 type Config struct {
 	Args                     []string
 	MistUtilLoadPort         uint32
