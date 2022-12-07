@@ -122,12 +122,24 @@
     ],
     "serverid": null,
     "triggers": {
+      "PUSH_END": [
+        {
+          "handler": "http://localhost:7979/api/mist/trigger",
+          "sync": false
+        }
+      ],
+      "RECORDING_END": [
+        {
+          "handler": "http://localhost:7979/api/mist/trigger",
+          "sync": false
+        }
+      ],
       "USER_NEW": [
         {
           "default": "true",
-          "handler":"http://127.0.0.1:8090/triggers",
-          "streams":[],
-          "sync":true
+          "handler": "http://127.0.0.1:8090/triggers",
+          "streams": [],
+          "sync": true
         }
       ]
     },
