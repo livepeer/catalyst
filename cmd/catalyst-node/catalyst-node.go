@@ -32,8 +32,8 @@ var Version = "unknown"
 var mistUtilLoadPort = rand.Intn(10000) + 40000
 
 type Node struct {
-	Cluster  cluster.ClusterIface
-	Balancer balancer.BalancerIface
+	Cluster  cluster.Cluster
+	Balancer balancer.Balancer
 	Config   *Config
 }
 

@@ -15,7 +15,7 @@ import (
 	glog "github.com/magicsong/color-glog"
 )
 
-type BalancerIface interface {
+type Balancer interface {
 	Start() error
 	UpdateMembers(members *[]serfclient.Member) error
 	Kill()
@@ -29,15 +29,15 @@ type Config struct {
 	MistLoadBalancerTemplate string
 }
 
-type Balancer struct {
+type BalancerImpl struct {
 	config   *Config
 	cmd      *exec.Cmd
 	endpoint string
 }
 
 // create a new load balancer instance
-func NewBalancer(config *Config) *Balancer {
-	return &Balancer{
+func NewBalancer(config *Config) Balancer {
+	return &BalancerImpl{
 		config:   config,
 		cmd:      nil,
 		endpoint: fmt.Sprintf("http://127.0.0.1:%d", config.MistUtilLoadPort),
@@ -45,11 +45,11 @@ func NewBalancer(config *Config) *Balancer {
 }
 
 // start this load balancer instance, execing MistUtilLoad if necessary
-func (b *Balancer) Start() error {
+func (b *BalancerImpl) Start() error {
 	return b.execBalancer(b.config.Args)
 }
 
-func (b *Balancer) UpdateMembers(members *[]serfclient.Member) error {
+func (b *BalancerImpl) UpdateMembers(members *[]serfclient.Member) error {
 	balancedServers, err := b.getMistLoadBalancerServers()
 
 	if err != nil {
@@ -100,7 +100,7 @@ func (b *Balancer) UpdateMembers(members *[]serfclient.Member) error {
 	return nil
 }
 
-func (b *Balancer) changeLoadBalancerServers(server, action string) ([]byte, error) {
+func (b *BalancerImpl) changeLoadBalancerServers(server, action string) ([]byte, error) {
 	serverTmpl := fmt.Sprintf(b.config.MistLoadBalancerTemplate, server)
 	actionURL := b.endpoint + "?" + action + "server=" + url.QueryEscape(serverTmpl)
 	req, err := http.NewRequest("POST", actionURL, nil)
@@ -133,7 +133,7 @@ func (b *Balancer) changeLoadBalancerServers(server, action string) ([]byte, err
 	return bytes, nil
 }
 
-func (b *Balancer) getMistLoadBalancerServers() (map[string]interface{}, error) {
+func (b *BalancerImpl) getMistLoadBalancerServers() (map[string]interface{}, error) {
 	url := b.endpoint + "?lstservers=1"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -167,12 +167,12 @@ func (b *Balancer) getMistLoadBalancerServers() (map[string]interface{}, error) 
 	return mistResponse, nil
 }
 
-func (b *Balancer) Kill() {
+func (b *BalancerImpl) Kill() {
 	glog.Infof("killing MistUtilLoad")
 	b.cmd.Process.Kill()
 }
 
-func (b *Balancer) execBalancer(balancerArgs []string) error {
+func (b *BalancerImpl) execBalancer(balancerArgs []string) error {
 	args := append(balancerArgs, "-p", fmt.Sprintf("%d", b.config.MistUtilLoadPort))
 	glog.Infof("Running MistUtilLoad with %v", args)
 	b.cmd = exec.Command("MistUtilLoad", args...)
@@ -190,7 +190,7 @@ func (b *Balancer) execBalancer(balancerArgs []string) error {
 	return err
 }
 
-func (b *Balancer) queryMistForClosestNode(playbackID, lat, lon, prefix string) (string, error) {
+func (b *BalancerImpl) queryMistForClosestNode(playbackID, lat, lon, prefix string) (string, error) {
 	// First, check to see if any server has this stream
 	_, err1 := b.QueryMistForClosestNodeSource(playbackID, lat, lon, prefix, true)
 	// Then, check the best playback server
@@ -208,7 +208,7 @@ func (b *Balancer) queryMistForClosestNode(playbackID, lat, lon, prefix string) 
 }
 
 // return the best node available for a given stream. will return any node if nobody has the stream.
-func (b *Balancer) GetBestNode(redirectPrefixes []string, playbackID, lat, lon, fallbackPrefix string) (string, string, error) {
+func (b *BalancerImpl) GetBestNode(redirectPrefixes []string, playbackID, lat, lon, fallbackPrefix string) (string, string, error) {
 	var nodeAddr, fullPlaybackID, fallbackAddr string
 	var mu sync.Mutex
 	var err error
@@ -253,7 +253,7 @@ func (b *Balancer) GetBestNode(redirectPrefixes []string, playbackID, lat, lon, 
 	return "", "", err
 }
 
-func (b *Balancer) QueryMistForClosestNodeSource(playbackID, lat, lon, prefix string, source bool) (string, error) {
+func (b *BalancerImpl) QueryMistForClosestNodeSource(playbackID, lat, lon, prefix string, source bool) (string, error) {
 	if prefix != "" {
 		prefix += "+"
 	}

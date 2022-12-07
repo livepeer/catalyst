@@ -14,7 +14,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type ClusterIface interface {
+type Cluster interface {
 	Start() error
 	MembersFiltered(filter map[string]string, status, name string) ([]serfclient.Member, error)
 	Member(filter map[string]string, status, name string) (*serfclient.Member, error)
@@ -27,7 +27,7 @@ type Config struct {
 	MemberChan     chan *[]serfclient.Member
 }
 
-type Cluster struct {
+type ClusterImpl struct {
 	config *Config
 	client *serfclient.RPCClient
 }
@@ -35,8 +35,8 @@ type Cluster struct {
 var mediaFilter = map[string]string{"node": "media"}
 
 // Create a connection to a new Cluster that will immediately connect
-func NewCluster(config *Config) *Cluster {
-	c := Cluster{
+func NewCluster(config *Config) Cluster {
+	c := ClusterImpl{
 		config: config,
 	}
 	return &c
@@ -44,7 +44,7 @@ func NewCluster(config *Config) *Cluster {
 
 // Start the connection to this cluster. Blocks until error.
 // TODO: Is this a good pattern for doing this?
-func (c *Cluster) Start() error {
+func (c *ClusterImpl) Start() error {
 	errchan := make(chan error)
 
 	// client
@@ -72,11 +72,11 @@ func (c *Cluster) Start() error {
 	return <-errchan
 }
 
-func (c *Cluster) MembersFiltered(filter map[string]string, status, name string) ([]serfclient.Member, error) {
+func (c *ClusterImpl) MembersFiltered(filter map[string]string, status, name string) ([]serfclient.Member, error) {
 	return c.client.MembersFiltered(filter, status, name)
 }
 
-func (c *Cluster) Member(filter map[string]string, status, name string) (*serfclient.Member, error) {
+func (c *ClusterImpl) Member(filter map[string]string, status, name string) (*serfclient.Member, error) {
 	members, err := c.MembersFiltered(filter, status, name)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (c *Cluster) Member(filter map[string]string, status, name string) (*serfcl
 
 // var getSerfMember = member
 
-func (c *Cluster) runServer() error {
+func (c *ClusterImpl) runServer() error {
 	// Everything past this is booting up Serf
 	tmpFile, err := c.writeSerfConfig()
 	if err != nil {
@@ -130,14 +130,14 @@ func (c *Cluster) runServer() error {
 	return fmt.Errorf("serf exited code=%d", exitCode)
 }
 
-func (c *Cluster) connectSerfAgent(serfRPCAddress, serfRPCAuthKey string) (*serfclient.RPCClient, error) {
+func (c *ClusterImpl) connectSerfAgent(serfRPCAddress, serfRPCAuthKey string) (*serfclient.RPCClient, error) {
 	return serfclient.ClientFromConfig(&serfclient.Config{
 		Addr:    serfRPCAddress,
 		AuthKey: serfRPCAuthKey,
 	})
 }
 
-func (c *Cluster) runClient() error {
+func (c *ClusterImpl) runClient() error {
 	client, err := c.connectSerfAgent(c.config.SerfRPCAddress, c.config.SerfRPCAuthKey)
 
 	if err != nil {
@@ -196,7 +196,7 @@ func (c *Cluster) runClient() error {
 	return nil
 }
 
-func (c *Cluster) writeSerfConfig() (string, error) {
+func (c *ClusterImpl) writeSerfConfig() (string, error) {
 	serfConfig := &agent.Config{
 		BindAddr:      c.config.BindAddr,
 		AdvertiseAddr: c.config.AdvertiseAddr,
