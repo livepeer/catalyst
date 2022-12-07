@@ -96,7 +96,7 @@ require (
 require (
 	github.com/ProtonMail/go-crypto v0.0.0-20220822140716-1678d6eb0cbe // indirect
 	github.com/ProtonMail/go-mime v0.0.0-20220302105931-303f85f7fe0f // indirect
-	github.com/livepeer/livepeer-data v0.4.22
+	github.com/livepeer/livepeer-data v0.6.2
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
