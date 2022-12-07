@@ -30,6 +30,13 @@ type protocol struct {
 	RedirectPrefixes string `json:"redirect-prefixes,omitempty"`
 	Debug            string `json:"debug,omitempty"`
 	Port             string `json:"port,omitempty"`
+	Broadcaster      bool   `json:"broadcaster,omitempty"`
+	Orchestrator     bool   `json:"orchestrator,omitempty"`
+	Transcoder       bool   `json:"transcoder,omitempty"`
+	OrchAddr         string `json:"orchAddr,omitempty"`
+	ServiceAddr      string `json:"serviceAddr,omitempty"`
+	CliAddr          string `json:"cliAddr,omitempty"`
+	RtmpAddr         string `json:"rtmpAddr,omitempty"`
 }
 
 type config struct {
@@ -61,11 +68,31 @@ type config struct {
 }
 
 type stream struct {
-	Name         string   `json:"name"`
-	Processes    []string `json:"processes"`
-	Realtime     bool     `json:"realtime"`
-	Source       string   `json:"source"`
-	StopSessions bool     `json:"stop_sessions"`
+	Name         string    `json:"name"`
+	Processes    []process `json:"processes"`
+	Realtime     bool      `json:"realtime"`
+	Source       string    `json:"source"`
+	StopSessions bool      `json:"stop_sessions"`
+	DVR          int       `json:"DVR"`
+
+	Maxkeepaway int `json:"maxkeepaway"`
+}
+
+type process struct {
+	Debug                 int             `json:"debug"`
+	HardcodedBroadcasters string          `json:"hardcoded_broadcasters"`
+	Leastlive             string          `json:"leastlive"`
+	Process               string          `json:"process"`
+	TargetProfiles        []targetProfile `json:"target_profiles"`
+}
+
+type targetProfile struct {
+	Bitrate  int    `json:"bitrate"`
+	Fps      int    `json:"fps"`
+	Height   int    `json:"height"`
+	Name     string `json:"name"`
+	Width    int    `json:"width"`
+	XLSPName string `json:"x-LSP-name"`
 }
 
 type trigger struct {
@@ -131,6 +158,19 @@ func defaultMistConfig(host string) mistConfig {
 					Debug:            "6",
 				},
 				{
+					Connector:   "livepeer",
+					Broadcaster: true,
+					OrchAddr:    "localhost:8936",
+					RtmpAddr:    "127.0.0.1:1936",
+				},
+				{
+					Connector:    "livepeer",
+					CliAddr:      "127.0.0.1:7936",
+					Orchestrator: true,
+					Transcoder:   true,
+					ServiceAddr:  "127.0.0.1:8936",
+				},
+				{
 					Connector: "livepeer-catalyst-api",
 					Port:      catalystAPIPort,
 				},
@@ -143,7 +183,7 @@ func defaultMistConfig(host string) mistConfig {
 			SidMode:                "0",
 			Trustedproxy:           []string{},
 			Triggers: map[string][]trigger{
-				"STREAM_SOURCE": []trigger{
+				"STREAM_SOURCE": {
 					{
 						Handler: "http://localhost:8091/STREAM_SOURCE",
 						Sync:    true,
@@ -151,12 +191,39 @@ func defaultMistConfig(host string) mistConfig {
 						Streams: []string{},
 					},
 				},
+				"PUSH_END": {
+					{
+						Handler: "http://localhost:7979/api/mist/trigger",
+						Sync:    false,
+					},
+				},
+				"RECORDING_END": {
+					{
+						Handler: "http://localhost:7979/api/mist/trigger",
+						Sync:    false,
+					},
+				},
 			},
 		},
 		Streams: map[string]stream{
 			"stream": {
-				Name:         "stream",
-				Processes:    []string{},
+				Name: "stream",
+				Processes: []process{
+					{Debug: 5,
+						HardcodedBroadcasters: "[{\"address\":\"http://127.0.0.1:8935\"}]",
+						Leastlive:             "1",
+						Process:               "livepeer",
+						TargetProfiles: []targetProfile{
+							{Bitrate: 400000,
+								Fps:      30,
+								Height:   144,
+								Name:     "P144p30fps16x9",
+								Width:    256,
+								XLSPName: "",
+							},
+						},
+					},
+				},
 				Realtime:     false,
 				Source:       "push://",
 				StopSessions: false,
