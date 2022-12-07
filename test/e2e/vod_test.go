@@ -184,10 +184,6 @@ func requireSegmentingOutputFiles(ctx context.Context, t *testing.T, m *minioCon
 		"source/output.m3u8",
 		"source/source.mp4.dtsh",
 		"source/0.ts",
-		"source/11000.ts",
-		"source/17000.ts",
-		"source/23000.ts",
-		"source/29000.ts",
 		"source/5000.ts",
 	}
 
