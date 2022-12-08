@@ -43,7 +43,7 @@ func TestVod(t *testing.T) {
 	createDestBucket(t, m)
 
 	h := randomString("catalyst-")
-	c := startCatalyst(ctx, t, h, network.name, defaultMistConfig(h))
+	c := startCatalyst(ctx, t, h, network.name, defaultMistConfigWithLivepeerProcess(h))
 	defer c.Terminate(ctx)
 	waitForCatalystAPI(t, c)
 

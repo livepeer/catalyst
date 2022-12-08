@@ -69,13 +69,10 @@ type config struct {
 
 type stream struct {
 	Name         string    `json:"name"`
-	Processes    []process `json:"processes"`
+	Processes    []process `json:"processes,omitempty"`
 	Realtime     bool      `json:"realtime"`
 	Source       string    `json:"source"`
 	StopSessions bool      `json:"stop_sessions"`
-	DVR          int       `json:"DVR"`
-
-	Maxkeepaway int `json:"maxkeepaway"`
 }
 
 type process struct {
@@ -207,29 +204,36 @@ func defaultMistConfig(host string) mistConfig {
 		},
 		Streams: map[string]stream{
 			"stream": {
-				Name: "stream",
-				Processes: []process{
-					{Debug: 5,
-						HardcodedBroadcasters: "[{\"address\":\"http://127.0.0.1:8935\"}]",
-						Leastlive:             "1",
-						Process:               "livepeer",
-						TargetProfiles: []targetProfile{
-							{Bitrate: 400000,
-								Fps:      30,
-								Height:   144,
-								Name:     "P144p30fps16x9",
-								Width:    256,
-								XLSPName: "",
-							},
-						},
-					},
-				},
+				Name:         "stream",
 				Realtime:     false,
 				Source:       "push://",
 				StopSessions: false,
 			},
 		},
 	}
+}
+
+func defaultMistConfigWithLivepeerProcess(host string) mistConfig {
+	mc := defaultMistConfig(host)
+	s := mc.Streams["stream"]
+	s.Processes = []process{
+		{Debug: 5,
+			HardcodedBroadcasters: "[{\"address\":\"http://127.0.0.1:8935\"}]",
+			Leastlive:             "1",
+			Process:               "livepeer",
+			TargetProfiles: []targetProfile{
+				{Bitrate: 400000,
+					Fps:      30,
+					Height:   144,
+					Name:     "P144p30fps16x9",
+					Width:    256,
+					XLSPName: "",
+				},
+			},
+		},
+	}
+	mc.Streams["stream"] = s
+	return mc
 }
 
 func (m *mistConfig) string() (string, error) {
