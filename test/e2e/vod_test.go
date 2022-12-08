@@ -43,7 +43,7 @@ func TestVod(t *testing.T) {
 	createDestBucket(t, m)
 
 	h := randomString("catalyst-")
-	c := startCatalyst(ctx, t, h, network.name, defaultMistConfig(h))
+	c := startCatalyst(ctx, t, h, network.name, defaultMistConfigWithLivepeerProcess(h))
 	defer c.Terminate(ctx)
 	waitForCatalystAPI(t, c)
 
@@ -51,7 +51,7 @@ func TestVod(t *testing.T) {
 	processVod(t, m, c)
 
 	// then
-	requireSegmentingOutputFiles(ctx, t, m)
+	requireOutputFiles(ctx, t, m)
 }
 
 type minioContainer struct {
@@ -175,20 +175,30 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 	defer resp.Body.Close()
 }
 
-func requireSegmentingOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
+func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 	cli := minioClient(t, m)
 	var files []string
 	timeoutAt := time.Now().Add(5 * time.Minute)
 
 	expectedFiles := []string{
-		"source/output.m3u8",
+		"index.m3u8",
+
 		"source/source.mp4.dtsh",
+		"source/output.m3u8",
 		"source/0.ts",
-		"source/11000.ts",
-		"source/17000.ts",
-		"source/23000.ts",
-		"source/29000.ts",
 		"source/5000.ts",
+
+		"360p0/index.m3u8",
+		"360p0/0.ts",
+		"360p0/1.ts",
+
+		"720p0/index.m3u8",
+		"720p0/0.ts",
+		"720p0/1.ts",
+
+		"1080p0/index.m3u8",
+		"1080p0/0.ts",
+		"1080p0/1.ts",
 	}
 
 	for {
