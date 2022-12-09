@@ -76,8 +76,8 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: 0a5c2d9aba132a0394d70556f573969bce743709
-    release: catalyst
+      commit: 955d0ce090a07ee660976c5995bd50bbf11e0ebd
+    release: catalyst-no-rotation
     skipGpg: true
     srcFilenames:
       darwin-amd64: livepeer-mistserver-darwin-amd64.tar.gz
