@@ -24,7 +24,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-api
-      commit: a85689c22af10a8d3f9aa53845c67f69aaff5a32
+      commit: 95d9517afc3156d0591d1d4cd4d657e197ff8f11
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -76,7 +76,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: 41bff7f52584749d2b0d8c88d25522432488e882
+      commit: 0a5c2d9aba132a0394d70556f573969bce743709
     release: catalyst
     skipGpg: true
     srcFilenames:
