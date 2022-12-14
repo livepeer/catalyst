@@ -24,8 +24,8 @@ box:
     strategy:
       download: bucket
       project: catalyst-api
-      commit: 9d60acffc66e7560b151142b87a5935083f3abfe
-    release: main
+      commit: c65f3cfb79bd521d6c0846f6607e676b248a4d5d
+    release: pipeline-metrics
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
       darwin-arm64: livepeer-catalyst-api-darwin-arm64.tar.gz
