@@ -35,9 +35,9 @@ box:
     strategy:
       download: bucket
       project: mist-api-connector
-      commit: 145c23f30a07b64d9341586334f7fc0cd57b6bc7
+      commit: 97b8acf751a474a52575b929b3aa8dc6225ee4f1
     binary: livepeer-mist-api-connector
-    release: master
+    release: vg-fix-statefulness
     srcFilenames:
       darwin-amd64: livepeer-mist-api-connector-darwin-amd64.tar.gz
       darwin-arm64: livepeer-mist-api-connector-darwin-arm64.tar.gz
