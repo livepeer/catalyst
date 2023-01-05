@@ -18,7 +18,8 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-    release: ""
+      commit: c9ee5cf45bd3e5d8a6db941519617f4d2e40d983
+    release: v0.12.0
   - name: catalyst-api
     strategy:
       download: bucket
@@ -87,8 +88,9 @@ box:
     strategy:
       download: github
       project: livepeer/studio
+      commit: c9ee5cf45bd3e5d8a6db941519617f4d2e40d983
     binary: livepeer-www
-    release: ""
+    release: v0.12.0
   - name: victoria-metrics
     strategy:
       download: github
