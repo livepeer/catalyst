@@ -37,7 +37,7 @@ box:
       project: mist-api-connector
       commit: 1b90eb119828ed89f27f03e97b07ed61daefb7f6
     binary: livepeer-mist-api-connector
-    release: master
+    release: vg-feat-bump-last-seen
     srcFilenames:
       darwin-amd64: livepeer-mist-api-connector-darwin-amd64.tar.gz
       darwin-arm64: livepeer-mist-api-connector-darwin-arm64.tar.gz
