@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: mist-api-connector
-      commit: 97b8acf751a474a52575b929b3aa8dc6225ee4f1
+      commit: be74936f9f9311c2351a808c1dc0b35757c438ba
     binary: livepeer-mist-api-connector
     release: vg-fix-statefulness
     srcFilenames:
