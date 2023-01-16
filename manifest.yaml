@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: mist-api-connector
-      commit: 294ba0e301c8aa147b22041ef64b445e92cdedfc
+      commit: d3279c5d5e6614b42aee673306eb34c49ec366a0
     binary: livepeer-mist-api-connector
     release: master
     srcFilenames:
@@ -61,7 +61,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: a5606ca764d8b240525a0f22e2c7e1eff3cc0f30
+      commit: 5e96382025061231353b9292f5181644b5f37792
     binary: livepeer
     release: master
     archivePath: livepeer
