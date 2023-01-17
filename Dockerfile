@@ -51,6 +51,7 @@ RUN	apt update && apt install -yqq \
 	ca-certificates \
 	musl \
 	python3 \
+	ffmpeg \
 	"$(if [ "$BUILD_TARGET" != "stripped" ]; then echo "gdb"; fi)" \
 	&& rm -rf /var/lib/apt/lists/*
 
