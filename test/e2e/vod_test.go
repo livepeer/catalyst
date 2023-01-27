@@ -186,7 +186,7 @@ func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 		"source/source.mp4.dtsh",
 		"source/output.m3u8",
 		"source/0.ts",
-		"source/5000.ts",
+		"source/6000.ts",
 
 		"360p0/index.m3u8",
 		"360p0/0.ts",
