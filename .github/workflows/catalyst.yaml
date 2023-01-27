@@ -76,7 +76,7 @@ jobs:
           push: true
           target: catalyst
           build-args: |
-            GIT_VERSION=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+            GIT_VERSION=${{ (github.ref_type == 'tag' && github.ref_name) || github.event.pull_request.head.sha || github.sha }}
             BUILD_TARGET=${{ matrix.build.target }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

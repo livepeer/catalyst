@@ -74,17 +74,17 @@ jobs:
         run: |
           go build \
             -o "./${CI_CATALYST_BIN_DIR}/livepeer-catalyst-node" \
-            -ldflags="-X 'main.Version=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}'" \
+            -ldflags="-X 'main.Version=${{ (github.ref_type == 'tag' && github.ref_name) || github.event.pull_request.head.sha || github.sha }}'" \
             cmd/catalyst-node/catalyst-node.go
 
           go build \
             -o "./${CI_CATALYST_BIN_DIR}/livepeer-log" \
-            -ldflags="-X 'main.Version=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}'" \
+            -ldflags="-X 'main.Version=${{ (github.ref_type == 'tag' && github.ref_name) || github.event.pull_request.head.sha || github.sha }}'" \
             cmd/livepeer-log/livepeer-log.go
 
           go build \
             -o "./${CI_CATALYST_BIN_DIR}/livepeer-catalyst" \
-            -ldflags="-X 'main.Version=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}'" \
+            -ldflags="-X 'main.Version=${{ (github.ref_type == 'tag' && github.ref_name) || github.event.pull_request.head.sha || github.sha }}'" \
             cmd/catalyst/catalyst.go
 
       - name: Strip binaries of debug symbols
@@ -124,7 +124,7 @@ jobs:
         uses: livepeer/action-gh-checksum-and-gpg-sign@latest
         with:
           artifacts-dir: releases
-          release-name: ${{ (github.ref_type == 'tag' && github.ref_name) || github.sha }}
+          release-name: ${{ (github.ref_type == 'tag' && github.ref_name) || github.event.pull_request.head.sha || github.sha }}
           gpg-key: ${{ secrets.CI_GPG_SIGNING_KEY }}
           gpg-key-passphrase: ${{ secrets.CI_GPG_SIGNING_PASSPHRASE }}
 
@@ -147,7 +147,7 @@ jobs:
         uses: google-github-actions/upload-cloud-storage@v1
         with:
           path: "releases"
-          destination: "build.livepeer.live/${{ github.event.repository.name }}/${{ (github.ref_type == 'tag' && github.ref_name) || github.sha }}"
+          destination: "build.livepeer.live/${{ github.event.repository.name }}/${{ (github.ref_type == 'tag' && github.ref_name) || github.event.pull_request.head.sha || github.sha }}"
           parent: false
 
       - name: Upload branch manifest file
