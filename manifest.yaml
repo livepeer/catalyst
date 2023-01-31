@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: mist-api-connector
-      commit: 1b90eb119828ed89f27f03e97b07ed61daefb7f6
+      commit: 9d6703a4e5592e788293152a1e203b70c6f48067
     binary: livepeer-mist-api-connector
     release: vg-feat-bump-last-seen
     srcFilenames:
