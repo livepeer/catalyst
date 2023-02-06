@@ -158,7 +158,8 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 									"type": "object_store",
 									"url": "%s",
 									"outputs": {
-											"source_segments": true
+										"source_segments": true,
+										"transcoded_segments": true
 									}
 							}
 		]
