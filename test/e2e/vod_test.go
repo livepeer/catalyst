@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -158,7 +157,8 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 									"type": "object_store",
 									"url": "%s",
 									"outputs": {
-											"source_segments": true
+										"source_segments": true,
+										"transcoded_segments": true
 									}
 							}
 		]
