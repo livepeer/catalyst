@@ -51,8 +51,8 @@ jobs:
           source_branch: ${{ steps.branch-commit.outputs.branch_name }}
           target_branch: main
           title: '[BOT] Update `manifest.yaml` for staging'
-          reviewer: iameli
-          assignee: hjpotter92
+          reviewer: iameli, thomshutt
+          assignee: ${{ github.actor }}
           label: enhancement
           get_diff: true
           allow_no_diff: false
