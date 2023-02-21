@@ -179,3 +179,7 @@ test: docker
 .PHONY: test-local
 test-local: docker-local
 	go test ./test/e2e/*.go -v --logtostderr
+
+.PHONY: test-unit
+unit-test:
+	go test --covermode=atomic --coverprofile=coverage.out $(shell go list ./... | grep -v 'test/e2e')
