@@ -1,3 +1,6 @@
+# Files for which mocks should be generated
+MOCK_FILES := ./cmd/catalyst-node/balancer/balancer.go ./cmd/catalyst-node/balancer/balancer.go
+
 PROC_COUNT+="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 # The -DCMAKE_OSX_ARCHITECTURES flag should be ignored on non-OSX platforms
@@ -172,5 +175,15 @@ docker:
 docker-local:
 	tar ch ./bin Dockerfile.local | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=full -
 
+.PHONY: test
 test: docker
 	go test ./test/e2e/*.go -v --logtostderr
+
+.PHONY: test-local
+test-local: docker-local
+	go test ./test/e2e/*.go -v --logtostderr
+
+.PHONY: test-unit
+unit-test:
+	go generate github.com/livepeer/catalyst/cmd/catalyst-node/...
+	go test --covermode=atomic --coverprofile=coverage.out $(shell go list ./... | grep -v 'test/e2e')

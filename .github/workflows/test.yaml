@@ -52,7 +52,7 @@ jobs:
         uses: FedericoCarboni/setup-ffmpeg@v2
 
       - name: Run tests with coverage
-        run: go test --covermode=atomic --coverprofile=coverage.out $(go list ./... | grep -v 'test/e2e')
+        run: make unit-test
 
       - name: Build Docker image
         run: make docker DOCKER_TAG=catalyst-e2e-test

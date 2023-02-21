@@ -7,7 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	serfclient "github.com/hashicorp/serf/client"
+	"github.com/golang/mock/gomock"
+	mockbalancer "github.com/livepeer/catalyst/cmd/catalyst-node/balancer/mocks"
+	"github.com/livepeer/catalyst/cmd/catalyst-node/cluster"
+	mockcluster "github.com/livepeer/catalyst/cmd/catalyst-node/cluster/mocks"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,7 +19,8 @@ const (
 	playbackID      = "abc_XYZ-123"
 )
 
-var fakeSerfMember = &serfclient.Member{
+var fakeSerfMember = cluster.Node{
+	Name: "fake-serf-member",
 	Tags: map[string]string{
 		"http":  fmt.Sprintf("http://%s", closestNodeAddr),
 		"https": fmt.Sprintf("https://%s", closestNodeAddr),
@@ -98,188 +102,187 @@ func getHLSURLsWithSeg(proto, host, seg, query string) []string {
 	return urls
 }
 
-func TestRedirectHandler404(t *testing.T) {
-	defaultFunc := getClosestNode
-	getClosestNode = func(string, string, string, string) (string, error) {
-		return closestNodeAddr, fmt.Errorf("No node found")
-	}
-	defer func() { getClosestNode = defaultFunc }()
+func mockNode(t *testing.T) *Node {
+	ctrl := gomock.NewController(t)
+	mb := mockbalancer.NewMockBalancer(ctrl)
+	mc := mockcluster.NewMockCluster(ctrl)
+	mb.EXPECT().
+		GetBestNode(prefixes[:], playbackID, "", "", "").
+		AnyTimes().
+		Return(closestNodeAddr, fmt.Sprintf("%s+%s", prefixes[0], playbackID), nil)
 
-	defaultSerf := getSerfMember
-	getSerfMember = func(map[string]string, string, string) (*serfclient.Member, error) { return fakeSerfMember, nil }
-	defer func() { getSerfMember = defaultSerf }()
+	mc.EXPECT().
+		Member(map[string]string{}, "alive", closestNodeAddr).
+		AnyTimes().
+		Return(fakeSerfMember, nil)
+	n := &Node{
+		Balancer: mb,
+		Cluster:  mc,
+		Config:   &Config{},
+	}
+	return n
+}
+
+func TestRedirectHandler404(t *testing.T) {
+	n := mockNode(t)
 
 	path := fmt.Sprintf("/hls/%s/index.m3u8", playbackID)
 
 	requireReq(t, path).
-		result(nil).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getHLSURLs("http", closestNodeAddr)...)
 
 	requireReq(t, path).
 		withHeader("X-Forwarded-Proto", "https").
-		result(nil).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getHLSURLs("https", closestNodeAddr)...)
 }
 
 func TestRedirectHandlerHLS_Correct(t *testing.T) {
-	defaultFunc := getClosestNode
-	getClosestNode = func(string, string, string, string) (string, error) {
-		return closestNodeAddr, fmt.Errorf("No node found")
-	}
-	defer func() { getClosestNode = defaultFunc }()
-	defaultSerf := getSerfMember
-	getSerfMember = func(map[string]string, string, string) (*serfclient.Member, error) { return fakeSerfMember, nil }
-	defer func() { getSerfMember = defaultSerf }()
+	n := mockNode(t)
 
 	path := fmt.Sprintf("/hls/%s/index.m3u8", playbackID)
 
 	requireReq(t, path).
-		result(nil).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getHLSURLs("http", closestNodeAddr)...)
 
 	requireReq(t, path).
 		withHeader("X-Forwarded-Proto", "https").
-		result(nil).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getHLSURLs("https", closestNodeAddr)...)
 }
 
 func TestRedirectHandlerHLSVOD_Correct(t *testing.T) {
-	defaultFunc := getClosestNode
-	getClosestNode = func(string, string, string, string) (string, error) {
-		return closestNodeAddr, fmt.Errorf("No node found")
-	}
-	defer func() { getClosestNode = defaultFunc }()
-	defaultSerf := getSerfMember
-	getSerfMember = func(map[string]string, string, string) (*serfclient.Member, error) { return fakeSerfMember, nil }
-	defer func() { getSerfMember = defaultSerf }()
+	n := mockNode(t)
+
+	n.Balancer.(*mockbalancer.MockBalancer).EXPECT().
+		GetBestNode(prefixes[:], playbackID, "", "", "vod").
+		AnyTimes().
+		Return(closestNodeAddr, fmt.Sprintf("%s+%s", "vod", playbackID), nil)
 
 	pathHLS := fmt.Sprintf("/hls/vod+%s/index.m3u8", playbackID)
 
 	requireReq(t, pathHLS).
-		result(nil).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", fmt.Sprintf("http://%s/hls/vod+%s/index.m3u8", closestNodeAddr, playbackID))
 
 	requireReq(t, pathHLS).
 		withHeader("X-Forwarded-Proto", "https").
-		result(nil).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", fmt.Sprintf("https://%s/hls/vod+%s/index.m3u8", closestNodeAddr, playbackID))
 
 	pathJS := fmt.Sprintf("/json_vod+%s.js", playbackID)
 
 	requireReq(t, pathJS).
-		result(nil).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", fmt.Sprintf("http://%s/json_vod+%s.js", closestNodeAddr, playbackID))
 
 	requireReq(t, pathJS).
 		withHeader("X-Forwarded-Proto", "https").
-		result(nil).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", fmt.Sprintf("https://%s/json_vod+%s.js", closestNodeAddr, playbackID))
 }
 
 func TestRedirectHandlerHLS_SegmentInPath(t *testing.T) {
-	defaultFunc := getClosestNode
-	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
-	defer func() { getClosestNode = defaultFunc }()
-	defaultSerf := getSerfMember
-	getSerfMember = func(map[string]string, string, string) (*serfclient.Member, error) { return fakeSerfMember, nil }
-	defer func() { getSerfMember = defaultSerf }()
+	n := mockNode(t)
 
 	seg := "4_1"
 	getParams := "mTrack=0&iMsn=4&sessId=1274784345"
 	path := fmt.Sprintf("/hls/%s/%s/index.m3u8?%s", playbackID, seg, getParams)
 
 	requireReq(t, path).
-		result(nil).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getHLSURLsWithSeg("http", closestNodeAddr, seg, getParams)...)
 }
 
 func TestRedirectHandlerHLS_InvalidPath(t *testing.T) {
-	requireReq(t, "/hls").result(nil).hasStatus(http.StatusNotFound)
-	requireReq(t, "/hls").result(nil).hasStatus(http.StatusNotFound)
-	requireReq(t, "/hls/").result(nil).hasStatus(http.StatusNotFound)
-	requireReq(t, "/hls/12345").result(nil).hasStatus(http.StatusNotFound)
-	requireReq(t, "/hls/12345/somepath").result(nil).hasStatus(http.StatusNotFound)
+	n := mockNode(t)
+
+	requireReq(t, "/hls").result(n).hasStatus(http.StatusNotFound)
+	requireReq(t, "/hls").result(n).hasStatus(http.StatusNotFound)
+	requireReq(t, "/hls/").result(n).hasStatus(http.StatusNotFound)
+	requireReq(t, "/hls/12345").result(n).hasStatus(http.StatusNotFound)
+	requireReq(t, "/hls/12345/somepath").result(n).hasStatus(http.StatusNotFound)
 }
 
 func TestRedirectHandlerJS_Correct(t *testing.T) {
-	defaultFunc := getClosestNode
-	getClosestNode = func(string, string, string, string) (string, error) { return closestNodeAddr, nil }
-	defer func() { getClosestNode = defaultFunc }()
-	defaultSerf := getSerfMember
-	getSerfMember = func(map[string]string, string, string) (*serfclient.Member, error) { return fakeSerfMember, nil }
-	defer func() { getSerfMember = defaultSerf }()
+	n := mockNode(t)
 
 	path := fmt.Sprintf("/json_%s.js", playbackID)
 
 	requireReq(t, path).
-		result(nil).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getJSURLs("http", closestNodeAddr)...)
 
 	requireReq(t, path).
 		withHeader("X-Forwarded-Proto", "https").
-		result(nil).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", getJSURLs("https", closestNodeAddr)...)
 }
 
 func TestNodeHostRedirect(t *testing.T) {
-	hostCli := &catalystNodeCliFlags{NodeHost: "right-host"}
+	n := mockNode(t)
+	n.Config.NodeHost = "right-host"
+
 	// Success case; get past the redirect handler and 404
 	requireReq(t, "http://right-host/any/path").
 		withHeader("Host", "right-host").
-		result(hostCli).
+		result(n).
 		hasStatus(http.StatusNotFound)
 
 	requireReq(t, "http://wrong-host/any/path").
-		result(hostCli).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", "http://right-host/any/path")
 
 	requireReq(t, "http://wrong-host/any/path?foo=bar").
-		result(hostCli).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", "http://right-host/any/path?foo=bar")
 
 	requireReq(t, "http://wrong-host/any/path").
 		withHeader("X-Forwarded-Proto", "https").
-		result(hostCli).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", "https://right-host/any/path")
 }
 
 func TestNodeHostPortRedirect(t *testing.T) {
-	hostCli := &catalystNodeCliFlags{NodeHost: "right-host:20443"}
+	n := mockNode(t)
+	n.Config.NodeHost = "right-host:20443"
 
 	requireReq(t, "http://wrong-host/any/path").
-		result(hostCli).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", "http://right-host:20443/any/path")
 
 	requireReq(t, "http://wrong-host:1234/any/path").
-		result(hostCli).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", "http://right-host:20443/any/path")
 
 	requireReq(t, "http://wrong-host:7777/any/path").
 		withHeader("X-Forwarded-Proto", "https").
-		result(hostCli).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", "https://right-host:20443/any/path")
 
-	hostCli = &catalystNodeCliFlags{NodeHost: "right-host"}
+	n.Config.NodeHost = "right-host"
 	requireReq(t, "http://wrong-host:7777/any/path").
 		withHeader("X-Forwarded-Proto", "https").
-		result(hostCli).
+		result(n).
 		hasStatus(http.StatusFound).
 		hasHeader("Location", "https://right-host/any/path")
 }
@@ -308,12 +311,12 @@ func (hr httpReq) withHeader(key, value string) httpReq {
 	return hr
 }
 
-func (hr httpReq) result(cli *catalystNodeCliFlags) httpCheck {
-	if cli == nil {
-		cli = &catalystNodeCliFlags{}
+func (hr httpReq) result(n *Node) httpCheck {
+	if n == nil {
+		n = &Node{}
 	}
 	rr := httptest.NewRecorder()
-	redirectHandler(prefixes[:], cli.NodeHost).ServeHTTP(rr, hr.Request)
+	n.redirectHandler(prefixes[:], n.Config.NodeHost).ServeHTTP(rr, hr.Request)
 	return httpCheck{hr.T, rr}
 }
 

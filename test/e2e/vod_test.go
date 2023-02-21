@@ -33,7 +33,7 @@ func TestVod(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	network := createNetwork(ctx, t)
+	network := createNetwork(ctx, t, params.NetworkName)
 	defer network.Remove(ctx)
 
 	m := createMinio(ctx, t, network.name)
@@ -43,7 +43,7 @@ func TestVod(t *testing.T) {
 	createDestBucket(t, m)
 
 	h := randomString("catalyst-")
-	c := startCatalyst(ctx, t, h, network.name, defaultMistConfigWithLivepeerProcess(h))
+	c := startCatalyst(ctx, t, params.ImageName, h, network.name, defaultMistConfigWithLivepeerProcess(h))
 	defer c.Terminate(ctx)
 	waitForCatalystAPI(t, c)
 

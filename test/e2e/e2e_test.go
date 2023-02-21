@@ -8,23 +8,14 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/serf/cmd/serf/command"
 	glog "github.com/magicsong/color-glog"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
-)
-
-const (
-	webConsolePort   = "4242"
-	httpPort         = "8080"
-	httpCatalystPort = "8090"
-	rtmpPort         = "1935"
 )
 
 type cliParams struct {
@@ -55,28 +46,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-type network struct {
-	testcontainers.Network
-	name string
-}
-
-type catalystContainer struct {
-	testcontainers.Container
-	webConsole   string
-	serf         string
-	http         string
-	httpCatalyst string
-	catalystAPI  string
-	rtmp         string
-	ip           string
-	hostname     string
-}
-
-func (c *catalystContainer) Terminate(ctx context.Context) {
-	c.StopLogProducer()
-	c.Container.Terminate(ctx)
-}
-
 func TestMultiNodeCatalyst(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping testing in short mode")
@@ -86,36 +55,36 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	network := createNetwork(ctx, t)
+	network := createNetwork(ctx, t, params.NetworkName)
 	defer network.Remove(ctx)
 
 	h1 := randomString("catalyst-")
 	h2 := randomString("catalyst-")
 
 	// when
-	c1 := startCatalyst(ctx, t, h1, network.name, defaultMistConfig(h1))
+	c1 := startCatalyst(ctx, t, params.ImageName, h1, network.name, defaultMistConfig(h1))
 	defer c1.Terminate(ctx)
-	c2 := startCatalyst(ctx, t, h2, network.name, mistConfigConnectTo(h2, h1))
+	c2 := startCatalyst(ctx, t, params.ImageName, h2, network.name, mistConfigConnectTo(h2, h1))
 	defer c2.Terminate(ctx)
 
 	// then
 	requireMembersJoined(t, c1, c2)
 
-	p := startStream(t, c1)
-	defer p.Kill()
+	wg := sync.WaitGroup{}
+	for i := 0; i < 5; i += 1 {
+		wg.Add(1)
+		go func(i int) {
+			hs := randomString("ffmpeg-")
+			stream := randomString("stream+")
+			s := startStream(ctx, t, hs, network.name, fmt.Sprintf("rtmp://%s/live/%s", c1.hostname, stream))
+			defer s.Terminate(ctx)
 
-	requireReplicatedStream(t, c2)
-	requireStreamRedirection(t, c1, c2)
-}
-
-func createNetwork(ctx context.Context, t *testing.T) *network {
-	name := params.NetworkName
-	net, err := testcontainers.GenericNetwork(ctx, testcontainers.GenericNetworkRequest{
-		NetworkRequest: testcontainers.NetworkRequest{Name: name},
-	})
-	require.NoError(t, err)
-
-	return &network{Network: net, name: name}
+			requireReplicatedStream(t, c2, stream)
+			requireStreamRedirection(t, c1, c2, stream)
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
 }
 
 func mistConfigConnectTo(host string, connectToHost string) mistConfig {
@@ -127,102 +96,6 @@ func mistConfigConnectTo(host string, connectToHost string) mistConfig {
 		}
 	}
 	return mc
-}
-
-type logConsumer struct {
-	name string
-}
-
-func (lc *logConsumer) Accept(l testcontainers.Log) {
-	glog.Infof("[%s] %s", lc.name, string(l.Content))
-}
-
-func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig) *catalystContainer {
-	return startCatalystWithEnv(ctx, t, hostname, network, mc, nil)
-}
-
-func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig, env map[string]string) *catalystContainer {
-	mcPath, err := mc.toTmpFile(t.TempDir())
-	require.NoError(t, err)
-	configAbsPath := filepath.Dir(mcPath)
-	mcFile := filepath.Base(mcPath)
-
-	envVars := map[string]string{"CATALYST_NODE_HTTP_ADDR": "0.0.0.0:8090"}
-	for k, v := range env {
-		envVars[k] = v
-	}
-	req := testcontainers.ContainerRequest{
-		Image:        params.ImageName,
-		ExposedPorts: []string{tcp(webConsolePort), tcp(serfPort), tcp(httpPort), tcp(httpCatalystPort), tcp(catalystAPIPort), tcp(rtmpPort)},
-		Hostname:     hostname,
-		Name:         hostname,
-		Networks:     []string{network},
-		Env:          envVars,
-		Mounts: []testcontainers.ContainerMount{{
-			Source: testcontainers.GenericBindMountSource{
-				HostPath: configAbsPath,
-			},
-			Target:   "/config",
-			ReadOnly: true},
-		},
-		Cmd:     []string{"MistController", "-c", fmt.Sprintf("/config/%s", mcFile)},
-		ShmSize: 1000000000,
-	}
-	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	require.NoError(t, err)
-
-	// Redirect container logs to the standard logger
-	lc := logConsumer{name: hostname}
-	err = container.StartLogProducer(ctx)
-	require.NoError(t, err)
-	container.FollowOutput(&lc)
-
-	// Store mapped ports
-	catalyst := &catalystContainer{
-		Container: container,
-		hostname:  hostname,
-	}
-
-	mappedPort, err := container.MappedPort(ctx, webConsolePort)
-	require.NoError(t, err)
-	catalyst.webConsole = mappedPort.Port()
-
-	mappedPort, err = container.MappedPort(ctx, serfPort)
-	require.NoError(t, err)
-	catalyst.serf = mappedPort.Port()
-
-	mappedPort, err = container.MappedPort(ctx, httpPort)
-	require.NoError(t, err)
-	catalyst.http = mappedPort.Port()
-
-	mappedPort, err = container.MappedPort(ctx, httpCatalystPort)
-	require.NoError(t, err)
-	catalyst.httpCatalyst = mappedPort.Port()
-
-	mappedPort, err = container.MappedPort(ctx, catalystAPIPort)
-	require.NoError(t, err)
-	catalyst.catalystAPI = mappedPort.Port()
-
-	mappedPort, err = container.MappedPort(ctx, rtmpPort)
-	require.NoError(t, err)
-	catalyst.rtmp = mappedPort.Port()
-
-	// container IP
-	cid := container.GetContainerID()
-	dockerClient, _, _, err := testcontainers.NewDockerClient()
-	require.NoError(t, err)
-	inspect, err := dockerClient.ContainerInspect(ctx, cid)
-	require.NoError(t, err)
-	catalyst.ip = inspect.NetworkSettings.Networks[network].IPAddress
-
-	return catalyst
-}
-
-func tcp(p string) string {
-	return fmt.Sprintf("%s/tcp", p)
 }
 
 func requireMembersJoined(t *testing.T, containers ...*catalystContainer) {
@@ -241,19 +114,9 @@ func requireMembersJoined(t *testing.T, containers ...*catalystContainer) {
 	require.Eventually(t, correctMembersNumber, 5*time.Minute, time.Second)
 }
 
-func startStream(t *testing.T, c *catalystContainer) *os.Process {
-	ffmpegParams := []string{"-re", "-f", "lavfi", "-i", "testsrc=size=1920x1080:rate=30,format=yuv420p", "-f", "lavfi", "-i", "sine", "-c:v", "libx264", "-b:v", "1000k", "-x264-params", "keyint=60", "-c:a", "aac", "-f", "flv"}
-	ffmpegParams = append(ffmpegParams, fmt.Sprintf("rtmp://localhost:%s/live/stream+foo", c.rtmp))
-	cmd := exec.Command("ffmpeg", ffmpegParams...)
-	glog.Info("Spawning ffmpeg stream to ingest")
-	err := cmd.Start()
-	require.NoError(t, err)
-	return cmd.Process
-}
-
-func requireReplicatedStream(t *testing.T, c *catalystContainer) {
+func requireReplicatedStream(t *testing.T, c *catalystContainer, stream string) {
 	correctStream := func() bool {
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c.http))
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%s/hls/%s/index.m3u8", c.http, stream))
 		if err != nil {
 			return false
 		}
@@ -263,7 +126,7 @@ func requireReplicatedStream(t *testing.T, c *catalystContainer) {
 			return false
 		}
 		content := string(body)
-		for _, expected := range []string{"RESOLUTION=1920x1080", "FRAME-RATE=30", "index.m3u8"} {
+		for _, expected := range []string{"RESOLUTION=1280x720", "FRAME-RATE=30", "index.m3u8"} {
 			if !strings.Contains(content, expected) {
 				glog.Info("Failed to get HLS manifest")
 				return false
@@ -293,15 +156,16 @@ func requireNotReplicatedStream(t *testing.T, c *catalystContainer) {
 	}
 }
 
-func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
+func requireStreamRedirection(t *testing.T, c1, c2 *catalystContainer, stream string) {
 	require := require.New(t)
+	wildcard := strings.Split(stream, "+")[1]
 	redirect := func() bool {
 		client := &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
 		}
-		resp, err := client.Get(fmt.Sprintf("http://localhost:%s/hls/foo/index.m3u8", c1.httpCatalyst))
+		resp, err := client.Get(fmt.Sprintf("http://localhost:%s/hls/%s/index.m3u8", c1.httpCatalyst, wildcard))
 		if err != nil {
 			return false
 		}
@@ -311,8 +175,8 @@ func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystC
 			return false
 		}
 
-		c1URL := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c1.hostname)
-		c2URL := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c2.hostname)
+		c1URL := fmt.Sprintf("http://%s/hls/%s/index.m3u8", c1.hostname, stream)
+		c2URL := fmt.Sprintf("http://%s/hls/%s/index.m3u8", c2.hostname, stream)
 		rURL := resp.Header.Get("Location")
 		glog.Infof("c1URL=%s c2URL=%s rURL=%s", c1URL, c2URL, rURL)
 		return strings.Contains(rURL, c1URL) || strings.Contains(rURL, c2URL)
