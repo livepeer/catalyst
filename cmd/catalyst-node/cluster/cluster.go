@@ -18,20 +18,25 @@ import (
 
 type Cluster interface {
 	Start() error
-	MembersFiltered(filter map[string]string, status, name string) ([]serfclient.Member, error)
-	Member(filter map[string]string, status, name string) (*serfclient.Member, error)
+	MembersFiltered(filter map[string]string, status, name string) ([]Node, error)
+	Member(filter map[string]string, status, name string) (Node, error)
 }
 
 type Config struct {
 	agent.Config
 	SerfRPCAddress string
 	SerfRPCAuthKey string
-	MemberChan     chan *[]serfclient.Member
+	MemberChan     chan []Node
 }
 
 type ClusterImpl struct {
 	config *Config
 	client *serfclient.RPCClient
+}
+
+type Node struct {
+	Name string
+	Tags map[string]string
 }
 
 var mediaFilter = map[string]string{"node": "media"}
@@ -74,22 +79,33 @@ func (c *ClusterImpl) Start() error {
 	return <-errchan
 }
 
-func (c *ClusterImpl) MembersFiltered(filter map[string]string, status, name string) ([]serfclient.Member, error) {
-	return c.client.MembersFiltered(filter, status, name)
+func (c *ClusterImpl) MembersFiltered(filter map[string]string, status, name string) ([]Node, error) {
+	members, err := c.client.MembersFiltered(filter, status, name)
+	if err != nil {
+		return []Node{}, err
+	}
+	nodes := []Node{}
+	for _, member := range members {
+		nodes = append(nodes, Node{
+			Name: member.Name,
+			Tags: member.Tags,
+		})
+	}
+	return nodes, nil
 }
 
-func (c *ClusterImpl) Member(filter map[string]string, status, name string) (*serfclient.Member, error) {
+func (c *ClusterImpl) Member(filter map[string]string, status, name string) (Node, error) {
 	members, err := c.MembersFiltered(filter, status, name)
 	if err != nil {
-		return nil, err
+		return Node{}, err
 	}
 	if len(members) < 1 {
-		return nil, fmt.Errorf("could not find serf member name=%s", name)
+		return Node{}, fmt.Errorf("could not find serf member name=%s", name)
 	}
 	if len(members) > 1 {
 		glog.Errorf("found multiple serf members with the same name! this shouldn't happen! name=%s count=%d", name, len(members))
 	}
-	return &members[0], nil
+	return members[0], nil
 }
 
 // var getSerfMember = member
@@ -184,14 +200,14 @@ func (c *ClusterImpl) runClient() error {
 		event := <-inbox
 		glog.V(5).Infof("got event: %v", event)
 
-		members, err := c.client.MembersFiltered(mediaFilter, ".*", ".*")
+		members, err := c.MembersFiltered(mediaFilter, ".*", ".*")
 
 		if err != nil {
 			glog.Errorf("Error getting serf, crashing: %v\n", err)
 			break
 		}
 
-		c.config.MemberChan <- &members
+		c.config.MemberChan <- members
 		continue
 	}
 

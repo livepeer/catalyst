@@ -14,7 +14,6 @@ import (
 	"strings"
 	"syscall"
 
-	serfclient "github.com/hashicorp/serf/client"
 	"github.com/livepeer/catalyst/cmd/catalyst-node/balancer"
 	"github.com/livepeer/catalyst/cmd/catalyst-node/cluster"
 	accesscontrol "github.com/livepeer/catalyst/cmd/catalyst-node/handlers/access-control"
@@ -157,7 +156,7 @@ func main() {
 	// Start cluster
 	clusterConfig.SerfRPCAddress = config.serfRPCAddress
 	clusterConfig.SerfRPCAuthKey = config.serfRPCAuthKey
-	memberChan := make(chan *[]serfclient.Member)
+	memberChan := make(chan []cluster.Node)
 	clusterConfig.MemberChan = memberChan
 	n.Cluster = cluster.NewCluster(&clusterConfig)
 	go func() {

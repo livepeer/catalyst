@@ -13,13 +13,13 @@ import (
 	"os/exec"
 	"sync"
 
-	serfclient "github.com/hashicorp/serf/client"
+	"github.com/livepeer/catalyst/cmd/catalyst-node/cluster"
 	glog "github.com/magicsong/color-glog"
 )
 
 type Balancer interface {
 	Start() error
-	UpdateMembers(members *[]serfclient.Member) error
+	UpdateMembers(members []cluster.Node) error
 	Kill()
 	GetBestNode(redirectPrefixes []string, playbackID, lat, lon, fallbackPrefix string) (string, string, error)
 	QueryMistForClosestNodeSource(playbackID, lat, lon, prefix string, source bool) (string, error)
@@ -51,7 +51,7 @@ func (b *BalancerImpl) Start() error {
 	return b.execBalancer(b.config.Args)
 }
 
-func (b *BalancerImpl) UpdateMembers(members *[]serfclient.Member) error {
+func (b *BalancerImpl) UpdateMembers(members []cluster.Node) error {
 	balancedServers, err := b.getMistLoadBalancerServers()
 
 	if err != nil {
@@ -61,7 +61,7 @@ func (b *BalancerImpl) UpdateMembers(members *[]serfclient.Member) error {
 
 	membersMap := make(map[string]bool)
 
-	for _, member := range *members {
+	for _, member := range members {
 		memberHost := member.Name
 
 		// commented out as for now the load balancer does not return ports
