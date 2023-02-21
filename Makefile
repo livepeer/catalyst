@@ -1,3 +1,6 @@
+# Files for which mocks should be generated
+MOCK_FILES := ./cmd/catalyst-node/balancer/balancer.go ./cmd/catalyst-node/balancer/balancer.go
+
 PROC_COUNT+="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 # The -DCMAKE_OSX_ARCHITECTURES flag should be ignored on non-OSX platforms
@@ -182,4 +185,5 @@ test-local: docker-local
 
 .PHONY: test-unit
 unit-test:
+	go generate github.com/livepeer/catalyst/cmd/catalyst-node/...
 	go test --covermode=atomic --coverprofile=coverage.out $(shell go list ./... | grep -v 'test/e2e')

@@ -1,5 +1,7 @@
 package cluster
 
+//go:generate mockgen -source=./cluster.go -destination=./mocks/cluster.go
+
 import (
 	"encoding/json"
 	"fmt"

@@ -9,8 +9,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	serfclient "github.com/hashicorp/serf/client"
-	mockbalancer "github.com/livepeer/catalyst/mocks/cmd/catalyst-node/balancer"
-	mockcluster "github.com/livepeer/catalyst/mocks/cmd/catalyst-node/cluster"
+	mockbalancer "github.com/livepeer/catalyst/cmd/catalyst-node/balancer/mocks"
+	mockcluster "github.com/livepeer/catalyst/cmd/catalyst-node/cluster/mocks"
 	"github.com/stretchr/testify/require"
 )
 
@@ -103,8 +103,8 @@ func getHLSURLsWithSeg(proto, host, seg, query string) []string {
 
 func mockNode(t *testing.T) *Node {
 	ctrl := gomock.NewController(t)
-	mb := mockbalancer.NewMockBalancerIface(ctrl)
-	mc := mockcluster.NewMockClusterIface(ctrl)
+	mb := mockbalancer.NewMockBalancer(ctrl)
+	mc := mockcluster.NewMockCluster(ctrl)
 	mb.EXPECT().
 		GetBestNode(prefixes[:], playbackID, "", "", "").
 		AnyTimes().
@@ -159,7 +159,7 @@ func TestRedirectHandlerHLS_Correct(t *testing.T) {
 func TestRedirectHandlerHLSVOD_Correct(t *testing.T) {
 	n := mockNode(t)
 
-	n.Balancer.(*mockbalancer.MockBalancerIface).EXPECT().
+	n.Balancer.(*mockbalancer.MockBalancer).EXPECT().
 		GetBestNode(prefixes[:], playbackID, "", "", "vod").
 		AnyTimes().
 		Return(closestNodeAddr, fmt.Sprintf("%s+%s", "vod", playbackID), nil)

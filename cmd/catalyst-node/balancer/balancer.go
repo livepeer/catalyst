@@ -1,5 +1,7 @@
 package balancer
 
+//go:generate mockgen -source=./balancer.go -destination=./mocks/balancer.go
+
 import (
 	"encoding/json"
 	"errors"
