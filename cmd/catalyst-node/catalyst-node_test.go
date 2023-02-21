@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	serfclient "github.com/hashicorp/serf/client"
 	mockbalancer "github.com/livepeer/catalyst/cmd/catalyst-node/balancer/mocks"
+	"github.com/livepeer/catalyst/cmd/catalyst-node/cluster"
 	mockcluster "github.com/livepeer/catalyst/cmd/catalyst-node/cluster/mocks"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +19,8 @@ const (
 	playbackID      = "abc_XYZ-123"
 )
 
-var fakeSerfMember = &serfclient.Member{
+var fakeSerfMember = cluster.Node{
+	Name: "fake-serf-member",
 	Tags: map[string]string{
 		"http":  fmt.Sprintf("http://%s", closestNodeAddr),
 		"https": fmt.Sprintf("https://%s", closestNodeAddr),
