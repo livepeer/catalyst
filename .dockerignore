@@ -1,9 +1,0 @@
-.*
-*~
-Dockerfile.catalyst
-Dockerfile
-bin/
-lib/
-build/
-data/
-test/
