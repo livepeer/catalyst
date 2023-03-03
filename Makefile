@@ -85,6 +85,14 @@ livepeer-task-runner:
 	&& cd - \
 	&& mv ../task-runner/build/task-runner ./bin/livepeer-task-runner
 
+.PHONY: livepeer-task-runner
+livepeer-catalyst-api:
+	set -x \
+	&& cd ../catalyst-api \
+	&& make build \
+	&& cd - \
+	&& mv ../catalyst-api/build/catalyst-api ./bin/livepeer-catalyst-api
+
 .PHONY: livepeer-www
 livepeer-www:
 	set -x \
