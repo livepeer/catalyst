@@ -2,6 +2,7 @@ package accesscontrol
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -11,12 +12,6 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/require"
 )
-
-type MockClient struct {
-	StatusCode int
-	Body       []byte
-	*http.Client
-}
 
 const (
 	playbackID     = "1bbbqz6753hcli1t"
@@ -33,12 +28,29 @@ Tu9G76+QYCoNbQNbTLKgpa8mMUyqA2gYGMlt3fqy9s7xQWzOLJGDZe7K
 
 var expiration = time.Now().Add(time.Duration(1 * time.Hour))
 
-var allowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error) {
+type stubGateClient struct{}
+
+func (g *stubGateClient) QueryGate(body []byte) (bool, int32, int32, error) {
+	return queryGate(body)
+}
+
+var queryGate = func(body []byte) (bool, int32, int32, error) {
+	return false, 0, 0, errors.New("not implemented")
+}
+
+var allowAccess = func(body []byte) (bool, int32, int32, error) {
 	return true, 120, 300, nil
 }
 
-var denyAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error) {
+var denyAccess = func(body []byte) (bool, int32, int32, error) {
 	return false, 120, 300, nil
+}
+
+func TriggerHandler(gateURL string) http.Handler {
+	return (&PlaybackAccessControl{
+		cache:      make(map[string]map[string]*PlaybackAccessControlEntry),
+		gateClient: &stubGateClient{},
+	}).TriggerHandler()
 }
 
 func TestAllowedAccessValidToken(t *testing.T) {
@@ -103,7 +115,7 @@ func TestCacheHit(t *testing.T) {
 	handler := TriggerHandler(gateURL)
 
 	var callCount = 0
-	var countableAllowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error) {
+	var countableAllowAccess = func(body []byte) (bool, int32, int32, error) {
 		callCount++
 		return true, 10, 20, nil
 	}
@@ -121,7 +133,7 @@ func TestStaleCache(t *testing.T) {
 	handler := TriggerHandler(gateURL)
 
 	var callCount = 0
-	var countableAllowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error) {
+	var countableAllowAccess = func(body []byte) (bool, int32, int32, error) {
 		callCount++
 		return true, -10, 20, nil
 	}
@@ -154,7 +166,7 @@ func TestInvalidCache(t *testing.T) {
 	handler := TriggerHandler(gateURL)
 
 	var callCount = 0
-	var countableAllowAccess = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error) {
+	var countableAllowAccess = func(body []byte) (bool, int32, int32, error) {
 		callCount++
 		return true, -10, -20, nil
 	}
@@ -165,7 +177,7 @@ func TestInvalidCache(t *testing.T) {
 	require.Equal(t, 2, callCount)
 }
 
-func executeFlow(payload []byte, handler http.Handler, request func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error)) string {
+func executeFlow(payload []byte, handler http.Handler, request func(body []byte) (bool, int32, int32, error)) string {
 	original := queryGate
 	queryGate = request
 

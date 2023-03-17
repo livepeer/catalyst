@@ -18,10 +18,9 @@ import (
 )
 
 type PlaybackAccessControl struct {
-	gateURL string
-	*http.Client
-	cache map[string]map[string]*PlaybackAccessControlEntry
-	mutex sync.RWMutex
+	cache      map[string]map[string]*PlaybackAccessControlEntry
+	mutex      sync.RWMutex
+	gateClient GateAPICaller
 }
 
 type PlaybackAccessControlEntry struct {
@@ -36,16 +35,28 @@ type PlaybackAccessControlRequest struct {
 	Stream string `json:"stream"`
 }
 
+type GateAPICaller interface {
+	QueryGate(body []byte) (bool, int32, int32, error)
+}
+
+type GateClient struct {
+	Client  *http.Client
+	gateURL string
+}
+
 const UserNewTrigger = "USER_NEW"
 
-func TriggerHandler(gateURL string) http.Handler {
-	playbackAccessControl := PlaybackAccessControl{
-		gateURL,
-		&http.Client{},
-		make(map[string]map[string]*PlaybackAccessControlEntry),
-		sync.RWMutex{},
+func NewPlaybackAccessControl(gateURL string) *PlaybackAccessControl {
+	return &PlaybackAccessControl{
+		cache: make(map[string]map[string]*PlaybackAccessControlEntry),
+		gateClient: &GateClient{
+			gateURL: gateURL,
+			Client:  &http.Client{},
+		},
 	}
+}
 
+func (ac *PlaybackAccessControl) TriggerHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload, err := io.ReadAll(r.Body)
 
@@ -59,7 +70,7 @@ func TriggerHandler(gateURL string) http.Handler {
 
 		switch triggerName {
 		case UserNewTrigger:
-			w.Write(handleUserNew(&playbackAccessControl, payload))
+			w.Write(ac.handleUserNew(payload))
 			return
 		default:
 			w.Write([]byte("false"))
@@ -70,7 +81,7 @@ func TriggerHandler(gateURL string) http.Handler {
 	})
 }
 
-func handleUserNew(ac *PlaybackAccessControl, payload []byte) []byte {
+func (ac *PlaybackAccessControl) handleUserNew(payload []byte) []byte {
 	lines := strings.Split(string(payload), "\n")
 
 	if len(lines) != 6 {
@@ -108,7 +119,7 @@ func handleUserNew(ac *PlaybackAccessControl, payload []byte) []byte {
 		pubKey = claims.PublicKey
 	}
 
-	playbackAccessControlAllowed, err := getPlaybackAccessControlInfo(ac, playbackID, pubKey)
+	playbackAccessControlAllowed, err := ac.getPlaybackAccessControlInfo(playbackID, pubKey)
 	if err != nil {
 		glog.Errorf("Unable to get playback access control info for playbackId=%v pubkey=%v", playbackID, pubKey)
 		return []byte("false")
@@ -123,14 +134,14 @@ func handleUserNew(ac *PlaybackAccessControl, payload []byte) []byte {
 	return []byte("false")
 }
 
-func getPlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey string) (bool, error) {
+func (ac *PlaybackAccessControl) getPlaybackAccessControlInfo(playbackID, pubKey string) (bool, error) {
 	ac.mutex.RLock()
 	entry := ac.cache[playbackID][pubKey]
 	ac.mutex.RUnlock()
 
 	if isExpired(entry) {
 		glog.Infof("Cache expired for playbackId=%v pubkey=%v", playbackID, pubKey)
-		err := cachePlaybackAccessControlInfo(ac, playbackID, pubKey)
+		err := ac.cachePlaybackAccessControlInfo(playbackID, pubKey)
 		if err != nil {
 			return false, err
 		}
@@ -141,7 +152,7 @@ func getPlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey 
 			stillStale := isStale(ac.cache[playbackID][pubKey])
 			ac.mutex.RUnlock()
 			if stillStale {
-				cachePlaybackAccessControlInfo(ac, playbackID, pubKey)
+				ac.cachePlaybackAccessControlInfo(playbackID, pubKey)
 			}
 		}()
 	} else {
@@ -165,13 +176,13 @@ func isStale(entry *PlaybackAccessControlEntry) bool {
 	return entry != nil && time.Now().After(entry.MaxAge) && !isExpired(entry)
 }
 
-func cachePlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKey string) error {
+func (ac *PlaybackAccessControl) cachePlaybackAccessControlInfo(playbackID, pubKey string) error {
 	body, err := json.Marshal(PlaybackAccessControlRequest{"jwt", pubKey, playbackID})
 	if err != nil {
 		return err
 	}
 
-	allow, maxAge, stale, err := queryGate(ac, body)
+	allow, maxAge, stale, err := ac.gateClient.QueryGate(body)
 	if err != nil {
 		return err
 	}
@@ -187,15 +198,15 @@ func cachePlaybackAccessControlInfo(ac *PlaybackAccessControl, playbackID, pubKe
 	return nil
 }
 
-var queryGate = func(ac *PlaybackAccessControl, body []byte) (bool, int32, int32, error) {
-	req, err := http.NewRequest("POST", ac.gateURL, bytes.NewReader(body))
+func (g *GateClient) QueryGate(body []byte) (bool, int32, int32, error) {
+	req, err := http.NewRequest("POST", g.gateURL, bytes.NewReader(body))
 	if err != nil {
 		return false, 0, 0, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
-	res, err := ac.Client.Do(req)
+	res, err := g.Client.Do(req)
 	if err != nil {
 		return false, 0, 0, err
 	}
