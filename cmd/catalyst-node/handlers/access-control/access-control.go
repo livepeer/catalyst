@@ -109,7 +109,6 @@ func (ac *PlaybackAccessControl) handleUserNew(payload []byte) []byte {
 		}
 
 		if playbackID != claims.Subject {
-
 			glog.Errorf("PlaybackId mismatch playbackId=%v != claimed=%v", playbackID, claims.Subject)
 			return []byte("false")
 		}
@@ -119,7 +118,13 @@ func (ac *PlaybackAccessControl) handleUserNew(payload []byte) []byte {
 		pubKey = claims.PublicKey
 	}
 
-	playbackAccessControlAllowed, err := ac.getPlaybackAccessControlInfo(playbackID, pubKey)
+	body, err := json.Marshal(PlaybackAccessControlRequest{Type: "jwt", Pub: pubKey, Stream: playbackID})
+	if err != nil {
+		glog.Errorf("Unable to get playback access control info, JSON marshalling failed. playbackId=%v pubkey=%v", playbackID, pubKey)
+		return []byte("false")
+	}
+
+	playbackAccessControlAllowed, err := ac.GetPlaybackAccessControlInfo(playbackID, pubKey, body)
 	if err != nil {
 		glog.Errorf("Unable to get playback access control info for playbackId=%v pubkey=%v", playbackID, pubKey)
 		return []byte("false")
@@ -134,36 +139,36 @@ func (ac *PlaybackAccessControl) handleUserNew(payload []byte) []byte {
 	return []byte("false")
 }
 
-func (ac *PlaybackAccessControl) getPlaybackAccessControlInfo(playbackID, pubKey string) (bool, error) {
+func (ac *PlaybackAccessControl) GetPlaybackAccessControlInfo(playbackID, cacheKey string, requestBody []byte) (bool, error) {
 	ac.mutex.RLock()
-	entry := ac.cache[playbackID][pubKey]
+	entry := ac.cache[playbackID][cacheKey]
 	ac.mutex.RUnlock()
 
 	if isExpired(entry) {
-		glog.Infof("Cache expired for playbackId=%v pubkey=%v", playbackID, pubKey)
-		err := ac.cachePlaybackAccessControlInfo(playbackID, pubKey)
+		glog.Infof("Cache expired for playbackId=%v pubkey=%v", playbackID, cacheKey)
+		err := ac.cachePlaybackAccessControlInfo(playbackID, cacheKey, requestBody)
 		if err != nil {
 			return false, err
 		}
 	} else if isStale(entry) {
-		glog.Infof("Cache stale for playbackId=%v pubkey=%v\n", playbackID, pubKey)
+		glog.Infof("Cache stale for playbackId=%v pubkey=%v\n", playbackID, cacheKey)
 		go func() {
 			ac.mutex.RLock()
-			stillStale := isStale(ac.cache[playbackID][pubKey])
+			stillStale := isStale(ac.cache[playbackID][cacheKey])
 			ac.mutex.RUnlock()
 			if stillStale {
-				ac.cachePlaybackAccessControlInfo(playbackID, pubKey)
+				ac.cachePlaybackAccessControlInfo(playbackID, cacheKey, requestBody)
 			}
 		}()
 	} else {
-		glog.Infof("Cache hit for playbackId=%v pubkey=%v", playbackID, pubKey)
+		glog.Infof("Cache hit for playbackId=%v pubkey=%v", playbackID, cacheKey)
 	}
 
 	ac.mutex.RLock()
-	entry = ac.cache[playbackID][pubKey]
+	entry = ac.cache[playbackID][cacheKey]
 	ac.mutex.RUnlock()
 
-	glog.Infof("playbackId=%v pubkey=%v playback allowed=%v", playbackID, pubKey, entry.Allow)
+	glog.Infof("playbackId=%v pubkey=%v playback allowed=%v", playbackID, cacheKey, entry.Allow)
 
 	return entry.Allow, nil
 }
@@ -176,13 +181,8 @@ func isStale(entry *PlaybackAccessControlEntry) bool {
 	return entry != nil && time.Now().After(entry.MaxAge) && !isExpired(entry)
 }
 
-func (ac *PlaybackAccessControl) cachePlaybackAccessControlInfo(playbackID, pubKey string) error {
-	body, err := json.Marshal(PlaybackAccessControlRequest{"jwt", pubKey, playbackID})
-	if err != nil {
-		return err
-	}
-
-	allow, maxAge, stale, err := ac.gateClient.QueryGate(body)
+func (ac *PlaybackAccessControl) cachePlaybackAccessControlInfo(playbackID, cacheKey string, requestBody []byte) error {
+	allow, maxAge, stale, err := ac.gateClient.QueryGate(requestBody)
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func (ac *PlaybackAccessControl) cachePlaybackAccessControlInfo(playbackID, pubK
 	if ac.cache[playbackID] == nil {
 		ac.cache[playbackID] = make(map[string]*PlaybackAccessControlEntry)
 	}
-	ac.cache[playbackID][pubKey] = &PlaybackAccessControlEntry{staleTime, maxAgeTime, allow}
+	ac.cache[playbackID][cacheKey] = &PlaybackAccessControlEntry{staleTime, maxAgeTime, allow}
 	return nil
 }
 
