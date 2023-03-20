@@ -478,7 +478,7 @@ func writeSerfConfig(config *agent.Config) (string, error) {
 
 func startCatalystWebServer(redirectPrefixes []string, httpAddr, nodeHost, gateURL string) {
 	http.Handle("/", redirectHandler(redirectPrefixes, nodeHost))
-	http.Handle("/triggers", accesscontrol.TriggerHandler(gateURL))
+	http.Handle("/triggers", accesscontrol.NewPlaybackAccessControl(gateURL).TriggerHandler())
 	glog.Infof("HTTP server listening on %s", httpAddr)
 	glog.Fatal(http.ListenAndServe(httpAddr, nil))
 }
