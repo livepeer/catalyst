@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -30,9 +31,10 @@ type PlaybackAccessControlEntry struct {
 }
 
 type PlaybackAccessControlRequest struct {
-	Type   string `json:"type"`
-	Pub    string `json:"pub"`
-	Stream string `json:"stream"`
+	Type      string `json:"type"`
+	Pub       string `json:"pub"`
+	AccessKey string `json:"accessKey"`
+	Stream    string `json:"stream"`
 }
 
 type GateAPICaller interface {
@@ -98,45 +100,47 @@ func (ac *PlaybackAccessControl) handleUserNew(payload []byte) []byte {
 	playbackID := lines[0]
 	playbackID = playbackID[strings.Index(playbackID, "+")+1:]
 
-	jwtToken := requestURL.Query().Get("jwt")
-
-	var pubKey string
-	if jwtToken != "" {
-		claims, err := decodeJwt(jwtToken)
-		if err != nil {
-			glog.Errorf("Unable to decode on incoming playbackId=%v jwt=%v", playbackID, jwtToken)
-			return []byte("false")
-		}
-
-		if playbackID != claims.Subject {
-			glog.Errorf("PlaybackId mismatch playbackId=%v != claimed=%v", playbackID, claims.Subject)
-			return []byte("false")
-		}
-
-		glog.Infof("Access control request for playbackId=%v pubkey=%v", playbackID, claims.PublicKey)
-
-		pubKey = claims.PublicKey
-	}
-
-	body, err := json.Marshal(PlaybackAccessControlRequest{Type: "jwt", Pub: pubKey, Stream: playbackID})
+	playbackAccessControlAllowed, err := ac.IsAuthorized(playbackID, requestURL)
 	if err != nil {
-		glog.Errorf("Unable to get playback access control info, JSON marshalling failed. playbackId=%v pubkey=%v", playbackID, pubKey)
-		return []byte("false")
-	}
-
-	playbackAccessControlAllowed, err := ac.GetPlaybackAccessControlInfo(playbackID, pubKey, body)
-	if err != nil {
-		glog.Errorf("Unable to get playback access control info for playbackId=%v pubkey=%v", playbackID, pubKey)
+		glog.Errorf("Unable to get playback access control info for playbackId=%v err=%s", playbackID, err.Error())
 		return []byte("false")
 	}
 
 	if playbackAccessControlAllowed {
-		glog.Infof("Playback access control allowed for playbackId=%v pubkey=%v", playbackID, pubKey)
+		glog.Infof("Playback access control allowed for playbackId=%v", playbackID)
 		return []byte("true")
 	}
 
 	glog.Infof("Playback access control denied for playbackId=%v", playbackID)
 	return []byte("false")
+}
+
+func (ac *PlaybackAccessControl) IsAuthorized(playbackID string, reqURL *url.URL) (bool, error) {
+	acReq := PlaybackAccessControlRequest{Stream: playbackID}
+	cacheKey := ""
+	accessKey := reqURL.Query().Get("accessKey")
+	jwt := reqURL.Query().Get("jwt")
+	if accessKey != "" {
+		acReq.Type = "accessKey"
+		acReq.AccessKey = accessKey
+		cacheKey = "accessKey_" + accessKey
+	} else if jwt != "" {
+		acReq.Pub = extractKeyFromJwt(jwt, acReq.Stream)
+		if acReq.Pub == "" {
+			return false, fmt.Errorf("failed to extract key from jwt: %s", jwt)
+		}
+
+		acReq.Type = "jwt"
+		cacheKey = "jwtPubKey_" + acReq.Pub
+	}
+
+	body, err := json.Marshal(acReq)
+	if err != nil {
+		glog.Errorf("Unable to get playback access control info, JSON marshalling failed. playbackId=%v", acReq.Stream)
+		return false, nil
+	}
+
+	return ac.GetPlaybackAccessControlInfo(acReq.Stream, cacheKey, body)
 }
 
 func (ac *PlaybackAccessControl) GetPlaybackAccessControlInfo(playbackID, cacheKey string, requestBody []byte) (bool, error) {
@@ -145,13 +149,13 @@ func (ac *PlaybackAccessControl) GetPlaybackAccessControlInfo(playbackID, cacheK
 	ac.mutex.RUnlock()
 
 	if isExpired(entry) {
-		glog.Infof("Cache expired for playbackId=%v pubkey=%v", playbackID, cacheKey)
+		glog.Infof("Cache expired for playbackId=%v cacheKey=%v", playbackID, cacheKey)
 		err := ac.cachePlaybackAccessControlInfo(playbackID, cacheKey, requestBody)
 		if err != nil {
 			return false, err
 		}
 	} else if isStale(entry) {
-		glog.Infof("Cache stale for playbackId=%v pubkey=%v\n", playbackID, cacheKey)
+		glog.Infof("Cache stale for playbackId=%v cacheKey=%v\n", playbackID, cacheKey)
 		go func() {
 			ac.mutex.RLock()
 			stillStale := isStale(ac.cache[playbackID][cacheKey])
@@ -161,14 +165,14 @@ func (ac *PlaybackAccessControl) GetPlaybackAccessControlInfo(playbackID, cacheK
 			}
 		}()
 	} else {
-		glog.Infof("Cache hit for playbackId=%v pubkey=%v", playbackID, cacheKey)
+		glog.Infof("Cache hit for playbackId=%v cacheKey=%v", playbackID, cacheKey)
 	}
 
 	ac.mutex.RLock()
 	entry = ac.cache[playbackID][cacheKey]
 	ac.mutex.RUnlock()
 
-	glog.Infof("playbackId=%v pubkey=%v playback allowed=%v", playbackID, cacheKey, entry.Allow)
+	glog.Infof("playbackId=%v cacheKey=%v playback allowed=%v", playbackID, cacheKey, entry.Allow)
 
 	return entry.Allow, nil
 }
@@ -245,6 +249,22 @@ func (c *PlaybackGateClaims) Valid() error {
 		return errors.New("exp claim too far in the future")
 	}
 	return nil
+}
+
+func extractKeyFromJwt(tokenString, playbackID string) string {
+	claims, err := decodeJwt(tokenString)
+	if err != nil {
+		glog.Errorf("Unable to decode on incoming playbackId=%v jwt=%v", playbackID, tokenString)
+		return ""
+	}
+
+	if playbackID != claims.Subject {
+		glog.Errorf("PlaybackId mismatch playbackId=%v != claimed=%v", playbackID, claims.Subject)
+		return ""
+	}
+
+	glog.Infof("Access control request for playbackId=%v pubkey=%v", playbackID, claims.PublicKey)
+	return claims.PublicKey
 }
 
 func decodeJwt(tokenString string) (*PlaybackGateClaims, error) {
