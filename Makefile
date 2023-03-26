@@ -169,10 +169,6 @@ full-reset: docker-compose-rm clean all
 	mv $(HOME)/.config/livepeer/catalyst.json $(HOME)/.config/livepeer/catalyst-$$(date +%s)-dev.json || echo '' \
 	&& echo "done"
 
-.PHONY: livepeer-catalyst-node
-livepeer-catalyst-node:
-	go build -o ./bin/livepeer-catalyst-node -ldflags="$(GO_LDFLAG_VERSION)" cmd/catalyst-node/catalyst-node.go
-
 .PHONY: docker
 docker:
 	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=full .
