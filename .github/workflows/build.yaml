@@ -73,11 +73,6 @@ jobs:
       - name: Build binaries
         run: |
           go build \
-            -o "./${CI_CATALYST_BIN_DIR}/livepeer-catalyst-node" \
-            -ldflags="-X 'main.Version=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}'" \
-            cmd/catalyst-node/catalyst-node.go
-
-          go build \
             -o "./${CI_CATALYST_BIN_DIR}/livepeer-log" \
             -ldflags="-X 'main.Version=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}'" \
             cmd/livepeer-log/livepeer-log.go

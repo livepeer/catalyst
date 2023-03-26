@@ -121,7 +121,7 @@ func createNetwork(ctx context.Context, t *testing.T) *network {
 func mistConfigConnectTo(host string, connectToHost string) mistConfig {
 	mc := defaultMistConfig(host)
 	for i, p := range mc.Config.Protocols {
-		if p.Connector == "livepeer-catalyst-node" {
+		if p.Connector == "livepeer-catalyst-api" {
 			p.RetryJoin = fmt.Sprintf("%s:%s", connectToHost, advertisePort)
 			mc.Config.Protocols[i] = p
 		}
