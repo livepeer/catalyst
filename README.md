@@ -14,16 +14,16 @@ proceeding.
 
 ### Mandatory requirements
 
-  - go1.17± or newer
-  - GNU make
-  - about 2-3 GB of free disk space
+-   go1.17± or newer
+-   GNU make
+-   about 2-3 GB of free disk space
 
 ### Optional
 
-  - ffmpeg v5 or newer (can be compiled from [go-livepeer], by running
+-   ffmpeg v5 or newer (can be compiled from [go-livepeer], by running
     `make ffmpeg`)
-  - Docker version 19 or newer
-  - cloning this repository alongside [go-livepeer], [MistServer] and
+-   Docker version 19 or newer
+-   cloning this repository alongside [go-livepeer], [MistServer] and
     other dependent projects of [Catalyst] in the same
     directory. Directories would look like:
 
@@ -52,9 +52,6 @@ in `manifest.yaml` (section below covers its structure).
 Run the following commands from the root of this repository directory:
 
     go build -o ./bin/livepeer-log ./cmd/livepeer-log/livepeer-log.go
-    go build -o ./bin/livepeer-catalyst-node \
-      -ldflags="-X 'main.Version=$(git describe --always --abbrev=8 --dirty)'" \
-      cmd/catalyst-node/catalyst-node.go
     go run cmd/downloader/downloader/downloader.go
 
     # or, single command:
@@ -72,11 +69,11 @@ This section covers building the dependent projects before booting up
 [Catalyst]. There are quite a few applications needed for Catalyst as
 listed below (but not limited to):
 
-  - [go-livepeer]
-  - [MistServer]
-  - [Catalyst] (for `livepeer-log`, `catalyst-node`)
-  - [catalyst-api]
-  - [victoria-metrics] (recommended to just download a stable binary
+-   [go-livepeer]
+-   [MistServer]
+-   [Catalyst] (for `livepeer-log`)
+-   [catalyst-api]
+-   [victoria-metrics] (recommended to just download a stable binary
     from github releases)
 
 A few of these can be compiled using `Makefile` recipes, but others
@@ -86,26 +83,25 @@ be symlinked instead).
 
 #### Requirements for compiling MistServer
 
-  - git
-  - gcc or clang
-  - CMake
-  - about 4 GB of free disk space
+-   git
+-   gcc or clang
+-   CMake
+-   about 4 GB of free disk space
 
 #### Requirements for compiling [go-livepeer]
 
-  - go1.17 (for arm64 build support)
-  - git
-  - GNU make
-  - CMake
-  - gcc-multilib
-  - autoconf
-  - pkg-config
+-   go1.17 (for arm64 build support)
+-   git
+-   GNU make
+-   CMake
+-   gcc-multilib
+-   autoconf
+-   pkg-config
 
 ```sh
 make mistserver
 make go-livepeer
 make livepeer-log
-make livepeer-catalyst-node
 ```
 
 ## Running Catalyst
@@ -173,6 +169,7 @@ ffmpeg -re -stream_loop -1 \
   -f flv \
   rtmp://localhost/live/video+foo
 ```
+
 where the `PLAYBACK_ID` is `foo`.
 
 ### Using OBS Studio
@@ -265,9 +262,9 @@ box:
       skipManifestUpdate: true
 ```
 
-  [go-livepeer]: https://github.com/livepeer/go-livepeer
-  [Catalyst]: https://github.com/livepeer/catalyst
-  [MistServer]: https://github.com/DDVTECH/mistserver
-  [catalyst-api]: https://github.com/livepeer/catalyst-api
-  [victoria-metrics]: https://github.com/VictoriaMetrics/VictoriaMetrics
-  [obs-studio]: .github/assets/obs-studio.png
+[go-livepeer]: https://github.com/livepeer/go-livepeer
+[catalyst]: https://github.com/livepeer/catalyst
+[mistserver]: https://github.com/DDVTECH/mistserver
+[catalyst-api]: https://github.com/livepeer/catalyst-api
+[victoria-metrics]: https://github.com/VictoriaMetrics/VictoriaMetrics
+[obs-studio]: .github/assets/obs-studio.png

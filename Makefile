@@ -14,7 +14,7 @@ $(shell mkdir -p $(HOME)/.config/livepeer)
 buildpath=$(realpath ./build)
 
 .PHONY: all
-all: download livepeer-log livepeer-catalyst-node
+all: download livepeer-log
 
 .PHONY: ffmpeg
 ffmpeg:

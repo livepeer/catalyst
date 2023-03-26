@@ -100,9 +100,6 @@
         "port": "7979"
       },
       {
-        "connector": "livepeer-catalyst-node"
-      },
-      {
         "cliAddr": "127.0.0.1:7936",
         "connector": "livepeer",
         "metricsClientIP": true,

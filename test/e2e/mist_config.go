@@ -148,13 +148,6 @@ func defaultMistConfig(host string) mistConfig {
 				{Connector: "WAV"},
 				{Connector: "WebRTC"},
 				{
-					Connector:        "livepeer-catalyst-node",
-					Advertise:        fmt.Sprintf("%s:%s", host, advertisePort),
-					RPCAddr:          fmt.Sprintf("0.0.0.0:%s", serfPort),
-					RedirectPrefixes: "stream",
-					Debug:            "6",
-				},
-				{
 					Connector:   "livepeer",
 					Broadcaster: true,
 					OrchAddr:    "localhost:8936",
@@ -168,8 +161,12 @@ func defaultMistConfig(host string) mistConfig {
 					ServiceAddr:  "127.0.0.1:8936",
 				},
 				{
-					Connector: "livepeer-catalyst-api",
-					Port:      catalystAPIPort,
+					Connector:        "livepeer-catalyst-api",
+					Port:             catalystAPIPort,
+					Advertise:        fmt.Sprintf("%s:%s", host, advertisePort),
+					RPCAddr:          fmt.Sprintf("0.0.0.0:%s", serfPort),
+					RedirectPrefixes: "stream",
+					Debug:            "6",
 				},
 			},
 			SessionInputMode:       "14",
