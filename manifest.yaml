@@ -24,7 +24,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-api
-      commit: 70e55580c387da05cc0fcaf6bdba5a68ce3772a3
+      commit: 7f79ac46068bb436d3378c3cc29848366c3172d1
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: mist-api-connector
-      commit: ef9040f4b26d551766aab89cd6a07636d9a42ef1
+      commit: 32d6fe2ae0b8008a1aa25ba567579998d934e0f7
     binary: livepeer-mist-api-connector
     release: master
     srcFilenames:
@@ -61,7 +61,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: db28a19f985cfb92cc87ed914c9087eaac37fd13
+      commit: 8c7ec0155c5ba040f7066ab0a30045c37f15be2a
     binary: livepeer
     release: master
     archivePath: livepeer
@@ -76,7 +76,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: 164e5c1f731346b697e7470d1f824f5d44069772
+      commit: 3226278cb4f5d0c872c63221f635d4e2c5feb768
     release: catalyst
     skipGpg: true
     srcFilenames:
