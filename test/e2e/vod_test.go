@@ -139,7 +139,7 @@ func minioClient(t *testing.T, m *minioContainer) *minio.Client {
 
 func waitForCatalystAPI(t *testing.T, c *catalystContainer) {
 	catalystAPIStarted := func() bool {
-		url := fmt.Sprintf("http://127.0.0.1:%s/ok", c.catalystAPI)
+		url := fmt.Sprintf("http://127.0.0.1:%s/ok", c.catalystAPIInternal)
 		resp, err := http.Get(url)
 		return err == nil && resp.StatusCode == http.StatusOK
 	}
@@ -165,7 +165,7 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 		]
 	}`, sourceVideoURL, destURL)
 
-	url := fmt.Sprintf("http://127.0.0.1:%s/api/vod", c.catalystAPI)
+	url := fmt.Sprintf("http://127.0.0.1:%s/api/vod", c.catalystAPIInternal)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(jsonData)))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
