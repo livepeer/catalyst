@@ -179,3 +179,6 @@ docker-local:
 
 test: docker
 	go test ./test/e2e/*.go -v --logtostderr
+
+test-local: docker-local
+	go test ./test/e2e/*.go -v --logtostderr

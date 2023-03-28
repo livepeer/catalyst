@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	serfPort        = "7373"
-	advertisePort   = "9935"
-	catalystAPIPort = "7979"
+	advertisePort           = "9935"
+	catalystAPIPort         = "7979"
+	catalystAPIInternalPort = "7878"
 )
 
 type account struct {
@@ -29,7 +29,8 @@ type protocol struct {
 	RPCAddr          string `json:"rpc-addr,omitempty"`
 	RedirectPrefixes string `json:"redirect-prefixes,omitempty"`
 	Debug            string `json:"debug,omitempty"`
-	Port             string `json:"port,omitempty"`
+	HTTPAddr         string `json:"http-addr,omitempty"`
+	HTTPAddrInternal string `json:"http-internal-addr,omitempty"`
 	Broadcaster      bool   `json:"broadcaster,omitempty"`
 	Orchestrator     bool   `json:"orchestrator,omitempty"`
 	Transcoder       bool   `json:"transcoder,omitempty"`
@@ -150,7 +151,7 @@ func defaultMistConfig(host string) mistConfig {
 				{
 					Connector:   "livepeer",
 					Broadcaster: true,
-					OrchAddr:    "localhost:8936",
+					OrchAddr:    "127.0.0.1:8936",
 					RtmpAddr:    "127.0.0.1:1936",
 				},
 				{
@@ -162,9 +163,9 @@ func defaultMistConfig(host string) mistConfig {
 				},
 				{
 					Connector:        "livepeer-catalyst-api",
-					Port:             catalystAPIPort,
 					Advertise:        fmt.Sprintf("%s:%s", host, advertisePort),
-					RPCAddr:          fmt.Sprintf("0.0.0.0:%s", serfPort),
+					HTTPAddr:         fmt.Sprintf("0.0.0.0:%s", catalystAPIPort),
+					HTTPAddrInternal: fmt.Sprintf("0.0.0.0:%s", catalystAPIInternalPort),
 					RedirectPrefixes: "stream",
 					Debug:            "6",
 				},
@@ -179,7 +180,7 @@ func defaultMistConfig(host string) mistConfig {
 			Triggers: map[string][]trigger{
 				"STREAM_SOURCE": {
 					{
-						Handler: "http://localhost:8091/STREAM_SOURCE",
+						Handler: "http://127.0.0.1:7878/STREAM_SOURCE",
 						Sync:    true,
 						Default: "push://",
 						Streams: []string{},
@@ -187,13 +188,13 @@ func defaultMistConfig(host string) mistConfig {
 				},
 				"PUSH_END": {
 					{
-						Handler: "http://localhost:7979/api/mist/trigger",
+						Handler: "http://127.0.0.1:7878/api/mist/trigger",
 						Sync:    false,
 					},
 				},
 				"RECORDING_END": {
 					{
-						Handler: "http://localhost:7979/api/mist/trigger",
+						Handler: "http://127.0.0.1:7878/api/mist/trigger",
 						Sync:    false,
 					},
 				},

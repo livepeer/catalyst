@@ -130,7 +130,7 @@ func uploadSourceVideo(ctx context.Context, t *testing.T, m *minioContainer) {
 }
 
 func minioClient(t *testing.T, m *minioContainer) *minio.Client {
-	cli, err := minio.New(fmt.Sprintf("localhost:%s", m.port), &minio.Options{
+	cli, err := minio.New(fmt.Sprintf("127.0.0.1:%s", m.port), &minio.Options{
 		Creds: credentials.NewStaticV4(username, password, ""),
 	})
 	require.NoError(t, err)
@@ -139,7 +139,7 @@ func minioClient(t *testing.T, m *minioContainer) *minio.Client {
 
 func waitForCatalystAPI(t *testing.T, c *catalystContainer) {
 	catalystAPIStarted := func() bool {
-		url := fmt.Sprintf("http://localhost:%s/ok", c.catalystAPI)
+		url := fmt.Sprintf("http://127.0.0.1:%s/ok", c.catalystAPI)
 		resp, err := http.Get(url)
 		return err == nil && resp.StatusCode == http.StatusOK
 	}
@@ -165,7 +165,7 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 		]
 	}`, sourceVideoURL, destURL)
 
-	url := fmt.Sprintf("http://localhost:%s/api/vod", c.catalystAPI)
+	url := fmt.Sprintf("http://127.0.0.1:%s/api/vod", c.catalystAPI)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(jsonData)))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
