@@ -2,9 +2,12 @@ FROM	ubuntu:20.04
 
 LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
 
-RUN	apt update && apt install -y \
+RUN	apt update && apt install -yqq \
 	ca-certificates \
 	musl \
+	python3 \
+	ffmpeg \
+	nodejs \
 	&& rm -rf /var/lib/apt/lists/*
 
 ADD ./bin ./usr/bin

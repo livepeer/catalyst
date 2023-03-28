@@ -2,9 +2,11 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -14,17 +16,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/serf/cmd/serf/command"
 	glog "github.com/magicsong/color-glog"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 )
 
 const (
-	webConsolePort   = "4242"
-	httpPort         = "8080"
-	httpCatalystPort = "8090"
-	rtmpPort         = "1935"
+	webConsolePort = "4242"
+	httpPort       = "8080"
+	rtmpPort       = "1935"
 )
 
 type cliParams struct {
@@ -62,14 +62,13 @@ type network struct {
 
 type catalystContainer struct {
 	testcontainers.Container
-	webConsole   string
-	serf         string
-	http         string
-	httpCatalyst string
-	catalystAPI  string
-	rtmp         string
-	ip           string
-	hostname     string
+	webConsole          string
+	http                string
+	catalystAPI         string
+	catalystAPIInternal string
+	rtmp                string
+	ip                  string
+	hostname            string
 }
 
 func (c *catalystContainer) Terminate(ctx context.Context) {
@@ -152,12 +151,18 @@ func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network s
 		envVars[k] = v
 	}
 	req := testcontainers.ContainerRequest{
-		Image:        params.ImageName,
-		ExposedPorts: []string{tcp(webConsolePort), tcp(serfPort), tcp(httpPort), tcp(httpCatalystPort), tcp(catalystAPIPort), tcp(rtmpPort)},
-		Hostname:     hostname,
-		Name:         hostname,
-		Networks:     []string{network},
-		Env:          envVars,
+		Image: params.ImageName,
+		ExposedPorts: []string{
+			tcp(webConsolePort),
+			tcp(httpPort),
+			tcp(catalystAPIPort),
+			tcp(catalystAPIInternalPort),
+			tcp(rtmpPort),
+		},
+		Hostname: hostname,
+		Name:     hostname,
+		Networks: []string{network},
+		Env:      envVars,
 		Mounts: []testcontainers.ContainerMount{{
 			Source: testcontainers.GenericBindMountSource{
 				HostPath: configAbsPath,
@@ -190,25 +195,22 @@ func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network s
 	require.NoError(t, err)
 	catalyst.webConsole = mappedPort.Port()
 
-	mappedPort, err = container.MappedPort(ctx, serfPort)
-	require.NoError(t, err)
-	catalyst.serf = mappedPort.Port()
-
 	mappedPort, err = container.MappedPort(ctx, httpPort)
 	require.NoError(t, err)
 	catalyst.http = mappedPort.Port()
-
-	mappedPort, err = container.MappedPort(ctx, httpCatalystPort)
-	require.NoError(t, err)
-	catalyst.httpCatalyst = mappedPort.Port()
 
 	mappedPort, err = container.MappedPort(ctx, catalystAPIPort)
 	require.NoError(t, err)
 	catalyst.catalystAPI = mappedPort.Port()
 
+	mappedPort, err = container.MappedPort(ctx, catalystAPIInternalPort)
+	require.NoError(t, err)
+	catalyst.catalystAPIInternal = mappedPort.Port()
+
 	mappedPort, err = container.MappedPort(ctx, rtmpPort)
 	require.NoError(t, err)
 	catalyst.rtmp = mappedPort.Port()
+	// panic(fmt.Sprintf("catalyst.webConsole: %s, catalyst.http: %s, catalyst.catalystAPI: %s, catalyst.catalystAPIInternal: %s, catalyst.rtmp: %s", catalyst.webConsole, catalyst.http, catalyst.catalystAPI, catalyst.catalystAPIInternal, catalyst.rtmp))
 
 	// container IP
 	cid := container.GetContainerID()
@@ -225,15 +227,25 @@ func tcp(p string) string {
 	return fmt.Sprintf("%s/tcp", p)
 }
 
+type Member struct {
+	Name string            `json:"name"`
+	Tags map[string]string `json:"tags"`
+}
+
 func requireMembersJoined(t *testing.T, containers ...*catalystContainer) {
 	c1 := containers[0]
 	correctMembersNumber := func() bool {
-		client, err := command.RPCClient(fmt.Sprintf("127.0.0.1:%s", c1.serf), "")
+		path := fmt.Sprintf("http://127.0.0.1:%s/admin/members", c1.catalystAPIInternal)
+		res, err := http.Get(path)
 		if err != nil {
 			return false
 		}
-		members, err := client.Members()
+		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
+			return false
+		}
+		members := []Member{}
+		if err := json.Unmarshal(body, &members); err != nil {
 			return false
 		}
 		return len(members) == len(containers)
@@ -243,7 +255,7 @@ func requireMembersJoined(t *testing.T, containers ...*catalystContainer) {
 
 func startStream(t *testing.T, c *catalystContainer) *os.Process {
 	ffmpegParams := []string{"-re", "-f", "lavfi", "-i", "testsrc=size=1920x1080:rate=30,format=yuv420p", "-f", "lavfi", "-i", "sine", "-c:v", "libx264", "-b:v", "1000k", "-x264-params", "keyint=60", "-c:a", "aac", "-f", "flv"}
-	ffmpegParams = append(ffmpegParams, fmt.Sprintf("rtmp://localhost:%s/live/stream+foo", c.rtmp))
+	ffmpegParams = append(ffmpegParams, fmt.Sprintf("rtmp://127.0.0.1:%s/live/stream+foo", c.rtmp))
 	cmd := exec.Command("ffmpeg", ffmpegParams...)
 	glog.Info("Spawning ffmpeg stream to ingest")
 	err := cmd.Start()
@@ -253,7 +265,8 @@ func startStream(t *testing.T, c *catalystContainer) *os.Process {
 
 func requireReplicatedStream(t *testing.T, c *catalystContainer) {
 	correctStream := func() bool {
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c.http))
+		u := fmt.Sprintf("http://127.0.0.1:%s/hls/stream+foo/index.m3u8", c.http)
+		resp, err := http.Get(u)
 		if err != nil {
 			return false
 		}
@@ -265,7 +278,7 @@ func requireReplicatedStream(t *testing.T, c *catalystContainer) {
 		content := string(body)
 		for _, expected := range []string{"RESOLUTION=1920x1080", "FRAME-RATE=30", "index.m3u8"} {
 			if !strings.Contains(content, expected) {
-				glog.Info("Failed to get HLS manifest")
+				glog.Infof("Failed to get HLS manifest at %s", u)
 				return false
 			}
 		}
@@ -278,7 +291,7 @@ func requireReplicatedStream(t *testing.T, c *catalystContainer) {
 func requireNotReplicatedStream(t *testing.T, c *catalystContainer) {
 	require := require.New(t)
 
-	resp, err := http.Get(fmt.Sprintf("http://localhost:%s/hls/stream+foo/index.m3u8", c.http))
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%s/hls/stream+foo/index.m3u8", c.http))
 	require.NoError(err)
 
 	defer resp.Body.Close()
@@ -301,7 +314,7 @@ func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystC
 				return http.ErrUseLastResponse
 			},
 		}
-		resp, err := client.Get(fmt.Sprintf("http://localhost:%s/hls/foo/index.m3u8", c1.httpCatalyst))
+		resp, err := client.Get(fmt.Sprintf("http://127.0.0.1:%s/hls/foo/index.m3u8", c1.catalystAPI))
 		if err != nil {
 			return false
 		}
@@ -317,5 +330,5 @@ func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystC
 		glog.Infof("c1URL=%s c2URL=%s rURL=%s", c1URL, c2URL, rURL)
 		return strings.Contains(rURL, c1URL) || strings.Contains(rURL, c2URL)
 	}
-	require.Eventually(redirect, 5*time.Minute, time.Second)
+	require.Eventually(redirect, 1*time.Minute, time.Second)
 }
