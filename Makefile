@@ -6,7 +6,7 @@ GIT_VERSION?=$(shell git describe --always --long --abbrev=8 --dirty)
 GO_LDFLAG_VERSION := -X 'main.Version=$(GIT_VERSION)'
 MIST_COMMIT ?= "catalyst"
 DOCKER_TAG ?= "livepeer/catalyst"
-STRIP_BINARIES ?= "true"
+BUILD_TARGET ?= "full"
 
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
@@ -171,11 +171,11 @@ full-reset: docker-compose-rm clean all
 
 .PHONY: docker
 docker:
-	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=full .
+	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) .
 
 .PHONY: docker-local
 docker-local:
-	tar ch ./bin Dockerfile.local | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=full -
+	tar ch ./bin Dockerfile.local | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
 
 test: docker
 	go test ./test/e2e/*.go -v --logtostderr
