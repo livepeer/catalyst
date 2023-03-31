@@ -23,6 +23,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        targets:
+          - suffix: ''
+            platforms: linux/amd64, linux/arm64
+          - suffix: "-amd64"
+            platforms: linux/amd64
+          - suffix: "-arm64"
+            platforms: linux/arm64
         build:
           - suffix: ''
             target: stripped
@@ -54,7 +61,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           flavor: |
-            suffix=${{ matrix.build.suffix }},onlatest=true
+            suffix=${{ matrix.targets.suffix }}${{ matrix.build.suffix }},onlatest=true
           images: |
             livepeerci/catalyst
             ghcr.io/${{ github.repository }}
@@ -72,7 +79,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
-          platforms: linux/amd64, linux/arm64
+          platforms: ${{ matrix.targets.platforms }}
           push: true
           target: catalyst
           build-args: |
