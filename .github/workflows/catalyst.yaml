@@ -1,4 +1,4 @@
-name: Build and publish catalyst docker images
+name: Docker build
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   catalyst:
-    name: Build and publish docker image for catalyst-${{ matrix.build.target }}
+    name: livepeerci/catalyst${{ matrix.targets.suffix }}${{ matrix.build.suffix }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
