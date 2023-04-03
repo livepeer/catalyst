@@ -24,7 +24,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-api
-      commit: 0356498f523d9631faaf26dd3463f61aa1dacd1b
+      commit: 50f8ccebe394101a71d4d50bfabe8b96c08bb9d3
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
