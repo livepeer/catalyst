@@ -38,6 +38,7 @@ type protocol struct {
 	ServiceAddr      string `json:"serviceAddr,omitempty"`
 	CliAddr          string `json:"cliAddr,omitempty"`
 	RtmpAddr         string `json:"rtmpAddr,omitempty"`
+	SourceOutput     string `json:"source-output,omitempty"`
 }
 
 type config struct {
@@ -113,7 +114,7 @@ type mistConfig struct {
 	UISettings interface{}       `json:"ui_settings"`
 }
 
-func defaultMistConfig(host string) mistConfig {
+func defaultMistConfig(host, sourceOutput string) mistConfig {
 	return mistConfig{
 		Account: map[string]account{
 			"test": {
@@ -163,6 +164,7 @@ func defaultMistConfig(host string) mistConfig {
 				},
 				{
 					Connector:        "livepeer-catalyst-api",
+					SourceOutput:     sourceOutput,
 					Advertise:        fmt.Sprintf("%s:%s", host, advertisePort),
 					HTTPAddr:         fmt.Sprintf("0.0.0.0:%s", catalystAPIPort),
 					HTTPAddrInternal: fmt.Sprintf("0.0.0.0:%s", catalystAPIInternalPort),
@@ -211,8 +213,8 @@ func defaultMistConfig(host string) mistConfig {
 	}
 }
 
-func defaultMistConfigWithLivepeerProcess(host string) mistConfig {
-	mc := defaultMistConfig(host)
+func defaultMistConfigWithLivepeerProcess(host, sourceOutput string) mistConfig {
+	mc := defaultMistConfig(host, sourceOutput)
 	s := mc.Streams["stream"]
 	s.Processes = []process{
 		{Debug: 5,

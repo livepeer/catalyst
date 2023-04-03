@@ -43,7 +43,7 @@ func TestVod(t *testing.T) {
 	createDestBucket(t, m)
 
 	h := randomString("catalyst-")
-	c := startCatalyst(ctx, t, h, network.name, defaultMistConfigWithLivepeerProcess(h))
+	c := startCatalyst(ctx, t, h, network.name, defaultMistConfigWithLivepeerProcess(h, sourceOutput(m)))
 	defer c.Terminate(ctx)
 	waitForCatalystAPI(t, c)
 
@@ -115,6 +115,10 @@ func createSourceBucket(t *testing.T, m *minioContainer) {
 	createBucket(t, m, inBucket)
 }
 
+func sourceOutput(m *minioContainer) string {
+	return fmt.Sprintf("s3+http://%s:%s@%s:9000/%s", username, password, m.hostname, inBucket)
+}
+
 func createDestBucket(t *testing.T, m *minioContainer) {
 	createBucket(t, m, outBucket)
 }
@@ -149,10 +153,10 @@ func waitForCatalystAPI(t *testing.T, c *catalystContainer) {
 
 func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 	sourceVideoURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/%s", username, password, m.hostname, inBucket, source)
-	destURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/output.m3u8", username, password, m.hostname, outBucket)
+	destURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/index.m3u8", username, password, m.hostname, outBucket)
 	var jsonData = fmt.Sprintf(`{
 		"url": "%s",
-		"callback_url": "http://todo-callback.com",
+		"callback_url": "https://todo-callback.com",
 		"output_locations": [
 			{
 									"type": "object_store",
@@ -183,10 +187,6 @@ func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 
 	expectedFiles := []string{
 		"index.m3u8",
-
-		"source/source.mp4.dtsh",
-		"source/output.m3u8",
-		"source/0.ts",
 
 		"360p0/index.m3u8",
 		"360p0/0.ts",
