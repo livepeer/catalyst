@@ -92,7 +92,7 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	h2 := randomString("catalyst-")
 
 	// when
-	c1 := startCatalyst(ctx, t, h1, network.name, defaultMistConfig(h1))
+	c1 := startCatalyst(ctx, t, h1, network.name, defaultMistConfig(h1, ""))
 	defer c1.Terminate(ctx)
 	c2 := startCatalyst(ctx, t, h2, network.name, mistConfigConnectTo(h2, h1))
 	defer c2.Terminate(ctx)
@@ -118,7 +118,7 @@ func createNetwork(ctx context.Context, t *testing.T) *network {
 }
 
 func mistConfigConnectTo(host string, connectToHost string) mistConfig {
-	mc := defaultMistConfig(host)
+	mc := defaultMistConfig(host, "")
 	for i, p := range mc.Config.Protocols {
 		if p.Connector == "livepeer-catalyst-api" {
 			p.RetryJoin = fmt.Sprintf("%s:%s", connectToHost, advertisePort)
