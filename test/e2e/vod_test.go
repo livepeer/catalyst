@@ -156,7 +156,7 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 	destURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/index.m3u8", username, password, m.hostname, outBucket)
 	var jsonData = fmt.Sprintf(`{
 		"url": "%s",
-		"callback_url": "http://todo-callback.com",
+		"callback_url": "https://todo-callback.com",
 		"output_locations": [
 			{
 									"type": "object_store",
