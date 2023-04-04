@@ -153,7 +153,7 @@ func waitForCatalystAPI(t *testing.T, c *catalystContainer) {
 
 func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 	sourceVideoURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/%s", username, password, m.hostname, inBucket, source)
-	destURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/index.m3u8", username, password, m.hostname, outBucket)
+	destURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/", username, password, m.hostname, outBucket)
 	var jsonData = fmt.Sprintf(`{
 		"url": "%s",
 		"callback_url": "https://todo-callback.com",
@@ -162,8 +162,7 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 									"type": "object_store",
 									"url": "%s",
 									"outputs": {
-										"source_segments": true,
-										"transcoded_segments": true
+										"hls": "enabled"
 									}
 							}
 		]
