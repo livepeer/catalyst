@@ -100,7 +100,8 @@
         "port": "7979",
         "source-output":"/tmp/livepeer/source",
         "vod-pipeline-strategy":"catalyst",
-        "api-server":"127.0.0.1:3004"
+        "api-server":"http://127.0.0.1:3004",
+        "api-token":"IAmAuthorized"
       },
       {
         "cliAddr": "127.0.0.1:7936",
