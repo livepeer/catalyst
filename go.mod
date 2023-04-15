@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/ProtonMail/gopenpgp/v2 v2.4.10
-	github.com/golang/glog v1.0.0
+	github.com/golang/glog v1.1.1
 	github.com/magicsong/color-glog v0.0.1
 	github.com/minio/minio-go/v7 v7.0.46
 	github.com/peterbourgon/ff/v3 v3.3.0
