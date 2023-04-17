@@ -192,7 +192,7 @@
           "process":"Livepeer",
           "access_token":"YOUR_STUDIO_API_KEY",
           "audio_streams":"maxbps",
-          "custom_api_url":"http://localhost:3004/api/stream/video",
+          "custom_url":"http://localhost:3004/api/stream/video",
           "target_profiles":[
             {
               "bitrate":400000,
@@ -220,7 +220,7 @@
           "process":"Livepeer",
           "access_token":"YOUR_STUDIO_API_KEY",
           "audio_streams":"maxbps",
-          "custom_api_url":"http://localhost:3004/api/stream/video",
+          "custom_url":"http://localhost:3004/api/stream/video",
           "target_profiles":[
             {
               "bitrate":400000,
