@@ -191,8 +191,8 @@
           "leastlive":"1",
           "process":"Livepeer",
           "access_token":"YOUR_STUDIO_API_KEY",
-          "audio_streams":"maxbps",
-          "custom_url":"http://localhost:3004/api/stream/video",
+          "audio_select":"maxbps",
+          "custom_api_url":"http://localhost:3004/api/stream/video",
           "target_profiles":[
             {
               "bitrate":400000,
