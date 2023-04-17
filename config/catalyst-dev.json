@@ -1,179 +1,241 @@
 {
-  "account": {
-    "test": {
-      "password": "098f6bcd4621d373cade4e832627b4f6"
+  "account":{
+    "test":{
+      "password":"098f6bcd4621d373cade4e832627b4f6"
     }
   },
-  "autopushes": null,
-  "bandwidth": {
-    "exceptions": [],
-    "limit": 0
+  "autopushes":[
+    [
+      "videorec+", "YOUR_S3_BUCKET/rec/$wildcard/$datetime/source/$segmentCounter.ts?m3u8=../output.m3u8&split=5"
+    ]
+  ],
+  "bandwidth":{
+    "exceptions":[],
+    "limit":0
   },
-  "config": {
-    "accesslog": "LOG",
-    "controller": {
-      "interface": null,
-      "port": null,
-      "username": null
+  "config":{
+    "accesslog":"LOG",
+    "controller":{
+      "interface":null,
+      "port":null,
+      "username":null
     },
-    "debug": 4,
-    "defaultStream": null,
-    "limits": null,
-    "location": {
-      "lat": 0,
-      "lon": 0,
-      "name": ""
+    "debug":4,
+    "defaultStream":null,
+    "limits":null,
+    "location":{
+      "lat":0,
+      "lon":0,
+      "name":""
     },
-    "prometheus": "metrics",
-    "protocols": [
+    "prometheus":"metrics",
+    "protocols":[
       {
-        "connector": "AAC"
-      },
-      {
-        "connector": "CMAF"
-      },
-      {
-        "connector": "DTSC"
-      },
-      {
-        "connector": "EBML"
-      },
-      {
-        "connector": "FLV"
-      },
-      {
-        "connector": "H264"
-      },
-      {
-        "connector": "HDS"
-      },
-      {
-        "connector": "HLS"
-      },
-      {
-        "connector": "HTTP"
-      },
-      {
-        "connector": "HTTPTS"
-      },
-      {
-        "connector": "JSON"
-      },
-      {
-        "connector": "MP3"
-      },
-      {
-        "connector": "MP4"
-      },
-      {
-        "connector": "OGG"
-      },
-      {
-        "connector": "RTMP"
-      },
-      {
-        "connector": "RTSP"
-      },
-      {
-        "connector": "SRT"
-      },
-      {
-        "connector": "TSSRT"
-      },
-      {
-        "connector": "WAV"
-      },
-      {
-        "connector": "WebRTC"
-      },
-      {
-        "broadcaster": true,
-        "connector": "livepeer",
-        "metricsClientIP": true,
-        "metricsPerStream": true,
-        "monitor": true,
-        "orchAddr": "localhost:8936",
-        "rtmpAddr": "127.0.0.1:1936"
-      },
-      {
-        "connector": "livepeer-catalyst-api",
-        "port": "7979",
-        "source-output":"/tmp/livepeer/source",
+        "connector":"AAC"
+      }, {
+        "connector":"CMAF"
+      }, {
+        "connector":"DTSC"
+      }, {
+        "connector":"EBML"
+      }, {
+        "connector":"FLV"
+      }, {
+        "connector":"H264"
+      }, {
+        "connector":"HDS"
+      }, {
+        "connector":"HLS"
+      }, {
+        "connector":"HTTP"
+      }, {
+        "connector":"HTTPTS"
+      }, {
+        "connector":"JSON"
+      }, {
+        "connector":"MP3"
+      }, {
+        "connector":"MP4"
+      }, {
+        "connector":"OGG"
+      }, {
+        "connector":"RTMP"
+      }, {
+        "connector":"RTSP"
+      }, {
+        "connector":"SRT"
+      }, {
+        "connector":"TSSRT"
+      }, {
+        "connector":"WAV"
+      }, {
+        "connector":"WebRTC"
+      }, {
+        "broadcaster":true,
+        "connector":"livepeer",
+        "metricsClientIP":true,
+        "metricsPerStream":true,
+        "monitor":true,
+        "orchAddr":"localhost:8936",
+        "rtmpAddr":"127.0.0.1:1936"
+      }, {
+        "amqp-url":"amqp://guest:guest@localhost:5672/livepeer",
+        "api-server":"http://127.0.0.1:3004",
+        "api-token":"YOUR_STUDIO_API_KEY",
+        "connector":"livepeer-catalyst-api",
+        "mist-base-stream-name":"video",
+        "mist-stream-source":"balance:http://localhost:8042/?fallback=push://",
+        "port":"7979",
+        "source-output":"YOUR_S3_BUCKET/source",
         "vod-pipeline-strategy":"catalyst"
-      },
-      {
-        "cliAddr": "127.0.0.1:7936",
-        "connector": "livepeer",
-        "metricsClientIP": true,
-        "metricsPerStream": true,
-        "monitor": true,
-        "orchestrator": true,
-        "serviceAddr": "127.0.0.1:8936",
-        "transcoder": true
-      },
-      {
-        "connector": "livepeer-victoria-metrics",
-        "promscrape.config": "./config/scrape_config.yaml"
-      },
-      {
-        "connector": "livepeer-mist-api-connector"
+      }, {
+        "connector":"livepeer-catalyst-node"
+      }, {
+        "cliAddr":"127.0.0.1:7936",
+        "connector":"livepeer",
+        "metricsClientIP":true,
+        "metricsPerStream":true,
+        "monitor":true,
+        "orchestrator":true,
+        "serviceAddr":"127.0.0.1:8936",
+        "transcoder":true
+      }, {
+        "connector":"livepeer-victoria-metrics",
+        "promscrape.config":"./config/scrape_config.yaml"
       }
     ],
-    "serverid": null,
-    "triggers": {
-      "PUSH_END": [
+    "serverid":null,
+    "sessionInputMode":15,
+    "sessionOutputMode":15,
+    "sessionStreamInfoMode":1,
+    "sessionUnspecifiedMode":0,
+    "sessionViewerMode":14,
+    "tknMode":15,
+    "triggers":{
+      "CONN_CLOSE":[
         {
-          "handler": "http://localhost:7979/api/mist/trigger",
-          "sync": false
+          "handler":"http://127.0.0.1:7979/mapic",
+          "sync":false
         }
       ],
-      "RECORDING_END": [
+      "LIVE_TRACK_LIST":[
         {
-          "handler": "http://localhost:7979/api/mist/trigger",
-          "sync": false
+          "handler":"http://127.0.0.1:7979/mapic",
+          "sync":false
         }
       ],
-      "USER_NEW": [
+      "PUSH_END":[
         {
-          "default": "true",
-          "handler": "http://127.0.0.1:8090/triggers",
-          "streams": [],
-          "sync": true
+          "handler":"http://localhost:7979/api/mist/trigger",
+          "sync":false
+        }, {
+          "handler":"http://127.0.0.1:7979/mapic",
+          "sync":false
+        }
+      ],
+      "PUSH_OUT_START":[
+        {
+          "handler":"http://127.0.0.1:7979/mapic",
+          "sync":false
+        }
+      ],
+      "PUSH_REWRITE":[
+        {
+          "default":"000reallylongnonexistenstreamnamethatreallyshouldntexist000",
+          "handler":"http://127.0.0.1:7979/mapic",
+          "sync":true
+        }
+      ],
+      "RECORDING_END":[
+        {
+          "handler":"http://localhost:7979/api/mist/trigger",
+          "sync":false
+        }
+      ],
+      "STREAM_SOURCE":[
+        {
+          "default":"push://",
+          "handler":"http://127.0.0.1:7979/STREAM_SOURCE",
+          "streams":[
+            "video", "videorec"
+          ],
+          "sync":true
+        }
+      ],
+      "USER_NEW":[
+        {
+          "default":"true",
+          "handler":"http://127.0.0.1:7979/USER_NEW",
+          "streams":[
+            "video", "videorec"
+          ],
+          "sync":true
         }
       ]
     },
-    "trustedproxy": []
+    "trustedproxy":[]
   },
-  "push_settings": {
-    "maxspeed": null,
-    "wait": null
+  "push_settings":{
+    "maxspeed":null,
+    "wait":null
   },
-  "streams": {
-    "video": {
-      "DVR": 25000,
-      "name": "video",
-      "maxkeepaway": 7500,
-      "processes": [
+  "streams":{
+    "video":{
+      "DVR":25000,
+      "maxkeepaway":7500,
+      "name":"video",
+      "processes":[
         {
-          "debug": 5,
-          "hardcoded_broadcasters": "[{\"address\":\"http://127.0.0.1:8935\"}]",
-          "leastlive": "1",
-          "process": "Livepeer",
-          "target_profiles": [
+          "debug":5,
+          "hardcoded_broadcasters":"[{\"address\":\"http://127.0.0.1:8935\"}]",
+          "leastlive":"1",
+          "process":"Livepeer",
+          "access_token":"YOUR_STUDIO_API_KEY",
+          "audio_streams":"maxbps",
+          "custom_api_url":"http://localhost:3004/api/stream/video",
+          "target_profiles":[
             {
-              "bitrate": 400000,
-              "fps": 30,
-              "height": 144,
-              "name": "P144p30fps16x9",
-              "width": 256,
-              "x-LSP-name": ""
+              "bitrate":400000,
+              "fps":30,
+              "height":144,
+              "name":"P144p30fps16x9",
+              "width":256,
+              "x-LSP-name":""
             }
           ]
         }
       ],
-      "segmentsize": "1",
-      "source": "push://"
+      "segmentsize":"1",
+      "source":"push://"
+    },
+    "videorec":{
+      "DVR":25000,
+      "maxkeepaway":7500,
+      "name":"videorec",
+      "processes":[
+        {
+          "debug":5,
+          "hardcoded_broadcasters":"[{\"address\":\"http://127.0.0.1:8935\"}]",
+          "leastlive":"1",
+          "process":"Livepeer",
+          "access_token":"YOUR_STUDIO_API_KEY",
+          "audio_streams":"maxbps",
+          "custom_api_url":"http://localhost:3004/api/stream/video",
+          "target_profiles":[
+            {
+              "bitrate":400000,
+              "fps":30,
+              "height":144,
+              "name":"P144p30fps16x9",
+              "width":256,
+              "x-LSP-name":""
+            }
+          ]
+        }
+      ],
+      "segmentsize":"1",
+      "source":"push://"
     }
   },
-  "ui_settings": null
+  "ui_settings":null
 }
