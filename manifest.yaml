@@ -89,6 +89,7 @@ box:
       download: github
       project: livepeer/playbacklog_uploader
     binary: livepeer-mist-bigquery-uploader
+    release: v1.1.0
   - name: www
     strategy:
       download: github
