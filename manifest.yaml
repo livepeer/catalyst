@@ -84,6 +84,12 @@ box:
       darwin-arm64: livepeer-mistserver-darwin-arm64.tar.gz
       linux-amd64: livepeer-mistserver-linux-amd64.tar.gz
       linux-arm64: livepeer-mistserver-linux-arm64.tar.gz
+  - name: mist-bigquery-uploader
+    strategy:
+      download: github
+      project: livepeer/playbacklog_uploader
+    binary: livepeer-mist-bigquery-uploader
+    release: v1.1.0
   - name: www
     strategy:
       download: github
