@@ -35,7 +35,7 @@ RUN	apt update && apt install -yqq build-essential
 
 COPY --from=gobuild	/src/bin/	/opt/bin/
 
-RUN	find /opt/bin -type f ! -name "*.sh" -exec strip -s {} \;
+RUN	find /opt/bin -type f ! -name "*.sh" ! -name "livepeer-mist-bigquery-uploader" -exec strip -s {} \;
 
 FROM	catalyst-${BUILD_TARGET}-build	as	catalyst-build
 

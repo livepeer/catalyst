@@ -86,7 +86,7 @@ jobs:
         if: matrix.platform.name == 'linux' && matrix.architecture == 'amd64'
         run: |
           cd "${CI_CATALYST_BIN_DIR}/"
-          find . -type f ! -name "*.sh" -exec strip -s {} \;
+          find . -type f ! -name "*.sh" ! -name "livepeer-mist-bigquery-uploader" -exec strip -s {} \;
 
       - name: Archive binaries for linux/macos
         if: matrix.platform.name != 'windows'
