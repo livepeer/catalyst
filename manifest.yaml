@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: mist-api-connector
-      commit: 0ef3ae63ae870cd86356117ef385bb7ef51550bd
+      commit: 2bb80b8f10d845d5c0102f2fd27c8308d45a107b
     binary: livepeer-mist-api-connector
     release: master
     srcFilenames:
@@ -76,7 +76,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: f915b2899014cb634401ddd734b00425ff28d9a2
+      commit: e89d1a28af36b243f8eeba65cf764e76af1086cb
     release: catalyst
     skipGpg: true
     srcFilenames:
@@ -88,8 +88,9 @@ box:
     strategy:
       download: github
       project: livepeer/playbacklog_uploader
+      commit: 636ae6098724724eec168a35a1b45fa769d5dcfd
     binary: livepeer-mist-bigquery-uploader
-    release: v1.1.0
+    release: v1.2.0
   - name: www
     strategy:
       download: github
