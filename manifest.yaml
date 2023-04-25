@@ -24,7 +24,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-api
-      commit: c4325023ea26eef644c32c06c9fe7b52eb484b8a
+      commit: 07145f236976cfe8ee95833dcf50d71cadcd565b
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -88,9 +88,9 @@ box:
     strategy:
       download: github
       project: livepeer/playbacklog_uploader
-      commit: 636ae6098724724eec168a35a1b45fa769d5dcfd
+      commit: bd7eb09dafefc95ec7d9d33d33e12e7f86a8cc83
     binary: livepeer-mist-bigquery-uploader
-    release: v1.2.0
+    release: v1.2.1
   - name: www
     strategy:
       download: github
