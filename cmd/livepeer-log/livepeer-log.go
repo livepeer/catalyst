@@ -6,6 +6,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/livepeer/livepeer-data/pkg/mistconnector"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
@@ -128,6 +130,8 @@ func main() {
 	cmd := exec.Command(os.Args[1], rest...)
 	cmd.Stdin = os.Stdin
 
+	group, _ := errgroup.WithContext(context.Background())
+
 	if dashJ {
 		// If they did -j, don't mangle the output
 		cmd.Stdout = os.Stdout
@@ -149,20 +153,26 @@ func main() {
 
 		// Actually print with lots of lines!
 		for i, pipe := range []io.ReadCloser{stdout, stderr} {
-			go func(i int, pipe io.ReadCloser) {
-				reader := bufio.NewReader(pipe)
+			func(i int, pipe io.ReadCloser) {
+				group.Go(func() error {
+					reader := bufio.NewReader(pipe)
 
-				for {
-					line, isPrefix, err := reader.ReadLine()
-					if err != nil {
-						output(fmt.Sprintf("reader gave error, ending logging for fd=%d err=%s", i+1, err))
-						break
+					for {
+						line, isPrefix, err := reader.ReadLine()
+						if string(line) != "" {
+							output(string(line))
+						}
+						if err != nil {
+							output(fmt.Sprintf("reader gave error, ending logging for fd=%d err=%s", i+1, err))
+							line, _, err := reader.ReadLine()
+							output(string(line))
+							return err
+						}
+						if isPrefix {
+							output("warning: preceeding line exceeds 64k logging limit and was split")
+						}
 					}
-					output(string(line))
-					if isPrefix {
-						output("warning: preceeding line exceeds 64k logging limit and was split")
-					}
-				}
+				})
 			}(i, pipe)
 		}
 
@@ -187,12 +197,19 @@ func main() {
 	}()
 
 	// Fire away!
-	progerr := cmd.Run()
+	progerr := cmd.Start()
 	if progerr != nil {
-		newerr := fmt.Sprintf("%s - invocation %s", progerr.Error(), strings.Join(os.Args, " "))
+		newerr := fmt.Errorf("%s - invocation %s", progerr.Error(), strings.Join(os.Args, " "))
 		panic(newerr)
 	}
-	os.Exit(0)
+
+	group.Wait()
+
+	progerr = cmd.Wait()
+	if progerr != nil {
+		newerr := fmt.Errorf("%s - invocation %s", progerr.Error(), strings.Join(os.Args, " "))
+		panic(newerr)
+	}
 }
 
 func printJSONInfo(jsonInfo mistconnector.MistConfig) {
