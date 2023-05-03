@@ -143,7 +143,7 @@ func main() {
 			panic(err)
 		}
 
-		print := func(text string) {
+		output := func(text string) {
 			fmt.Fprintf(os.Stderr, "INFO|%s|%d|||%s\n", procname, mypid, text)
 		}
 
@@ -155,12 +155,12 @@ func main() {
 				for {
 					line, isPrefix, err := reader.ReadLine()
 					if err != nil {
-						print(fmt.Sprintf("reader gave error, ending logging for fd=%d err=%s", i+1, err))
+						output(fmt.Sprintf("reader gave error, ending logging for fd=%d err=%s", i+1, err))
 						break
 					}
-					print(string(line))
+					output(string(line))
 					if isPrefix {
-						print("warning: preceeding line exceeds 64k logging limit and was split")
+						output("warning: preceeding line exceeds 64k logging limit and was split")
 					}
 				}
 			}(i, pipe)
