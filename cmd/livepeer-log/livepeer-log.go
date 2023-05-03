@@ -169,7 +169,7 @@ func main() {
 							return err
 						}
 						if isPrefix {
-							output("warning: preceeding line exceeds 64k logging limit and was split")
+							output("warning: preceding line exceeds 64k logging limit and was split")
 						}
 					}
 				})
