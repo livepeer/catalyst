@@ -143,15 +143,27 @@ func main() {
 			panic(err)
 		}
 
+		print := func(text string) {
+			fmt.Fprintf(os.Stderr, "INFO|%s|%d|||%s\n", procname, mypid, text)
+		}
+
 		// Actually print with lots of lines!
-		for _, pipe := range []io.ReadCloser{stderr, stdout} {
-			go func(pipe io.ReadCloser) {
-				scanner := bufio.NewScanner(pipe)
-				for scanner.Scan() {
-					text := scanner.Text()
-					fmt.Fprintf(os.Stderr, "INFO|%s|%d|||%s\n", procname, mypid, text)
+		for i, pipe := range []io.ReadCloser{stdout, stderr} {
+			go func(i int, pipe io.ReadCloser) {
+				reader := bufio.NewReader(pipe)
+
+				for {
+					line, isPrefix, err := reader.ReadLine()
+					if err != nil {
+						print(fmt.Sprintf("reader gave error, ending logging for fd=%d err=%s", i+1, err))
+						break
+					}
+					print(string(line))
+					if isPrefix {
+						print("warning: preceeding line exceeds 64k logging limit and was split")
+					}
 				}
-			}(pipe)
+			}(i, pipe)
 		}
 
 	}
