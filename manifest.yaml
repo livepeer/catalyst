@@ -5,7 +5,7 @@ box:
     strategy:
       download: bucket
       project: livepeer-data
-      commit: dd30988244b13fb19b822b426bd7519983139ffe
+      commit: 3b894031980f666d687cd138720c62e3de3a6b8b
     release: main
     srcFilenames:
       darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
@@ -18,13 +18,13 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: 2a7e1eec4d4ff06a0253c19d7c36668a2edd5cb1
-    release: v0.14.2
+      commit: f65dde353dff011929d187a153616141e305a0ca
+    release: v0.15.0
   - name: catalyst-api
     strategy:
       download: bucket
       project: catalyst-api
-      commit: 795cb3c9bda97cf1f198bd259450789c81ba9417
+      commit: 99667ed66e83a1e6fcd55c157a9cb35c9f15552a
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -76,7 +76,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: 07e93d7295e21c6604f652297e376e4427d57825
+      commit: c34fc98128747f3d159f0b62e2766028a7a178cb
     release: catalystthreepointtwo
     skipGpg: true
     srcFilenames:
@@ -95,9 +95,9 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: 2a7e1eec4d4ff06a0253c19d7c36668a2edd5cb1
+      commit: f65dde353dff011929d187a153616141e305a0ca
     binary: livepeer-www
-    release: v0.14.2
+    release: v0.15.0
   - name: victoria-metrics
     strategy:
       download: github
