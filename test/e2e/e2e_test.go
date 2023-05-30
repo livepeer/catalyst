@@ -214,7 +214,7 @@ func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network s
 
 	// container IP
 	cid := container.GetContainerID()
-	dockerClient, _, _, err := testcontainers.NewDockerClient()
+	dockerClient, err := testcontainers.NewDockerClient()
 	require.NoError(t, err)
 	inspect, err := dockerClient.ContainerInspect(ctx, cid)
 	require.NoError(t, err)
