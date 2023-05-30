@@ -102,7 +102,7 @@ func createMinio(ctx context.Context, t *testing.T, network string) *minioContai
 
 	// container IP
 	cid := container.GetContainerID()
-	dockerClient, _, _, err := testcontainers.NewDockerClient()
+	dockerClient, err := testcontainers.NewDockerClient()
 	require.NoError(t, err)
 	inspect, err := dockerClient.ContainerInspect(ctx, cid)
 	require.NoError(t, err)
