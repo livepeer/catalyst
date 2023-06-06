@@ -6,7 +6,7 @@ GIT_VERSION?=$(shell git describe --always --long --abbrev=8 --dirty)
 GO_LDFLAG_VERSION := -X 'main.Version=$(GIT_VERSION)'
 MIST_COMMIT ?= "catalyst"
 DOCKER_TAG ?= "livepeer/catalyst"
-STRIP_BINARIES ?= "true"
+BUILD_TARGET ?= "full"
 
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
@@ -14,7 +14,7 @@ $(shell mkdir -p $(HOME)/.config/livepeer)
 buildpath=$(realpath ./build)
 
 .PHONY: all
-all: download livepeer-log livepeer-catalyst-node
+all: download livepeer-log
 
 .PHONY: ffmpeg
 ffmpeg:
@@ -84,6 +84,15 @@ livepeer-task-runner:
 	&& PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig make \
 	&& cd - \
 	&& mv ../task-runner/build/task-runner ./bin/livepeer-task-runner
+
+.PHONY: livepeer-task-runner
+livepeer-catalyst-api:
+	set -x \
+	&& cd ../catalyst-api \
+	&& make build \
+	&& cd - \
+	&& mv ../catalyst-api/build/catalyst-api ./bin/livepeer-catalyst-api
+	&& mv ../catalyst-api/build/mist-cleanup.sh ./bin/mist-cleanup
 
 .PHONY: livepeer-www
 livepeer-www:
@@ -160,17 +169,16 @@ full-reset: docker-compose-rm clean all
 	mv $(HOME)/.config/livepeer/catalyst.json $(HOME)/.config/livepeer/catalyst-$$(date +%s)-dev.json || echo '' \
 	&& echo "done"
 
-.PHONY: livepeer-catalyst-node
-livepeer-catalyst-node:
-	go build -o ./bin/livepeer-catalyst-node -ldflags="$(GO_LDFLAG_VERSION)" cmd/catalyst-node/catalyst-node.go
-
 .PHONY: docker
 docker:
-	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=full .
+	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) .
 
 .PHONY: docker-local
 docker-local:
-	tar ch ./bin Dockerfile.local | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=full -
+	tar ch ./bin Dockerfile.local | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
 
 test: docker
+	go test ./test/e2e/*.go -v --logtostderr
+
+test-local: docker-local
 	go test ./test/e2e/*.go -v --logtostderr

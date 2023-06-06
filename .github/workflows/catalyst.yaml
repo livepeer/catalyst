@@ -1,4 +1,4 @@
-name: Build and publish catalyst docker images
+name: Docker build
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   catalyst:
-    name: Build and publish docker image for catalyst-${{ matrix.build.target }}
+    name: livepeerci/catalyst${{ matrix.targets.suffix }}${{ matrix.build.suffix }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -23,6 +23,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        targets:
+          - suffix: ''
+            platforms: linux/amd64, linux/arm64
+          - suffix: "-amd64"
+            platforms: linux/amd64
+          - suffix: "-arm64"
+            platforms: linux/arm64
         build:
           - suffix: ''
             target: stripped
@@ -54,7 +61,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           flavor: |
-            suffix=${{ matrix.build.suffix }},onlatest=true
+            suffix=${{ matrix.targets.suffix }}${{ matrix.build.suffix }},onlatest=true
           images: |
             livepeerci/catalyst
             ghcr.io/${{ github.repository }}
@@ -70,13 +77,13 @@ jobs:
             type=raw,value=${{ (github.event_name == 'pull_request' && github.head_ref) || github.ref_name }}
 
       - name: Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
-          platforms: linux/amd64, linux/arm64
+          platforms: ${{ matrix.targets.platforms }}
           push: true
           target: catalyst
           build-args: |
-            GIT_VERSION=${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+            GIT_VERSION=${{ github.ref_type == 'tag' && github.ref_name || github.event.pull_request.head.sha || github.sha }}
             BUILD_TARGET=${{ matrix.build.target }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

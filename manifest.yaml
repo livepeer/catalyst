@@ -5,7 +5,7 @@ box:
     strategy:
       download: bucket
       project: livepeer-data
-      commit: 1ac553bda62b2db4b2ed814a8cbe36e46379a8a4
+      commit: e54477bc9479513ce8ba76aa1609bb21ad28a802
     release: main
     srcFilenames:
       darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
@@ -18,13 +18,13 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: 2337ef4030d8eae355df6151adf1bed466d3f61e
-    release: v0.11.0
+      commit: f65dde353dff011929d187a153616141e305a0ca
+    release: v0.15.0
   - name: catalyst-api
     strategy:
       download: bucket
       project: catalyst-api
-      commit: a33140ed45962676914b1162f66cd540ff7085ed
+      commit: 42a783b53f352c5c076a487b315c51dabd5cb84a
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: mist-api-connector
-      commit: 3b7e8d6c59702ed8b733283110dbeb281a044793
+      commit: 4e42ae5d010ddbe07b93f11efde91850563c5962
     binary: livepeer-mist-api-connector
     release: master
     srcFilenames:
@@ -49,7 +49,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-uploader
-      commit: 1cc69cd124a0ef245741bed37992123163778716
+      commit: 5457805c3706059ca4c1f08d10b99823edaf8387
     binary: livepeer-catalyst-uploader
     release: main
     srcFilenames:
@@ -61,7 +61,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: 372b0d389954cc3312754ea81d5b0a1bccee0eb0
+      commit: 788854865d093436c8a808ef1372d6e843cc55c2
     binary: livepeer
     release: master
     archivePath: livepeer
@@ -76,21 +76,28 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: f9e197ef169fe5982321a4debc6a7957a3c70e1f
-    release: catalyst
+      commit: ff30dad44c34a7e6685b4b824e7aca5cd713663d
+    release: catalystthreepointtwo
     skipGpg: true
     srcFilenames:
       darwin-amd64: livepeer-mistserver-darwin-amd64.tar.gz
       darwin-arm64: livepeer-mistserver-darwin-arm64.tar.gz
       linux-amd64: livepeer-mistserver-linux-amd64.tar.gz
       linux-arm64: livepeer-mistserver-linux-arm64.tar.gz
+  - name: mist-bigquery-uploader
+    strategy:
+      download: github
+      project: livepeer/playbacklog_uploader
+      commit: bd7eb09dafefc95ec7d9d33d33e12e7f86a8cc83
+    binary: livepeer-mist-bigquery-uploader
+    release: v1.2.1
   - name: www
     strategy:
       download: github
       project: livepeer/studio
-      commit: 2337ef4030d8eae355df6151adf1bed466d3f61e
+      commit: f65dde353dff011929d187a153616141e305a0ca
     binary: livepeer-www
-    release: v0.11.0
+    release: v0.15.0
   - name: victoria-metrics
     strategy:
       download: github

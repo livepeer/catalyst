@@ -20,7 +20,7 @@ jobs:
 
       - name: Set up go
         id: go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
           cache: true
@@ -36,7 +36,7 @@ jobs:
 
       - name: Commit and push changes
         id: branch-commit
-        uses: devops-infra/action-commit-push@v0.9.1
+        uses: devops-infra/action-commit-push@v0.9.2
         with:
           github_token: ${{ secrets.PUSH_TOKEN }}
           target_branch: staging
@@ -45,14 +45,14 @@ jobs:
           force: true
 
       - name: Create pull request
-        uses: devops-infra/action-pull-request@v0.5.2
+        uses: devops-infra/action-pull-request@v0.5.5
         with:
           github_token: ${{ github.token }}
           source_branch: ${{ steps.branch-commit.outputs.branch_name }}
           target_branch: main
           title: '[BOT] Update `manifest.yaml` for staging'
-          reviewer: iameli
-          assignee: hjpotter92
+          reviewer: iameli, thomshutt
+          assignee: ${{ github.actor }}
           label: enhancement
           get_diff: true
           allow_no_diff: false

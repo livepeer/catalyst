@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
-	"net/http"
-	"testing"
-	"time"
 )
 
 const (
@@ -42,7 +43,7 @@ func TestVod(t *testing.T) {
 	createDestBucket(t, m)
 
 	h := randomString("catalyst-")
-	c := startCatalyst(ctx, t, h, network.name, defaultMistConfig(h))
+	c := startCatalyst(ctx, t, h, network.name, defaultMistConfigWithLivepeerProcess(h, sourceOutput(m)))
 	defer c.Terminate(ctx)
 	waitForCatalystAPI(t, c)
 
@@ -50,7 +51,7 @@ func TestVod(t *testing.T) {
 	processVod(t, m, c)
 
 	// then
-	requireSegmentingOutputFiles(ctx, t, m)
+	requireOutputFiles(ctx, t, m)
 }
 
 type minioContainer struct {
@@ -101,7 +102,7 @@ func createMinio(ctx context.Context, t *testing.T, network string) *minioContai
 
 	// container IP
 	cid := container.GetContainerID()
-	dockerClient, _, _, err := testcontainers.NewDockerClient()
+	dockerClient, err := testcontainers.NewDockerClient()
 	require.NoError(t, err)
 	inspect, err := dockerClient.ContainerInspect(ctx, cid)
 	require.NoError(t, err)
@@ -112,6 +113,10 @@ func createMinio(ctx context.Context, t *testing.T, network string) *minioContai
 
 func createSourceBucket(t *testing.T, m *minioContainer) {
 	createBucket(t, m, inBucket)
+}
+
+func sourceOutput(m *minioContainer) string {
+	return fmt.Sprintf("s3+http://%s:%s@%s:9000/%s", username, password, m.hostname, inBucket)
 }
 
 func createDestBucket(t *testing.T, m *minioContainer) {
@@ -129,7 +134,7 @@ func uploadSourceVideo(ctx context.Context, t *testing.T, m *minioContainer) {
 }
 
 func minioClient(t *testing.T, m *minioContainer) *minio.Client {
-	cli, err := minio.New(fmt.Sprintf("localhost:%s", m.port), &minio.Options{
+	cli, err := minio.New(fmt.Sprintf("127.0.0.1:%s", m.port), &minio.Options{
 		Creds: credentials.NewStaticV4(username, password, ""),
 	})
 	require.NoError(t, err)
@@ -138,7 +143,7 @@ func minioClient(t *testing.T, m *minioContainer) *minio.Client {
 
 func waitForCatalystAPI(t *testing.T, c *catalystContainer) {
 	catalystAPIStarted := func() bool {
-		url := fmt.Sprintf("http://localhost:%s/ok", c.catalystAPI)
+		url := fmt.Sprintf("http://127.0.0.1:%s/ok", c.catalystAPIInternal)
 		resp, err := http.Get(url)
 		return err == nil && resp.StatusCode == http.StatusOK
 	}
@@ -148,22 +153,22 @@ func waitForCatalystAPI(t *testing.T, c *catalystContainer) {
 
 func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 	sourceVideoURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/%s", username, password, m.hostname, inBucket, source)
-	destURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/output.m3u8", username, password, m.hostname, outBucket)
+	destURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/", username, password, m.hostname, outBucket)
 	var jsonData = fmt.Sprintf(`{
 		"url": "%s",
-		"callback_url": "http://todo-callback.com",
+		"callback_url": "https://todo-callback.com",
 		"output_locations": [
 			{
 									"type": "object_store",
 									"url": "%s",
 									"outputs": {
-											"source_segments": true
+										"hls": "enabled"
 									}
 							}
 		]
 	}`, sourceVideoURL, destURL)
 
-	url := fmt.Sprintf("http://localhost:%s/api/vod", c.catalystAPI)
+	url := fmt.Sprintf("http://127.0.0.1:%s/api/vod", c.catalystAPIInternal)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(jsonData)))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
@@ -174,13 +179,38 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 	defer resp.Body.Close()
 }
 
-func requireSegmentingOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
+func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 	cli := minioClient(t, m)
 	var files []string
-	for o := range cli.ListObjects(ctx, outBucket, minio.ListObjectsOptions{}) {
-		files = append(files, o.Key)
+	timeoutAt := time.Now().Add(5 * time.Minute)
+
+	expectedFiles := []string{
+		"index.m3u8",
+
+		"360p0/index.m3u8",
+		"360p0/0.ts",
+
+		"720p0/index.m3u8",
+		"720p0/0.ts",
+
+		"1080p0/index.m3u8",
+		"1080p0/0.ts",
 	}
 
-	require.Contains(t, files, "output.m3u8")
-	require.Contains(t, files, "0.ts")
+	for timeoutAt.After(time.Now()) {
+		files = []string{}
+		for o := range cli.ListObjects(ctx, outBucket, minio.ListObjectsOptions{Recursive: true}) {
+			files = append(files, o.Key)
+		}
+		if len(files) < len(expectedFiles) {
+			time.Sleep(500 * time.Millisecond)
+			continue
+		}
+		break
+	}
+
+	require.Equal(t, len(expectedFiles), len(files), "Expected %v but got %v", expectedFiles, files)
+	for _, expectedFile := range expectedFiles {
+		require.Contains(t, files, expectedFile)
+	}
 }

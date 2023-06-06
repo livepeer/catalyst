@@ -90,7 +90,7 @@
         "connector": "WebRTC"
       },
       {
-        "connector": "livepeer-catalyst-node",
+        "connector": "livepeer-catalyst-api",
         "advertise": "catalyst-two:9935",
         "retry-join": "catalyst-one:9935",
         "redirect-prefixes": "stream"
