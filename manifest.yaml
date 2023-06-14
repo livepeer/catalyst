@@ -31,20 +31,6 @@ box:
       darwin-arm64: livepeer-catalyst-api-darwin-arm64.tar.gz
       linux-amd64: livepeer-catalyst-api-linux-amd64.tar.gz
       linux-arm64: livepeer-catalyst-api-linux-arm64.tar.gz
-  - name: mapic
-    strategy:
-      download: bucket
-      project: mist-api-connector
-      commit: 4e42ae5d010ddbe07b93f11efde91850563c5962
-    binary: livepeer-mist-api-connector
-    release: master
-    srcFilenames:
-      darwin-amd64: livepeer-mist-api-connector-darwin-amd64.tar.gz
-      darwin-arm64: livepeer-mist-api-connector-darwin-arm64.tar.gz
-      linux-amd64: livepeer-mist-api-connector-linux-amd64.tar.gz
-      linux-arm64: livepeer-mist-api-connector-linux-arm64.tar.gz
-      windows-amd64: livepeer-mist-api-connector-windows-amd64.zip
-      windows-arm64: livepeer-mist-api-connector-windows-arm64.zip
   - name: catalyst-uploader
     strategy:
       download: bucket
