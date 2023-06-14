@@ -264,28 +264,31 @@ func startStream(t *testing.T, c *catalystContainer) *os.Process {
 }
 
 func requireReplicatedStream(t *testing.T, c *catalystContainer) {
+	var errorMsg string
 	correctStream := func() bool {
 		u := fmt.Sprintf("http://127.0.0.1:%s/hls/stream+foo/index.m3u8", c.http)
 		resp, err := http.Get(u)
 		if err != nil {
+			errorMsg = fmt.Sprintf("error fetching manifest: %s", err)
 			return false
 		}
 		defer resp.Body.Close()
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
+			errorMsg = fmt.Sprintf("error reading response body: %s", err)
 			return false
 		}
 		content := string(body)
 		for _, expected := range []string{"RESOLUTION=1920x1080", "FRAME-RATE=30", "index.m3u8"} {
 			if !strings.Contains(content, expected) {
-				glog.Infof("Failed to get HLS manifest at %s", u)
+				errorMsg = fmt.Sprintf("incorrect manifest: %s did not contain %s", content, expected)
 				return false
 			}
 		}
 		glog.Info("Got HLS manifest!")
 		return true
 	}
-	require.Eventually(t, correctStream, 5*time.Minute, time.Second)
+	require.Eventually(t, correctStream, 5*time.Minute, time.Second, errorMsg)
 }
 
 func requireNotReplicatedStream(t *testing.T, c *catalystContainer) {
