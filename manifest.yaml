@@ -116,3 +116,21 @@ box:
       linux-arm64: vmutils-linux-arm64-v1.80.0.tar.gz
     outputPath: livepeer-vmagent
     skipManifestUpdate: true
+  - name: promtail
+    strategy:
+      download: github
+      project: grafana/loki
+      commit: 9f809eda70babaf583bdf6bf335a28038f286618
+    release: v2.8.2  # https://github.com/grafana/loki/releases/
+    binary: promtail
+    archivePath: promtail
+    skipGpg: true
+    skipChecksum: true
+    srcFilenames:
+      darwin-amd64: promtail-darwin-amd64.zip
+      darwin-arm64: promtail-darwin-arm64.zip
+      linux-amd64: promtail-linux-amd64.zip
+      linux-arm64: promtail-linux-arm64.zip
+      windows-amd64: promtail-windows-amd64.exe.zip
+    outputPath: livepeer-promtail
+    skipManifestUpdate: true

@@ -78,18 +78,26 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 		}
 	}
 
-	glog.Infof("downloaded %s. Getting ready for extraction!", projectInfo.ArchiveFileName)
+	glog.Infof("downloaded %s. Getting ready for extraction", projectInfo.ArchiveFileName)
 	if projectInfo.Platform == "windows" {
-		glog.V(7).Info("extracting zip archive!")
-		err = ExtractZipArchive(archivePath, downloadPath, service)
+		glog.V(7).Info("extracting zip archive")
+		err = ExtractZipArchive(archivePath, downloadPath, service, true)
 		if err != nil {
 			return err
 		}
 	} else {
-		glog.V(7).Infof("extracting tarball archive!")
-		err = ExtractTarGzipArchive(archivePath, downloadPath, service)
-		if err != nil {
-			return err
+		if strings.HasSuffix(archivePath, ".tar.gz") {
+			glog.V(7).Infof("extracting tarball archive")
+			err = ExtractTarGzipArchive(archivePath, downloadPath, service)
+			if err != nil {
+				return err
+			}
+		} else if strings.HasSuffix(archivePath, ".zip") {
+			glog.V(7).Infof("extracting zip archive")
+			err = ExtractZipArchive(archivePath, downloadPath, service, false)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -97,36 +105,41 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 
 // ExtractZipArchive processes a zip file and extracts a single file
 // from the service definition.
-func ExtractZipArchive(archiveFile, extractPath string, service *types.Service) error {
+func ExtractZipArchive(archiveFile, extractPath string, service *types.Service, isWindows bool) error {
 	var outputPath string
-	if len(service.ArchivePath) > 0 && !strings.HasSuffix(service.ArchivePath, ".exe") {
-		service.ArchivePath += ".exe"
-		outputPath = filepath.Join(extractPath, service.ArchivePath)
-	}
-	if len(service.OutputPath) > 0 {
-		outputPath = filepath.Join(extractPath, service.OutputPath+".exe")
+	if isWindows {
+		// Make sure .exe extension is added to the extracted file.
+		if len(service.ArchivePath) > 0 && !strings.HasSuffix(service.ArchivePath, ".exe") {
+			service.ArchivePath += ".exe"
+			outputPath = filepath.Join(extractPath, service.ArchivePath)
+		}
+		if len(service.OutputPath) > 0 {
+			outputPath = filepath.Join(extractPath, service.OutputPath+".exe")
+		}
 	}
 	zipReader, err := zip.OpenReader(archiveFile)
 	if err != nil {
 		return err
 	}
 	for _, file := range zipReader.File {
-		if strings.HasSuffix(file.Name, service.ArchivePath) {
-			if outputPath == "" {
-				outputPath = filepath.Join(extractPath, file.Name)
-			}
-			glog.V(9).Infof("extracting to %q", outputPath)
-			outfile, err := os.Create(outputPath)
-			if err != nil {
-				return err
-			}
-			reader, _ := file.Open()
-			if _, err := io.Copy(outfile, reader); err != nil {
-				glog.Error("failed to create file")
-			}
-			outfile.Chmod(fs.FileMode(file.Mode()))
-			outfile.Close()
+		if !strings.HasPrefix(file.Name, service.ArchivePath) {
+			glog.V(9).Infof("skipping %q (expected %q)", file.Name, service.ArchivePath)
+			continue
 		}
+		if outputPath == "" {
+			outputPath = filepath.Join(extractPath, file.Name)
+		}
+		glog.V(9).Infof("extracting to %q", outputPath)
+		outfile, err := os.Create(outputPath)
+		if err != nil {
+			return err
+		}
+		reader, _ := file.Open()
+		if _, err := io.Copy(outfile, reader); err != nil {
+			glog.Error("failed to create file")
+		}
+		outfile.Chmod(fs.FileMode(file.Mode()))
+		outfile.Close()
 	}
 	return nil
 }
@@ -157,27 +170,28 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service *types.Servi
 			return err
 		}
 		if strings.HasSuffix(header.Name, "/") {
-			glog.V(9).Infof("skpping directory %s", header.Name)
+			glog.V(9).Infof("skipping directory %s", header.Name)
+			continue
+		} else if !strings.HasSuffix(header.Name, service.ArchivePath) {
+			glog.V(9).Infof("skipping %q file (expected %q)", header.Name, service.ArchivePath)
 			continue
 		}
-		if strings.HasSuffix(header.Name, service.ArchivePath) {
-			if output == "" {
-				output = filepath.Join(extractPath, path.Base(header.Name))
-			}
-			glog.V(9).Infof("extracting to %q", output)
-			outfile, err := os.Create(output)
-			if err != nil {
-				return err
-			}
-			if _, err := io.Copy(outfile, tarReader); err != nil {
-				glog.Errorf("Failed to create file: %q", output)
-			}
-			if err != nil {
-				return err
-			}
-			outfile.Chmod(fs.FileMode(header.Mode))
-			outfile.Close()
+		if output == "" {
+			output = filepath.Join(extractPath, path.Base(header.Name))
 		}
+		glog.V(9).Infof("extracting to %q", output)
+		outfile, err := os.Create(output)
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(outfile, tarReader); err != nil {
+			glog.Errorf("Failed to create file: %q", output)
+		}
+		if err != nil {
+			return err
+		}
+		outfile.Chmod(fs.FileMode(header.Mode))
+		outfile.Close()
 	}
 	return nil
 }
