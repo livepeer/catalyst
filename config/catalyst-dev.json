@@ -98,8 +98,8 @@
       {
         "connector": "livepeer-catalyst-api",
         "port": "7979",
-        "source-output":"/tmp/livepeer/source",
-        "vod-pipeline-strategy":"catalyst"
+        "source-output": "/tmp/livepeer/source",
+        "vod-pipeline-strategy": "catalyst"
       },
       {
         "cliAddr": "127.0.0.1:7936",
@@ -114,9 +114,6 @@
       {
         "connector": "livepeer-victoria-metrics",
         "promscrape.config": "./config/scrape_config.yaml"
-      },
-      {
-        "connector": "livepeer-mist-api-connector"
       }
     ],
     "serverid": null,

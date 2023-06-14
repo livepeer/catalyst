@@ -110,15 +110,6 @@ livepeer-api:
 	&& cd - \
 	&& mv ../livepeer-com/packages/api/bin/api ./bin/livepeer-api
 
-.PHONY: livepeer-mist-api-connector
-livepeer-mist-api-connector:
-	set -x \
-	&& cd ../stream-tester \
-	&& make connector \
-	&& cd - \
-	&& rm -rf ./bin/livepeer-mist-api-connector \
-	&& cp ../stream-tester/build/mist-api-connector ./bin/livepeer-mist-api-connector
-
 .PHONY: download
 download:
 	go run cmd/downloader/downloader/downloader.go -v=5 $(ARGS)
