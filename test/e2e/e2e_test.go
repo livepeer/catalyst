@@ -288,25 +288,7 @@ func requireReplicatedStream(t *testing.T, c *catalystContainer) {
 		glog.Info("Got HLS manifest!")
 		return true
 	}
-	require.Eventually(t, correctStream, 5*time.Minute, time.Second, errorMsg)
-}
-
-func requireNotReplicatedStream(t *testing.T, c *catalystContainer) {
-	require := require.New(t)
-
-	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%s/hls/stream+foo/index.m3u8", c.http))
-	require.NoError(err)
-
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	require.NoError(err)
-
-	content := string(body)
-	for _, expected := range []string{"RESOLUTION=1920x1080", "FRAME-RATE=30", "index.m3u8"} {
-		if strings.Contains(content, expected) {
-			require.Fail("Stream should not be replicated", "Received replicated stream '%s'", content)
-		}
-	}
+	require.Eventually(t, correctStream, 5*time.Minute, time.Second, fmt.Sprintf("Error Detail: %s", errorMsg))
 }
 
 func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
