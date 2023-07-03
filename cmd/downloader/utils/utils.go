@@ -40,7 +40,7 @@ func ParseYamlManifest(manifestPath string, isURL bool) (*types.BoxManifest, err
 		file, _ = ioutil.ReadFile(manifestPath)
 	} else {
 		response, err := http.Get(manifestPath)
-		if err != nil || response.StatusCode != 200 {
+		if err != nil || response.StatusCode != http.StatusOK {
 			return nil, err
 		}
 		glog.V(9).Infof("response=%v", response)
