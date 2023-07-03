@@ -264,7 +264,7 @@ box:
 
 [go-livepeer]: https://github.com/livepeer/go-livepeer
 [catalyst]: https://github.com/livepeer/catalyst
-[mistserver]: https://github.com/DDVTECH/mistserver
+[mistserver]: https://github.com/livepeer/mistserver
 [catalyst-api]: https://github.com/livepeer/catalyst-api
 [victoria-metrics]: https://github.com/VictoriaMetrics/VictoriaMetrics
 [obs-studio]: .github/assets/obs-studio.png
