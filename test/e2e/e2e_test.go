@@ -305,7 +305,7 @@ func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystC
 		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode != http.StatusFound {
+		if resp.StatusCode != http.StatusTemporaryRedirect {
 			return false
 		}
 
