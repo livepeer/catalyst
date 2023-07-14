@@ -19,13 +19,13 @@ ENV	GIT_VERSION="${GIT_VERSION}"
 
 RUN	make livepeer-log
 
-FROM	ubuntu:20.04	as	catalyst-full-build
+FROM	ubuntu:22.04	as	catalyst-full-build
 
 WORKDIR	/opt/bin
 
 COPY --from=gobuild	/src/bin/	/opt/bin/
 
-FROM	ubuntu:20.04	as	catalyst-stripped-build
+FROM	ubuntu:22.04	as	catalyst-stripped-build
 
 ENV	DEBIAN_FRONTEND=noninteractive
 
@@ -46,7 +46,7 @@ WORKDIR /app
 RUN	git clone --depth 1 --branch ${LIVEPEER_W3_VERSION} https://github.com/livepeer/go-tools.git
 RUN	npm install --prefix /app/go-tools/w3
 
-FROM	ubuntu:20.04	AS	catalyst
+FROM	ubuntu:22.04	AS	catalyst
 
 ENV	DEBIAN_FRONTEND=noninteractive
 
