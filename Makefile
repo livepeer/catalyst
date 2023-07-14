@@ -1,3 +1,4 @@
+SHELL = /bin/bash
 PROC_COUNT+="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 # The -DCMAKE_OSX_ARCHITECTURES flag should be ignored on non-OSX platforms
@@ -120,7 +121,7 @@ manifest:
 
 .PHONY: dev
 dev:
-	if [ $$(uname) == "Darwin" ]; then \
+	if [ "$$(uname)" == "Darwin" ]; then \
 		if [ ! -d "/Volumes/RAMDisk/" ]; then \
 			disk=$$(hdiutil attach -nomount ram://4194304) \
 			&& sleep 3 \
