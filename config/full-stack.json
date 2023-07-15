@@ -25,13 +25,78 @@
       {
         "connector": "livepeer-api",
         "postgres-url": "postgresql://root@localhost:5432/defaultdb?sslmode=disable",
-        "cors-jwt-allowlist": "[\"http://localhost:8080\", \"http://localhost:3000\", \"http://localhost:8888s\"]",
+        "cors-jwt-allowlist": "[\"http://localhost:8080\", \"http://localhost:3000\", \"http://localhost:8888\"]",
         "jwt-secret": "stupidlysecret",
         "jwt-audience": "my-node",
         "ingest": "[{\"ingest\":\"rtmp://localhost/live\",\"ingests\":{\"rtmp\":\"rtmp://localhost/live\",\"srt\":\"srt://localhost:8889\"},\"playback\":\"http://localhost:8888/hls\",\"base\":\"http://localhost:8888\",\"origin\":\"http://localhost:3004\"}]"
       },
       {
         "connector": "livepeer-nginx"
+      },
+      {
+        "connector": "livepeer-catalyst-api",
+        "api-server": "http://127.0.0.1:3004",
+        "api-token": "1ae27fb9-9490-4f97-8a9e-3e36586a605d"
+      },
+      {
+        "connector": "AAC"
+      },
+      {
+        "connector": "CMAF"
+      },
+      {
+        "connector": "DTSC"
+      },
+      {
+        "connector": "EBML"
+      },
+      {
+        "connector": "FLV"
+      },
+      {
+        "connector": "H264"
+      },
+      {
+        "connector": "HDS"
+      },
+      {
+        "connector": "HLS"
+      },
+      {
+        "connector": "HTTP"
+      },
+      {
+        "connector": "HTTPTS"
+      },
+      {
+        "connector": "JSON"
+      },
+      {
+        "connector": "MP3"
+      },
+      {
+        "connector": "MP4"
+      },
+      {
+        "connector": "OGG"
+      },
+      {
+        "connector": "RTMP"
+      },
+      {
+        "connector": "RTSP"
+      },
+      {
+        "connector": "SRT"
+      },
+      {
+        "connector": "TSSRT"
+      },
+      {
+        "connector": "WAV"
+      },
+      {
+        "connector": "WebRTC"
       }
     ],
     "sessionInputMode": 15,
