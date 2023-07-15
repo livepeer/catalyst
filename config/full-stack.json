@@ -1,0 +1,59 @@
+{
+  "account": {
+    "test": {
+      "password": "098f6bcd4621d373cade4e832627b4f6"
+    }
+  },
+  "autopushes": null,
+  "config": {
+    "accesslog": "LOG",
+    "controller": {
+      "interface": null,
+      "port": null,
+      "username": null
+    },
+    "defaultStream": null,
+    "limits": null,
+    "prometheus": "",
+    "protocols": [
+      {
+        "connector": "livepeer-cockroach"
+      },
+      {
+        "connector": "livepeer-rabbitmq"
+      },
+      {
+        "connector": "livepeer-api",
+        "postgres-url": "postgresql://root@localhost:5432/defaultdb?sslmode=disable",
+        "cors-jwt-allowlist": "[\"http://localhost:8080\", \"http://localhost:3000\", \"http://localhost:8888s\"]",
+        "jwt-secret": "stupidlysecret",
+        "jwt-audience": "my-node",
+        "ingest": "[{\"ingest\":\"rtmp://localhost/live\",\"ingests\":{\"rtmp\":\"rtmp://localhost/live\",\"srt\":\"srt://localhost:8889\"},\"playback\":\"http://localhost:8888/hls\",\"base\":\"http://localhost:8888\",\"origin\":\"http://localhost:3004\"}]"
+      },
+      {
+        "connector": "livepeer-nginx"
+      }
+    ],
+    "sessionInputMode": 15,
+    "sessionOutputMode": 15,
+    "sessionStreamInfoMode": 1,
+    "sessionUnspecifiedMode": 0,
+    "sessionViewerMode": 14,
+    "tknMode": 15,
+    "triggers": {},
+    "trustedproxy": ["0.0.0.0/1", "128.0.0.0/1"]
+  },
+  "extwriters": [
+    [
+      "s3",
+      "livepeer-catalyst-uploader -t 2592000s",
+      ["s3", "s3+http", "s3+https", "ipfs"]
+    ]
+  ],
+  "push_settings": {
+    "maxspeed": null,
+    "wait": null
+  },
+  "streams": null,
+  "variables": null
+}

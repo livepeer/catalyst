@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [[ $* == *-j* ]]; then
+    echo '{
+  "desc": "Livepeer-packaged CockroachDB",
+  "name": "Livepeer CockroachDB",
+  "optional": {}
+}'
+    exit 0
+fi
+
+exec cockroach start-single-node --insecure --listen-addr=localhost:36257 --sql-addr=localhost:5432 -s /data/cockroach

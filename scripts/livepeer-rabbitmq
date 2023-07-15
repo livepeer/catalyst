@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [[ $* == *-j* ]]; then
+    echo '{
+  "desc": "Livepeer-packaged RabbitMQ",
+  "name": "Livepeer RabbitMQ",
+  "optional": {}
+}'
+    exit 0
+fi
+
+exec rabbitmq-server

@@ -2,17 +2,28 @@ FROM	ubuntu:22.04
 
 LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
 
+ENV DEBIAN_FRONTEND noninteractive
 RUN	apt update && apt install -yqq \
+	curl \
 	ca-certificates \
 	musl \
 	python3 \
 	ffmpeg \
 	nodejs \
 	gstreamer1.0-tools gstreamer1.0-plugins-good gstreamer1.0-plugins-base gstreamer1.0-plugins-bad \
+	rabbitmq-server \
 	&& rm -rf /var/lib/apt/lists/*
 
-ADD	./bin	./usr/bin
+RUN curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-amd64.tgz \
+	&& tar xzvf cockroach-v23.1.5.linux-amd64.tgz \
+	&& mv cockroach-v23.1.5.linux-amd64/cockroach /usr/bin/cockroach \
+	&& rm -rf cockroach-v23.1.5.linux-amd64.tgz cockroach-v23.1.5.linux-amd64
+
+RUN apt update && apt install -yqq nginx
+
+ADD ./scripts /usr/local/bin
+ADD	./bin	/usr/local/bin
 
 EXPOSE	1935	4242	8080	8889/udp
 
-CMD	["/usr/bin/MistController", "-c", "/etc/livepeer/catalyst.json"]
+CMD	["/usr/local/bin/MistController", "-c", "/etc/livepeer/catalyst.json"]

@@ -1,0 +1,53 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [[ $* == *-j* ]]; then
+    echo '{
+  "desc": "Livepeer-packaged nginx",
+  "name": "Livepeer nginx",
+  "optional": {}
+}'
+    exit 0
+fi
+
+cat > /etc/nginx/nginx.conf << EOF
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+daemon off;
+
+events {
+	worker_connections 768;
+	# multi_accept on;
+}
+
+http {
+	sendfile on;
+	tcp_nopush on;
+	types_hash_max_size 2048;
+
+	include /etc/nginx/mime.types;
+	default_type application/octet-stream;
+
+	ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
+	ssl_prefer_server_ciphers on;
+
+	access_log /proc/1/fd/2;
+	error_log /proc/1/fd/2;
+
+	gzip on;
+
+    server {
+        listen       8888;
+        server_name  _;
+
+        location / {
+            proxy_pass http://127.0.0.1:3004;
+        }
+    }
+}
+EOF
+
+exec nginx

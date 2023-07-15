@@ -94,21 +94,13 @@ livepeer-catalyst-api:
 	&& mv ../catalyst-api/build/catalyst-api ./bin/livepeer-catalyst-api
 	&& mv ../catalyst-api/build/mist-cleanup.sh ./bin/mist-cleanup
 
-.PHONY: livepeer-www
-livepeer-www:
-	set -x \
-	&& cd ../livepeer-com/packages/www \
-	&& yarn run pkg:local \
-	&& cd - \
-	&& mv ../livepeer-com/packages/www/bin/www ./bin/livepeer-www
-
 .PHONY: livepeer-api
 livepeer-api:
 	set -x \
-	&& cd ../livepeer-com/packages/api \
+	&& cd ../studio \
 	&& yarn run pkg:local \
 	&& cd - \
-	&& mv ../livepeer-com/packages/api/bin/api ./bin/livepeer-api
+	&& mv ../studio/packages/api/bin/api ./bin/livepeer-api
 
 .PHONY: download
 download:
@@ -166,7 +158,7 @@ docker:
 
 .PHONY: docker-local
 docker-local:
-	tar ch ./bin Dockerfile.local | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
+	tar ch ./bin Dockerfile.local ./scripts | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
 
 test: docker
 	go test ./test/e2e/*.go -v --logtostderr
