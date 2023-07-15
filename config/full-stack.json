@@ -14,7 +14,7 @@
     },
     "defaultStream": null,
     "limits": null,
-    "prometheus": "",
+    "prometheus": "koekjes",
     "protocols": [
       {
         "connector": "livepeer-cockroach"
@@ -36,7 +36,12 @@
       {
         "connector": "livepeer-catalyst-api",
         "api-server": "http://127.0.0.1:3004",
-        "api-token": "1ae27fb9-9490-4f97-8a9e-3e36586a605d"
+        "api-token": "1ae27fb9-9490-4f97-8a9e-3e36586a605d",
+        "tags": "node=media,http=http://localhost:8085",
+        "redirect-prefixes": "video,videorec",
+        "node": "localhost",
+        "http-internal-addr": "0.0.0.0:7979",
+        "balancer-args": "-P koekjes"
       },
       {
         "connector": "AAC"
@@ -63,7 +68,8 @@
         "connector": "HLS"
       },
       {
-        "connector": "HTTP"
+        "connector": "HTTP",
+        "port": "8085"
       },
       {
         "connector": "HTTPTS"
