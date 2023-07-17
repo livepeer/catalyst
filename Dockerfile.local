@@ -21,9 +21,16 @@ RUN curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-amd64.tg
 
 RUN apt update && apt install -yqq nginx
 
+RUN mkdir -p /data \
+	&& cd /data \
+	&& curl -LO https://github.com/iameli-streams/livepeer-in-a-box-database-snapshots/raw/f6f680f6c3f85880cad2a5b4550237a77f1c4acf/livepeer-studio-bootstrap.tar.gz \
+	&& tar xzvf livepeer-studio-bootstrap.tar.gz
+
+ADD ./config/full-stack.json /config/full-stack.json
+
 ADD ./scripts /usr/local/bin
 ADD	./bin	/usr/local/bin
 
 EXPOSE	1935	4242	8080	8889/udp
 
-CMD	["/usr/local/bin/MistController", "-c", "/etc/livepeer/catalyst.json"]
+CMD	["/usr/local/bin/MistController", "-c", "/config/full-stack.json"]
