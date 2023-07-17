@@ -157,8 +157,8 @@ docker:
 	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) .
 
 .PHONY: docker-local
-docker-local:
-	tar ch ./bin Dockerfile.local ./scripts | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
+docker-local: scripts
+	tar ch ./bin Dockerfile.local ./scripts ./config | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
 
 .PHONY: test
 test: docker
