@@ -30,7 +30,8 @@
         "jwt-audience": "my-node",
         "ingest": "[{\"ingest\":\"rtmp://localhost/live\",\"ingests\":{\"rtmp\":\"rtmp://localhost/live\",\"srt\":\"srt://localhost:8889\"},\"playback\":\"http://localhost:8888/hls\",\"base\":\"http://localhost:8888\",\"origin\":\"http://localhost:3004\"}]",
         "broadcasters": "[{\"address\":\"http://127.0.0.1:8935\"}]",
-        "base-stream-name": "video"
+        "base-stream-name": "video",
+        "amqp-url": "amqp://localhost:5672/livepeer"
       },
       {
         "connector": "livepeer-nginx"
@@ -39,11 +40,12 @@
         "connector": "livepeer-catalyst-api",
         "api-server": "http://127.0.0.1:3004",
         "api-token": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
-        "tags": "node=media,http=http://localhost:8085",
+        "tags": "node=media,http=http://localhost:8888/mist",
         "redirect-prefixes": "video,videorec",
         "node": "localhost",
         "http-internal-addr": "0.0.0.0:7979",
-        "balancer-args": "-P koekjes"
+        "balancer-args": "-P koekjes",
+        "amqp-url": "amqp://localhost:5672/livepeer"
       },
       {
         "connector": "livepeer",
@@ -54,6 +56,7 @@
         "orchAddr": "127.0.0.1:8936",
         "rtmpAddr": "127.0.0.1:1936",
         "authWebhookUrl": "http://9c2936b5-143f-4b10-b302-6a21b5f29c3d:f61b3cdb-d173-4a7a-a0d3-547b871a56f9@127.0.0.1:3004/api/stream/hook",
+        "metadataQueueUri": "amqp://localhost:5672/livepeer",
         "v": "2"
       },
       {
@@ -92,8 +95,7 @@
         "connector": "HLS"
       },
       {
-        "connector": "HTTP",
-        "port": "8085"
+        "connector": "HTTP"
       },
       {
         "connector": "HTTPTS"
