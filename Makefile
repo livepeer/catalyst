@@ -85,7 +85,7 @@ livepeer-task-runner:
 	&& cd - \
 	&& mv ../task-runner/build/task-runner ./bin/livepeer-task-runner
 
-.PHONY: livepeer-task-runner
+.PHONY: livepeer-catalyst-api
 livepeer-catalyst-api:
 	set -x \
 	&& cd ../catalyst-api \
@@ -93,6 +93,15 @@ livepeer-catalyst-api:
 	&& cd - \
 	&& mv ../catalyst-api/build/catalyst-api ./bin/livepeer-catalyst-api \
 	&& mv ../catalyst-api/build/mist-cleanup.sh ./bin/mist-cleanup
+
+
+.PHONY: livepeer-analyzer
+livepeer-analyzer:
+	set -x \
+	&& cd ../livepeer-data \
+	&& make analyzer \
+	&& cd - \
+	&& mv ../livepeer-data/build/analyzer ./bin/livepeer-analyzer
 
 .PHONY: livepeer-api
 livepeer-api:
