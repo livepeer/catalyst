@@ -91,7 +91,7 @@ livepeer-catalyst-api:
 	&& cd ../catalyst-api \
 	&& make build \
 	&& cd - \
-	&& mv ../catalyst-api/build/catalyst-api ./bin/livepeer-catalyst-api
+	&& mv ../catalyst-api/build/catalyst-api ./bin/livepeer-catalyst-api \
 	&& mv ../catalyst-api/build/mist-cleanup.sh ./bin/mist-cleanup
 
 .PHONY: livepeer-api
