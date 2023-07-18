@@ -31,7 +31,8 @@
         "ingest": "[{\"ingest\":\"rtmp://localhost/live\",\"ingests\":{\"rtmp\":\"rtmp://localhost/live\",\"srt\":\"srt://localhost:8889\"},\"playback\":\"http://localhost:8888/hls\",\"base\":\"http://localhost:8888\",\"origin\":\"http://localhost:3004\"}]",
         "broadcasters": "[{\"address\":\"http://127.0.0.1:8935\"}]",
         "base-stream-name": "video",
-        "amqp-url": "amqp://localhost:5672/livepeer"
+        "amqp-url": "amqp://localhost:5672/livepeer",
+        "own-region": "box"
       },
       {
         "connector": "livepeer-nginx"
@@ -45,7 +46,8 @@
         "node": "localhost",
         "http-internal-addr": "0.0.0.0:7979",
         "balancer-args": "-P koekjes",
-        "amqp-url": "amqp://localhost:5672/livepeer"
+        "amqp-url": "amqp://localhost:5672/livepeer",
+        "own-region": "box"
       },
       {
         "connector": "livepeer",
@@ -69,6 +71,13 @@
         "monitor": true,
         "serviceAddr": "127.0.0.1:8936",
         "v": "2"
+      },
+      {
+        "connector": "livepeer-analyzer",
+        "livepeer-access-token": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
+        "port": "3080",
+        "rabbitmq-uri": "amqp://localhost:5672/livepeer",
+        "disable-bigquery": true
       },
       {
         "connector": "AAC"
