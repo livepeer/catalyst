@@ -35,6 +35,13 @@
         "own-region": "box"
       },
       {
+        "connector": "livepeer-api",
+        "postgres-url": "postgresql://root@localhost:5432/defaultdb?sslmode=disable",
+        "own-region": "box",
+        "stream-info-service": true,
+        "port": "3040"
+      },
+      {
         "connector": "livepeer-nginx"
       },
       {
