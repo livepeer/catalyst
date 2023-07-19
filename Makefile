@@ -26,47 +26,14 @@ build:
 	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/downloader cmd/downloader/downloader/downloader.go
 	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/manifest cmd/downloader/manifest/manifest.go
 
-build/compiled/lib/libmbedtls.a:
-	export PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig \
-	&& export LD_LIBRARY_PATH=$(buildpath)/compiled/lib \
-	&& export C_INCLUDE_PATH=$(buildpath)/compiled/include \
-	&& git clone -b dtls_srtp_support --depth=1 https://github.com/livepeer/mbedtls.git $(buildpath)/mbedtls \
-  && cd $(buildpath)/mbedtls \
-  && mkdir build \
-  && cd build \
-  && cmake -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} .. \
-  && make -j$(nproc) install
-
-build/compiled/lib/libsrtp2.a:
-	git clone https://github.com/cisco/libsrtp.git $(buildpath)/libsrtp \
-  && cd $(buildpath)/libsrtp \
-  && mkdir build \
-  && cd build \
-  && cmake -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} .. \
-  && make -j$(nproc) install
-
-build/compiled/lib/libsrt.a: build/compiled/lib/libmbedtls.a
-build/compiled/lib/libsrt.a:
-	git clone https://github.com/Haivision/srt.git $(buildpath)/srt \
-  && cd $(buildpath)/srt \
-  && mkdir build \
-  && cd build \
-  && cmake .. -DCMAKE_INSTALL_PREFIX=$(buildpath)/compiled -D USE_ENCLIB=mbedtls -D ENABLE_SHARED=false -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} \
-  && make -j$(nproc) install
-
-mistserver: build/compiled/lib/libmbedtls.a build/compiled/lib/libsrtp2.a build/compiled/lib/libsrt.a
-
 .PHONY: mistserver
 mistserver:
 	set -x \
-	export PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig \
-	export LD_LIBRARY_PATH=~$(buildpath)/compiled/lib \
-	export C_INCLUDE_PATH=~$(buildpath)/compiled/include \
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
-	&& cmake ../../../mistserver -DPERPETUAL=1 -DLOAD_BALANCE=1 -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DCMAKE_PREFIX_PATH=$(buildpath)/compiled -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES} -DNORIST=yes \
-	&& make -j${PROC_COUNT} \
-	&& make install
+	&& meson ../../../mistserver -DLOAD_BALANCE=true -Dprefix=${CMAKE_INSTALL_PREFIX} -Dbuildtype=debugoptimized --default-library static \
+	&& ninja \
+	&& ninja install
 
 .PHONY: go-livepeer
 go-livepeer:
