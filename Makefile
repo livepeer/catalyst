@@ -61,6 +61,13 @@ livepeer-catalyst-api:
 	&& mv ../catalyst-api/build/catalyst-api ./bin/livepeer-catalyst-api \
 	&& mv ../catalyst-api/build/mist-cleanup.sh ./bin/mist-cleanup
 
+.PHONY: livepeer-catalyst-uploader
+livepeer-catalyst-uploader:
+	set -x \
+	&& cd ../catalyst-uploader \
+	&& make \
+	&& cd - \
+	&& mv ../catalyst-uploader/build/catalyst-uploader ./bin/livepeer-catalyst-uploader
 
 .PHONY: livepeer-analyzer
 livepeer-analyzer:
@@ -147,3 +154,20 @@ test-local: docker-local
 .PHONY: scripts
 scripts:
 	cp -Rv ./scripts/* ./bin
+
+.PHONY: box-dev
+box-dev: scripts
+	exec docker run \
+	-v $$HOME/code/livepeer-in-a-box-database-snapshots:/data \
+	-v $$(realpath bin):/usr/local/bin \
+	-v $$(realpath ../studio):/studio \
+	-v $$(realpath config):/config:ro \
+	--rm \
+	-it \
+	--name catalyst \
+	--shm-size=4gb \
+	-p 1935:1935 \
+	-p 8888:8888 \
+	-p 4242:4242 \
+	-e ATHIEST=true livepeer/catalyst:latest MistController \
+	-c /config/full-stack.json

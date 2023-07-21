@@ -9,17 +9,22 @@ RUN	apt update && apt install -yqq \
 	musl \
 	python3 \
 	ffmpeg \
-	nodejs \
 	gstreamer1.0-tools gstreamer1.0-plugins-good gstreamer1.0-plugins-base gstreamer1.0-plugins-bad \
 	rabbitmq-server \
+	nginx \
 	&& rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+	&& apt install -y nodejs
 
 RUN curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-amd64.tgz \
 	&& tar xzvf cockroach-v23.1.5.linux-amd64.tgz \
 	&& mv cockroach-v23.1.5.linux-amd64/cockroach /usr/bin/cockroach \
 	&& rm -rf cockroach-v23.1.5.linux-amd64.tgz cockroach-v23.1.5.linux-amd64
 
-RUN apt update && apt install -yqq nginx
+RUN curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-amd64/minio \
+	&& curl -o /usr/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc \
+	&& chmod +x /usr/bin/minio /usr/bin/mc
 
 RUN mkdir -p /data \
 	&& cd /data \
