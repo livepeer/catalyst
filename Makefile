@@ -7,6 +7,12 @@ GO_LDFLAG_VERSION := -X 'main.Version=$(GIT_VERSION)'
 MIST_COMMIT ?= "catalyst"
 DOCKER_TAG ?= "livepeer/catalyst"
 BUILD_TARGET ?= "full"
+DOCKER ?= "docker"
+ifeq ($(DOCKER),podman)
+        DOCKER_HOST ?= unix://$(shell podman info -f '{{ .Host.RemoteSocket.Path }}')
+else
+        DOCKER_HOST ?= ""
+endif
 
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
@@ -162,14 +168,16 @@ full-reset: docker-compose-rm clean all
 
 .PHONY: docker
 docker:
-	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) .
+	$(DOCKER) build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) .
 
 .PHONY: docker-local
 docker-local:
-	tar ch ./bin Dockerfile.local | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
+	tar ch ./bin Dockerfile.local | $(DOCKER) build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
 
-test: docker
-	go test ./test/e2e/*.go -v --logtostderr
+.PHONY: test
+test:
+	DOCKER_HOST=$(DOCKER_HOST) go test ./test/e2e/*.go -v --logtostderr
 
+.PHONY: test-local
 test-local: docker-local
-	go test ./test/e2e/*.go -v --logtostderr
+	DOCKER_HOST=$(DOCKER_HOST) go test ./test/e2e/*.go -v --logtostderr
