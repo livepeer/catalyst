@@ -24,7 +24,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Install podman
-        run: apt install -y podman
+        run: sudo apt install -y podman
 
       - name: Set up go
         id: go
