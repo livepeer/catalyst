@@ -26,7 +26,7 @@ jobs:
       - name: Install podman
         run: |-
           sudo apt install -y podman \
-          && echo 'unqualified-search-registries = ["docker.io"]' >> /etc/containers/registries.conf
+          && echo 'unqualified-search-registries = ["docker.io"]' | sudo tee -a /etc/containers/registries.conf
 
       - name: Set up go
         id: go
