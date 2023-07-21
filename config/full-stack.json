@@ -4,7 +4,12 @@
       "password": "098f6bcd4621d373cade4e832627b4f6"
     }
   },
-  "autopushes": null,
+  "autopushes": [
+    [
+      "videorec+",
+      "s3+http://admin:password@localhost:9000/os-recordings/$wildcard/$uuid/source/$segmentCounter.ts?m3u8=../output.m3u8&split=5&video=source&audio=source&append=1"
+    ]
+  ],
   "config": {
     "accesslog": "LOG",
     "controller": {
@@ -23,15 +28,25 @@
         "connector": "livepeer-rabbitmq"
       },
       {
+        "connector": "livepeer-nginx"
+      },
+      {
+        "connector": "livepeer-minio"
+      },
+      {
         "connector": "livepeer-api",
         "postgres-url": "postgresql://root@localhost:5432/defaultdb?sslmode=disable",
         "cors-jwt-allowlist": "[\"http://localhost:8080\", \"http://localhost:3000\", \"http://localhost:8888\"]",
         "jwt-secret": "stupidlysecret",
         "jwt-audience": "my-node",
-        "ingest": "[{\"ingest\":\"rtmp://localhost/live\",\"ingests\":{\"rtmp\":\"rtmp://localhost/live\",\"srt\":\"srt://localhost:8889\"},\"playback\":\"http://localhost:8888/hls\",\"base\":\"http://localhost:8888\",\"origin\":\"http://localhost:3004\"}]",
+        "ingest": "[{\"ingest\":\"rtmp://localhost/live\",\"ingests\":{\"rtmp\":\"rtmp://localhost/live\",\"srt\":\"srt://localhost:8889\"},\"playback\":\"http://localhost:8888/hls\",\"base\":\"http://localhost:8888\",\"origin\":\"http://localhost:8888\"}]",
         "broadcasters": "[{\"address\":\"http://127.0.0.1:8935\"}]",
         "base-stream-name": "video",
         "amqp-url": "amqp://localhost:5672/livepeer",
+        "vodObjectStoreId": "917a2f18-f7a8-4ae3-a849-6efd4aac8e59",
+        "vodCatalystObjectStoreId": "517873a4-487c-40ad-872f-027f4bc6bd98",
+        "vodCatalystPrivateAssetsObjectStore": "cab9266f-5583-4532-9630-7be10d92affe",
+        "recordCatalystObjectStoreId": "0926e4ba-b726-4386-92ee-5c4583f62f0a",
         "own-region": "box"
       },
       {
@@ -40,9 +55,6 @@
         "own-region": "box",
         "stream-info-service": true,
         "port": "3040"
-      },
-      {
-        "connector": "livepeer-nginx"
       },
       {
         "connector": "livepeer-catalyst-api",
@@ -54,7 +66,9 @@
         "http-internal-addr": "0.0.0.0:7979",
         "balancer-args": "-P koekjes",
         "amqp-url": "amqp://localhost:5672/livepeer",
-        "own-region": "box"
+        "own-region": "box",
+        "v": "8",
+        "broadcaster-url": "http://127.0.0.1:8937"
       },
       {
         "connector": "livepeer",
@@ -66,6 +80,18 @@
         "rtmpAddr": "127.0.0.1:1936",
         "authWebhookUrl": "http://9c2936b5-143f-4b10-b302-6a21b5f29c3d:f61b3cdb-d173-4a7a-a0d3-547b871a56f9@127.0.0.1:3004/api/stream/hook",
         "metadataQueueUri": "amqp://localhost:5672/livepeer",
+        "v": "2"
+      },
+      {
+        "connector": "livepeer",
+        "broadcaster": true,
+        "metricsClientIP": true,
+        "metricsPerStream": true,
+        "monitor": true,
+        "httpAddr": "127.0.0.1:8937",
+        "cliAddr": "127.0.0.1:7937",
+        "orchAddr": "127.0.0.1:8936",
+        "rtmpAddr": "127.0.0.1:1937",
         "v": "2"
       },
       {
@@ -84,7 +110,17 @@
         "livepeer-access-token": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
         "port": "3080",
         "rabbitmq-uri": "amqp://localhost:5672/livepeer",
-        "disable-bigquery": true
+        "disable-bigquery": true,
+        "v": "8"
+      },
+      {
+        "connector": "livepeer-task-runner",
+        "amqp-uri": "amqp://localhost:5672/livepeer",
+        "catalyst-secret": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
+        "catalyst-url": "http://127.0.0.1:7979",
+        "livepeer-access-token": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
+        "own-base-url": "http://127.0.0.1:3060/task-runner",
+        "port": "3060"
       },
       {
         "connector": "AAC"
@@ -169,6 +205,34 @@
   },
   "streams": {
     "video": {
+      "DVR": 25000,
+      "maxkeepaway": 7500,
+      "name": "video",
+      "processes": [
+        {
+          "access_token": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
+          "custom_url": "http://127.0.0.1:3004/api/stream/video",
+          "debug": 5,
+          "exit_unmask": false,
+          "leastlive": "1",
+          "process": "Livepeer",
+          "target_profiles": [
+            {
+              "bitrate": 400000,
+              "fps": 30,
+              "height": 144,
+              "name": "P144p30fps16x9",
+              "width": 256,
+              "x-LSP-name": ""
+            }
+          ]
+        }
+      ],
+      "segmentsize": 1,
+      "source": "push://",
+      "stop_sessions": false
+    },
+    "videorec": {
       "DVR": 25000,
       "maxkeepaway": 7500,
       "name": "video",
