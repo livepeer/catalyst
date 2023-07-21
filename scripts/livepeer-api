@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -euo pipefail
+
+exec node /studio/packages/api/dist/cli.js "$@"
