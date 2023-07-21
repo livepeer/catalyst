@@ -175,7 +175,7 @@ docker-local:
 	tar ch ./bin Dockerfile.local | $(DOCKER) build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
 
 .PHONY: test
-test:
+test: docker
 	DOCKER_HOST=$(DOCKER_HOST) go test ./test/e2e/*.go -v --logtostderr
 
 .PHONY: test-local
