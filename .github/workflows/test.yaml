@@ -24,7 +24,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Install podman
-        run: sudo apt install -y podman
+        run: |-
+          sudo apt install -y podman \
+          && echo 'unqualified-search-registries = ["docker.io"]' >> /etc/containers/registries.conf
 
       - name: Set up go
         id: go
