@@ -143,6 +143,11 @@ docker:
 docker-local: scripts
 	tar ch ./bin Dockerfile.local ./scripts ./config | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
 
+.PHONY: box-local
+box-local: DOCKER_TAG=livepeer/in-a-box
+box-local:
+	tar ch ./bin Dockerfile.local ./scripts ./config | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
+
 .PHONY: test
 test: docker
 	go test ./test/e2e/*.go -v --logtostderr
