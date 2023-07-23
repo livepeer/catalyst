@@ -28,7 +28,7 @@ RUN curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-amd64/mi
 
 RUN mkdir -p /data \
 	&& cd /data \
-	&& curl -LO https://github.com/iameli-streams/livepeer-in-a-box-database-snapshots/raw/f6f680f6c3f85880cad2a5b4550237a77f1c4acf/livepeer-studio-bootstrap.tar.gz \
+	&& curl -LO https://github.com/iameli-streams/livepeer-in-a-box-database-snapshots/raw/f59e7ce7a631dbcd176580a54b4fe5f31f9e4dbc/livepeer-studio-bootstrap.tar.gz \
 	&& tar xzvf livepeer-studio-bootstrap.tar.gz
 
 ADD ./config/full-stack.json /config/full-stack.json
