@@ -34,6 +34,9 @@
         "connector": "livepeer-minio"
       },
       {
+        "connector": "livepeer-core-dump-monitor"
+      },
+      {
         "connector": "livepeer-api",
         "postgres-url": "postgresql://root@localhost:5432/defaultdb?sslmode=disable",
         "cors-jwt-allowlist": "[\"http://localhost:8080\", \"http://localhost:3000\", \"http://localhost:8888\"]",
