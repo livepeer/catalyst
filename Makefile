@@ -162,17 +162,17 @@ scripts:
 
 .PHONY: box-dev
 box-dev: scripts
-	exec docker run \
+	ulimit -c unlimited \
+	&& exec docker run \
 	-v $$HOME/code/livepeer-in-a-box-database-snapshots:/data \
 	-v $$(realpath bin):/usr/local/bin \
 	-v $$(realpath ../studio):/studio \
 	-v $$(realpath config):/config:ro \
+	-v $$(realpath ./coredumps):$$(realpath ./coredumps) \
+	-e CORE_DUMP_DIR=$$(realpath ./coredumps) \
 	--rm \
 	-it \
 	--name catalyst \
 	--shm-size=4gb \
-	-p 1935:1935 \
-	-p 8888:8888 \
-	-p 4242:4242 \
-	-e ATHIEST=true livepeer/catalyst:latest MistController \
-	-c /config/full-stack.json
+	--network=host \
+	livepeer/catalyst:latest
