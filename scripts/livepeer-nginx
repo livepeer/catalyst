@@ -52,7 +52,7 @@ http {
             proxy_set_header Connection "Upgrade";
             proxy_read_timeout 600s;
             proxy_set_header Host \$host;
-            proxy_set_header X-Mst-Path "\$scheme://\$host/mist";
+            proxy_set_header X-Mst-Path "\$scheme://\$host:8888/mist";
         }
 
         location /mist/ {
@@ -64,7 +64,7 @@ http {
             proxy_set_header Connection "Upgrade";
             proxy_read_timeout 600s;
             proxy_set_header Host \$host;
-            proxy_set_header X-Mst-Path "\$scheme://\$host/mist";
+            proxy_set_header X-Mst-Path "\$scheme://\$host:\$server_port/mist";
         }
 
         proxy_set_header Host \$host:9000;
