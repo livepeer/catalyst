@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -163,9 +164,13 @@ func main() {
 							output(string(line))
 						}
 						if err != nil {
-							output(fmt.Sprintf("reader gave error, ending logging for fd=%d err=%s", i+1, err))
+							if !errors.Is(err, io.EOF) {
+								output(fmt.Sprintf("reader gave error, ending logging for fd=%d err=%s", i+1, err))
+							}
 							line, _, err := reader.ReadLine()
-							output(string(line))
+							if string(line) != "" {
+								output(string(line))
+							}
 							return err
 						}
 						if isPrefix {
