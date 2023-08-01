@@ -41,6 +41,7 @@ type CliFlags struct {
 	Architecture   string
 	ManifestFile   string
 	Verbosity      string
+	ExecCommand    []string
 
 	ManifestURL bool
 }
