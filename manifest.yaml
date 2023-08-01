@@ -77,13 +77,6 @@ box:
       commit: bd7eb09dafefc95ec7d9d33d33e12e7f86a8cc83
     binary: livepeer-mist-bigquery-uploader
     release: v1.2.1
-  - name: www
-    strategy:
-      download: github
-      project: livepeer/studio
-      commit: f65dde353dff011929d187a153616141e305a0ca
-    binary: livepeer-www
-    release: v0.15.0
   - name: victoria-metrics
     strategy:
       download: github
