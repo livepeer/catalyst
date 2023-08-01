@@ -13,6 +13,7 @@ BUILD_TARGET ?= "full"
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
 $(shell mkdir -p ./data)
+$(shell mkdir -p ./coredumps)
 $(shell mkdir -p $(HOME)/.config/livepeer)
 buildpath=$(realpath ./build)
 
