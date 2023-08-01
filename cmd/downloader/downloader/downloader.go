@@ -17,6 +17,7 @@ import (
 	"github.com/livepeer/catalyst/cmd/downloader/bucket"
 	"github.com/livepeer/catalyst/cmd/downloader/cli"
 	"github.com/livepeer/catalyst/cmd/downloader/github"
+	"github.com/livepeer/catalyst/cmd/downloader/manifest"
 	"github.com/livepeer/catalyst/cmd/downloader/types"
 	"github.com/livepeer/catalyst/cmd/downloader/utils"
 	"github.com/livepeer/catalyst/cmd/downloader/verification"
@@ -190,9 +191,11 @@ func Run(buildFlags types.BuildFlags) {
 		glog.Fatal(err)
 		return
 	}
-	var waitGroup sync.WaitGroup
-	manifest, err := utils.ParseYamlManifest(cliFlags.ManifestFile, cliFlags.ManifestURL)
+	m, err := utils.ParseYamlManifest(cliFlags.ManifestFile, cliFlags.ManifestURL)
 	if err != nil {
+		if !cliFlags.Download {
+			glog.Fatal(err)
+		}
 		if os.IsNotExist(err) {
 			glog.Infof("No manifest detected at %s, downloader continuing", cliFlags.ManifestFile)
 			ExecNext(cliFlags)
@@ -201,15 +204,26 @@ func Run(buildFlags types.BuildFlags) {
 		glog.Fatal(err)
 		return
 	}
+	if cliFlags.UpdateManifest {
+		wrote := manifest.UpdateManifest(cliFlags, m)
+		// if we're ONLY updating a manifest, fail if we can't. otherwise we can just use the in-memory one.
+		if !cliFlags.Download && !wrote {
+			glog.Fatalf("failed to update manifest")
+		}
+	}
+	if !cliFlags.Download {
+		return
+	}
+	var waitGroup sync.WaitGroup
 
-	for _, element := range manifest.Box {
+	for _, element := range m.Box {
 		if element.Skip {
 			continue
 		}
 		waitGroup.Add(1)
 		go func(element *types.Service) {
 			glog.V(8).Infof("triggering async task for %s", element.Name)
-			err := DownloadService(cliFlags, manifest, element)
+			err := DownloadService(cliFlags, m, element)
 			if err != nil {
 				glog.Fatalf("failed to download %s: %s", element.Name, err)
 			}

@@ -67,6 +67,8 @@ func GetCliFlags(buildFlags types.BuildFlags) (types.CliFlags, error) {
 	fs.StringVar(&cliFlags.ManifestFile, "manifest", "manifest.yaml", "Path (or URL) to manifest yaml file")
 	fs.BoolVar(&cliFlags.SkipDownloaded, "skip-downloaded", false, "Skip already downloaded archive (if found)")
 	fs.BoolVar(&cliFlags.Cleanup, "cleanup", true, "Cleanup downloaded archives after extraction")
+	fs.BoolVar(&cliFlags.UpdateManifest, "update-manifest", false, "Update the manifest file commit shas from releases prior to downloading")
+	fs.BoolVar(&cliFlags.Download, "download", true, "Actually do a download. Only useful for -update-manifest=true -download=false")
 
 	version := fs.Bool("version", false, "Get version information")
 
