@@ -24,17 +24,26 @@ jobs:
       fail-fast: false
       matrix:
         targets:
-          - suffix: ''
+          - suffix: ""
             platforms: linux/amd64, linux/arm64
           - suffix: "-amd64"
             platforms: linux/amd64
           - suffix: "-arm64"
             platforms: linux/arm64
         build:
-          - suffix: ''
+          - suffix: ""
             target: stripped
-          - suffix: '-debug'
+          - suffix: "-debug"
             target: full
+        docker_images:
+          - target: catalyst
+            refs: |
+              livepeerci/catalyst
+              ghcr.io/livepeer/catalyst
+          - target: livepeer-in-a-box
+            refs: |
+              livepeerci/in-a-box
+              ghcr.io/livepeer/in-a-box
 
     steps:
       - name: Set up QEMU
@@ -63,8 +72,7 @@ jobs:
           flavor: |
             suffix=${{ matrix.targets.suffix }}${{ matrix.build.suffix }},onlatest=true
           images: |
-            livepeerci/catalyst
-            ghcr.io/${{ github.repository }}
+            ${{ matrix.docker_images.refs }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
@@ -81,7 +89,7 @@ jobs:
         with:
           platforms: ${{ matrix.targets.platforms }}
           push: true
-          target: catalyst
+          target: ${{ matrix.docker_images.target }}
           build-args: |
             GIT_VERSION=${{ github.ref_type == 'tag' && github.ref_name || github.event.pull_request.head.sha || github.sha }}
             BUILD_TARGET=${{ matrix.build.target }}
