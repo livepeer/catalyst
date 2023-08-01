@@ -1,8 +1,6 @@
-FROM	livepeer/in-a-box
+ARG	FROM_PARENT
+FROM	${FROM_PARENT}
 
 LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
 
-RUN apt update && apt install -y perl libc-bin
-
-ADD ./scripts /usr/local/bin
 ADD	./bin	/usr/local/bin
