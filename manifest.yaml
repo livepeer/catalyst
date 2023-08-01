@@ -5,8 +5,8 @@ box:
     strategy:
       download: bucket
       project: livepeer-data
-      commit: c4bb683495eeb6a184d457a0a39cfd091943c185
-    release: eli/macos-teamid-fix
+      commit: 61aec845e822a50a4a17274c93ce23ee218974b9
+    release: main
     srcFilenames:
       darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
       darwin-arm64: livepeer-analyzer-darwin-arm64.tar.gz
@@ -24,8 +24,8 @@ box:
     strategy:
       download: bucket
       project: catalyst-api
-      commit: 66e8c0a02ead2bb77360c32e2eb666c7f2ea4a9c
-    release: eli/polish-for-box
+      commit: fe3ba3dc07120e3dea6d71edac930c9b4de0ac8c
+    release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
       darwin-arm64: livepeer-catalyst-api-darwin-arm64.tar.gz
@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-uploader
-      commit: 37be2c45eb23a85568754065e34118a59a736ed1
+      commit: f877e6f1d7be9a34ea883042a2a54201408fd6a5
     binary: livepeer-catalyst-uploader
     release: main
     srcFilenames:
