@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   catalyst:
-    name: livepeerci/catalyst${{ matrix.targets.suffix }}${{ matrix.build.suffix }}
+    name: livepeer/${{ matrix.docker_images.target }}${{ matrix.targets.suffix }}${{ matrix.build.suffix }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
