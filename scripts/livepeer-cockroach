@@ -16,7 +16,7 @@ if [[ ! -d /data/cockroach ]]; then
     echo "no database detected, pulling snapshot"
     cd /data
     curl -L $COCKROACH_DB_SNAPSHOT -o snapshot.tar.gz
-    tar xzf snapshot.tar.gz
+    tar --no-same-owner -xzf snapshot.tar.gz
     rm snapshot.tar.gz
   )
 fi
