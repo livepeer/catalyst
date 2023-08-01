@@ -82,11 +82,14 @@ livepeer-analyzer:
 
 .PHONY: livepeer-api
 livepeer-api:
-	set -x \
 	&& cd ../studio \
 	&& yarn run pkg:local \
 	&& cd - \
 	&& mv ../studio/packages/api/bin/api ./bin/livepeer-api
+
+.PHONY: livepeer-api-local
+livepeer-api-local:
+	cp ./scripts/local-livepeer-api ./bin/livepeer-api
 
 .PHONY: downloader
 downloader:
