@@ -28,7 +28,6 @@ ffmpeg:
 .PHONY: build
 build:
 	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/downloader cmd/downloader/downloader/downloader.go
-	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/manifest cmd/downloader/manifest/manifest.go
 
 .PHONY: mistserver
 mistserver:
@@ -94,7 +93,7 @@ downloader:
 	go build -o ./bin/catalyst-downloader ./cmd/downloader/downloader/downloader.go
 
 .PHONY: download
-download: downloader
+download: downloader livepeer-log
 	./bin/catalyst-downloader -v=5 $(ARGS)
 
 .PHONY: manifest
