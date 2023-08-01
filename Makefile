@@ -6,10 +6,13 @@ GIT_VERSION?=$(shell git describe --always --long --abbrev=8 --dirty)
 GO_LDFLAG_VERSION := -X 'main.Version=$(GIT_VERSION)'
 MIST_COMMIT ?= "catalyst"
 DOCKER_TAG ?= "livepeer/catalyst"
+FROM_PARENT ?= "livepeer/catalyst:parent"
+DOCKER_TARGET ?= "catalyst"
 BUILD_TARGET ?= "full"
 
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
+$(shell mkdir -p ./data)
 $(shell mkdir -p $(HOME)/.config/livepeer)
 buildpath=$(realpath ./build)
 
@@ -141,22 +144,35 @@ full-reset: docker-compose-rm clean all
 
 .PHONY: docker
 docker:
-	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) --target=catalyst .
-
-.PHONY: docker
-docker-box: DOCKER_TAG=livepeer/in-a-box
-docker-box:
-	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) --target=livepeer-in-a-box .
+	docker build \
+		-t "$(DOCKER_TAG)" \
+		-t "$(DOCKER_TAG):parent" \
+		--target=$(DOCKER_TARGET) \
+		--build-arg=GIT_VERSION=$(GIT_VERSION) \
+		--build-arg=BUILD_TARGET=$(BUILD_TARGET) \
+		.
 
 .PHONY: docker-local
-docker-box-local: DOCKER_TAG=livepeer/in-a-box-local
-docker-box-local: downloader livepeer-log scripts 
-	tar ch ./bin Dockerfile.local ./scripts ./config | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
+docker-local: downloader livepeer-log scripts 
+	tar ch ./bin Dockerfile.local ./config \
+	| docker build \
+		-f Dockerfile.local \
+		-t "$(DOCKER_TAG)" \
+		--build-arg=GIT_VERSION=$(GIT_VERSION) \
+		--build-arg=BUILD_TARGET=$(BUILD_TARGET) \
+		--build-arg=FROM_PARENT=$(FROM_PARENT) \
+		-
+
+.PHONY: box
+box: DOCKER_TAG=livepeer/in-a-box
+box: DOCKER_TARGET=livepeer-in-a-box
+box: scripts docker
 
 .PHONY: box-local
-box-local: DOCKER_TAG=livepeer/in-a-box scripts downloader livepeer-log
-box-local:
-	tar ch ./bin Dockerfile.local ./scripts ./config | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
+box-local: DOCKER_TAG=livepeer/in-a-box
+box-local: DOCKER_TARGET=livepeer-in-a-box
+box-local: FROM_PARENT=livepeer/in-a-box:parent
+box-local: docker-local
 
 .PHONY: test
 test: docker
@@ -174,7 +190,7 @@ scripts:
 box-dev: scripts
 	ulimit -c unlimited \
 	&& exec docker run \
-	-v $$HOME/code/livepeer-in-a-box-database-snapshots:/data \
+	-v $$(realpath data):/data \
 	-v $$(realpath bin):/usr/local/bin \
 	-v $$(realpath ../studio):/studio \
 	-v $$(realpath config):/config:ro \
@@ -185,4 +201,4 @@ box-dev: scripts
 	--name catalyst \
 	--shm-size=4gb \
 	--network=host \
-	livepeer/catalyst:latest
+	livepeer/in-a-box
