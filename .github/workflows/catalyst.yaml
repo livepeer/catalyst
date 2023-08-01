@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   catalyst:
-    name: livepeer/${{ matrix.docker_images.target }}:${{ (github.event_name == 'pull_request' && github.head_ref) || github.ref_name }}${{ matrix.targets.suffix }}${{ matrix.build.suffix }}
+    name: ${{ matrix.docker_images.label }} (${{ matrix.targets.suffix }}${{ matrix.build.suffix }})
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -37,10 +37,12 @@ jobs:
             target: full
         docker_images:
           - target: catalyst
+            label: livepeer/catalyst
             refs: |
               livepeerci/catalyst
               ghcr.io/livepeer/catalyst
           - target: livepeer-in-a-box
+            label: livepeer/in-a-box
             refs: |
               livepeerci/in-a-box
               ghcr.io/livepeer/in-a-box
