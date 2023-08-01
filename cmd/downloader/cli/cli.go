@@ -28,10 +28,11 @@ func validateFlags(flags *types.CliFlags) error {
 		if err != nil {
 			return err
 		}
-		if manifestURL.Scheme != "https" {
+		if manifestURL.Scheme == "https" {
+			flags.ManifestURL = true
+		} else if len(flags.ExecCommand) == 0 {
 			return errors.New("invalid path/url to manifest file")
 		}
-		flags.ManifestURL = true
 	}
 	if info, err := os.Stat(flags.DownloadPath); !(err == nil && info.IsDir()) {
 		err = os.MkdirAll(flags.DownloadPath, os.ModePerm)
@@ -46,6 +47,15 @@ func validateFlags(flags *types.CliFlags) error {
 // with useful values set after parsing the same.
 func GetCliFlags(buildFlags types.BuildFlags) (types.CliFlags, error) {
 	cliFlags := types.CliFlags{}
+	args := []string{}
+	// Handle post-exec string
+	for i, arg := range os.Args[1:] {
+		if arg == "--" {
+			cliFlags.ExecCommand = os.Args[i+2:]
+			break
+		}
+		args = append(args, arg)
+	}
 	flag.Set("logtostderr", "true")
 	vFlag := flag.Lookup("v")
 	fs := flag.NewFlagSet(constants.AppName, flag.ExitOnError)
@@ -66,10 +76,10 @@ func GetCliFlags(buildFlags types.BuildFlags) (types.CliFlags, error) {
 	}
 
 	ff.Parse(
-		fs, os.Args[1:],
+		fs, args,
 		ff.WithConfigFileFlag("config"),
 		ff.WithConfigFileParser(ff.PlainParser),
-		ff.WithEnvVarPrefix("LP"),
+		ff.WithEnvVarPrefix("CATALYST_DOWNLOADER"),
 		ff.WithEnvVarSplit(","),
 	)
 	flag.CommandLine.Parse(nil)

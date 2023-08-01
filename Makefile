@@ -85,9 +85,13 @@ livepeer-api:
 	&& cd - \
 	&& mv ../studio/packages/api/bin/api ./bin/livepeer-api
 
+.PHONY: downloader
+downloader:
+	go build -o ./bin/catalyst-downloader ./cmd/downloader/downloader/downloader.go
+
 .PHONY: download
-download:
-	go run cmd/downloader/downloader/downloader.go -v=5 $(ARGS)
+download: downloader
+	./bin/catalyst-downloader -v=5 $(ARGS)
 
 .PHONY: manifest
 manifest:
@@ -137,14 +141,20 @@ full-reset: docker-compose-rm clean all
 
 .PHONY: docker
 docker:
-	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) .
+	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) --target=catalyst .
+
+.PHONY: docker
+docker-box: DOCKER_TAG=livepeer/in-a-box
+docker-box:
+	docker build -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) --target=livepeer-in-a-box .
 
 .PHONY: docker-local
-docker-local: scripts
+docker-box-local: DOCKER_TAG=livepeer/in-a-box-local
+docker-box-local: downloader livepeer-log scripts 
 	tar ch ./bin Dockerfile.local ./scripts ./config | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
 
 .PHONY: box-local
-box-local: DOCKER_TAG=livepeer/in-a-box
+box-local: DOCKER_TAG=livepeer/in-a-box scripts downloader livepeer-log
 box-local:
 	tar ch ./bin Dockerfile.local ./scripts ./config | docker build -f Dockerfile.local -t "$(DOCKER_TAG)" --build-arg=GIT_VERSION=$(GIT_VERSION) --build-arg=BUILD_TARGET=$(BUILD_TARGET) -
 

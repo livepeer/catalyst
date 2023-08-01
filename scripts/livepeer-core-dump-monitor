@@ -15,7 +15,11 @@ if [[ $* == *-j* ]]; then
     exit 0
 fi
 
-DIR="$CORE_DUMP_DIR"
+DIR="${CORE_DUMP_DIR:-}"
+if [[ "$DIR" == "" ]]; then
+  echo "No CORE_DUMP_DIR provided. Doing nothing forever."
+  exec tail -f /dev/null
+fi
 
 logOfChanges="/tmp/changes.log.csv" # Set your file name here.
 
