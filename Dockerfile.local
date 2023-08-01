@@ -1,44 +1,8 @@
-FROM	ubuntu:22.04
+FROM	livepeer/in-a-box
 
 LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
 
-ENV DEBIAN_FRONTEND noninteractive
-RUN	apt update && apt install -yqq \
-	curl \
-	ca-certificates \
-	musl \
-	python3 \
-	ffmpeg \
-	gstreamer1.0-tools gstreamer1.0-plugins-good gstreamer1.0-plugins-base gstreamer1.0-plugins-bad \
-	rabbitmq-server \
-	nginx \
-	gdb \
-	inotify-tools \
-	file \
-	&& rm -rf /var/lib/apt/lists/*
-
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-	&& apt install -y nodejs
-
-RUN curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-amd64.tgz \
-	&& tar xzvf cockroach-v23.1.5.linux-amd64.tgz \
-	&& mv cockroach-v23.1.5.linux-amd64/cockroach /usr/bin/cockroach \
-	&& rm -rf cockroach-v23.1.5.linux-amd64.tgz cockroach-v23.1.5.linux-amd64
-
-RUN curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-amd64/minio \
-	&& curl -o /usr/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc \
-	&& chmod +x /usr/bin/minio /usr/bin/mc
-
-RUN mkdir -p /data \
-	&& cd /data \
-	&& curl -LO https://github.com/iameli-streams/livepeer-in-a-box-database-snapshots/raw/f59e7ce7a631dbcd176580a54b4fe5f31f9e4dbc/livepeer-studio-bootstrap.tar.gz \
-	&& tar xzvf livepeer-studio-bootstrap.tar.gz
-
-ADD ./config/full-stack.json /config/full-stack.json
+RUN apt update && apt install -y perl libc-bin
 
 ADD ./scripts /usr/local/bin
 ADD	./bin	/usr/local/bin
-
-EXPOSE	1935	4242	8080	8889/udp
-
-CMD	["/usr/local/bin/MistController", "-c", "/config/full-stack.json"]

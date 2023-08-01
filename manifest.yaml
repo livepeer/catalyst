@@ -5,8 +5,8 @@ box:
     strategy:
       download: bucket
       project: livepeer-data
-      commit: 82256487362c65a51c6841e66ef5252d0f493482
-    release: main
+      commit: c4bb683495eeb6a184d457a0a39cfd091943c185
+    release: eli/macos-teamid-fix
     srcFilenames:
       darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
       darwin-arm64: livepeer-analyzer-darwin-arm64.tar.gz
@@ -18,14 +18,14 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: f65dde353dff011929d187a153616141e305a0ca
-    release: v0.15.0
+      commit: a0a33c18f443670dffdbb76ccc8e464e8ee38220
+    release: v0.15.1
   - name: catalyst-api
     strategy:
       download: bucket
       project: catalyst-api
-      commit: e3a2f336d15800b13f61d328919a6afae05d92d4
-    release: main
+      commit: 66e8c0a02ead2bb77360c32e2eb666c7f2ea4a9c
+    release: eli/polish-for-box
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
       darwin-arm64: livepeer-catalyst-api-darwin-arm64.tar.gz
@@ -77,13 +77,6 @@ box:
       commit: bd7eb09dafefc95ec7d9d33d33e12e7f86a8cc83
     binary: livepeer-mist-bigquery-uploader
     release: v1.2.1
-  - name: www
-    strategy:
-      download: github
-      project: livepeer/studio
-      commit: f65dde353dff011929d187a153616141e305a0ca
-    binary: livepeer-www
-    release: v0.15.0
   - name: victoria-metrics
     strategy:
       download: github

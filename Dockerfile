@@ -57,6 +57,7 @@ ARG	BUILD_TARGET
 RUN	apt update && apt install -yqq wget
 RUN	wget -O - https://deb.nodesource.com/setup_18.x | bash
 RUN	apt update && apt install -yqq \
+	curl \
 	ca-certificates \
 	musl \
 	python3 \
@@ -74,3 +75,37 @@ RUN	ln -s /opt/local/lib/livepeer-w3/livepeer-w3.js /usr/local/bin/livepeer-w3 &
 EXPOSE	1935	4242	8080	8889/udp
 
 CMD	["/usr/local/bin/MistController", "-c", "/etc/livepeer/catalyst.json"]
+
+FROM catalyst AS livepeer-in-a-box
+
+RUN	apt update && apt install -yqq \
+	rabbitmq-server \
+	nginx \
+	gdb \
+	inotify-tools \
+	file \
+	# for `shasum`
+	perl \
+	&& rm -rf /var/lib/apt/lists/*
+
+RUN curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-amd64.tgz \
+	&& tar xzvf cockroach-v23.1.5.linux-amd64.tgz \
+	&& mv cockroach-v23.1.5.linux-amd64/cockroach /usr/bin/cockroach \
+	&& rm -rf cockroach-v23.1.5.linux-amd64.tgz cockroach-v23.1.5.linux-amd64
+
+RUN curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-amd64/minio \
+	&& curl -o /usr/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc \
+	&& chmod +x /usr/bin/minio /usr/bin/mc
+
+RUN mkdir -p /data \
+	&& cd /data \
+	&& curl -LO https://github.com/iameli-streams/livepeer-in-a-box-database-snapshots/raw/f59e7ce7a631dbcd176580a54b4fe5f31f9e4dbc/livepeer-studio-bootstrap.tar.gz \
+	&& tar xzvf livepeer-studio-bootstrap.tar.gz
+
+ADD ./scripts /usr/local/bin
+ADD ./config/full-stack.json /config/full-stack.json
+
+ENV CATALYST_DOWNLOADER_PATH /usr/local/bin
+ENV CATALYST_DOWNLOADER_MANIFEST /config/manifest.yaml
+
+CMD	["/usr/local/bin/catalyst-downloader", "--", "/usr/local/bin/MistController", "-c", "/config/full-stack.json"]

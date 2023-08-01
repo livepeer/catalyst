@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/livepeer/catalyst/cmd/downloader/bucket"
 	"github.com/livepeer/catalyst/cmd/downloader/cli"
@@ -192,6 +193,11 @@ func Run(buildFlags types.BuildFlags) {
 	var waitGroup sync.WaitGroup
 	manifest, err := utils.ParseYamlManifest(cliFlags.ManifestFile, cliFlags.ManifestURL)
 	if err != nil {
+		if os.IsNotExist(err) {
+			glog.Infof("No manifest detected at %s, downloader continuing", cliFlags.ManifestFile)
+			ExecNext(cliFlags)
+			return
+		}
 		glog.Fatal(err)
 		return
 	}
@@ -230,6 +236,20 @@ func Run(buildFlags types.BuildFlags) {
 				glog.Fatal(err)
 			}
 		}
+	}
+	ExecNext(cliFlags)
+}
+
+// Done! Move on to the provided next application, if it exists.
+func ExecNext(cliFlags types.CliFlags) {
+	if len(cliFlags.ExecCommand) == 0 {
+		// Nothing to do.
+		return
+	}
+	glog.Infof("downloader complete, now we will exec %v", cliFlags.ExecCommand)
+	execErr := syscall.Exec(cliFlags.ExecCommand[0], cliFlags.ExecCommand, os.Environ())
+	if execErr != nil {
+		glog.Fatalf("error running next command: %s", execErr)
 	}
 }
 
