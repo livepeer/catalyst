@@ -96,7 +96,7 @@ downloader:
 	go build -o ./bin/catalyst-downloader ./cmd/downloader/downloader/downloader.go
 
 .PHONY: download
-download: downloader livepeer-log
+download: downloader
 	./bin/catalyst-downloader -v=5 $(ARGS)
 
 .PHONY: manifest
