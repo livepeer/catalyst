@@ -102,6 +102,7 @@ ADD ./config/full-stack.json /config/full-stack.json
 
 ENV CATALYST_DOWNLOADER_PATH /usr/local/bin
 ENV CATALYST_DOWNLOADER_MANIFEST /config/manifest.yaml
+ENV CATALYST_DOWNLOADER_UPDATE_MANIFEST true
 ENV COCKROACH_DB_SNAPSHOT https://github.com/iameli-streams/livepeer-in-a-box-database-snapshots/raw/f59e7ce7a631dbcd176580a54b4fe5f31f9e4dbc/livepeer-studio-bootstrap.tar.gz
 
 CMD	["/usr/local/bin/catalyst-downloader", "--", "/usr/local/bin/MistController", "-c", "/config/full-stack.json"]
