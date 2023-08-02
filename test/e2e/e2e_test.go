@@ -17,6 +17,7 @@ import (
 	"time"
 
 	glog "github.com/magicsong/color-glog"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 )
@@ -293,27 +294,23 @@ func requireReplicatedStream(t *testing.T, c *catalystContainer) {
 
 func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystContainer) {
 	require := require.New(t)
-	redirect := func() bool {
+	redirect := func(collectT *assert.CollectT) {
 		client := &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
 		}
 		resp, err := client.Get(fmt.Sprintf("http://127.0.0.1:%s/hls/foo/index.m3u8", c1.catalystAPI))
-		if err != nil {
-			return false
-		}
+		assert.NoError(collectT, err)
 		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusTemporaryRedirect {
-			return false
-		}
+		assert.Equal(collectT, http.StatusTemporaryRedirect, resp.StatusCode)
 
 		c1URL := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c1.hostname)
 		c2URL := fmt.Sprintf("http://%s/hls/stream+foo/index.m3u8", c2.hostname)
 		rURL := resp.Header.Get("Location")
-		glog.Infof("c1URL=%s c2URL=%s rURL=%s", c1URL, c2URL, rURL)
-		return strings.Contains(rURL, c1URL) || strings.Contains(rURL, c2URL)
+
+		containsURL := strings.Contains(rURL, c1URL) || strings.Contains(rURL, c2URL)
+		assert.True(collectT, containsURL, "c1URL=%s c2URL=%s rURL=%s", c1URL, c2URL, rURL)
 	}
-	require.Eventually(redirect, 1*time.Minute, time.Second)
+	require.EventuallyWithT(redirect, 1*time.Minute, time.Second)
 }
