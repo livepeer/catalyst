@@ -24,16 +24,16 @@ jobs:
       fail-fast: false
       matrix:
         targets:
-          - suffix: ''
+          - suffix: ""
             platforms: linux/amd64, linux/arm64
           - suffix: "-amd64"
             platforms: linux/amd64
           - suffix: "-arm64"
             platforms: linux/arm64
         build:
-          - suffix: ''
+          - suffix: ""
             target: stripped
-          - suffix: '-debug'
+          - suffix: "-debug"
             target: full
 
     steps:
@@ -91,4 +91,5 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Notify new build upload
+        if: ${{ matrix.targets.suffix == '-amd64' && matrix.build.target == 'stripped' }}
         run: curl -X POST https://holy-bread-207a.livepeer.workers.dev
