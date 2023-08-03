@@ -5,7 +5,7 @@ box:
     strategy:
       download: bucket
       project: livepeer-data
-      commit: 61aec845e822a50a4a17274c93ce23ee218974b9
+      commit: 6f7736811a0d3069ee62ce818dd4c85d55724ad5
     release: main
     srcFilenames:
       darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
@@ -24,7 +24,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-api
-      commit: 1439bc0a663b8440805419eb6beb0e7243a81ec3
+      commit: 5662003db7b8f8d31f80babdee27ff4376cc6a35
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
