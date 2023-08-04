@@ -1,6 +1,0 @@
-ARG	FROM_PARENT
-FROM	${FROM_PARENT}
-
-LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
-
-ADD	./bin	/usr/local/bin

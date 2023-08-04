@@ -1,5 +1,6 @@
 ARG	GIT_VERSION=unknown
 ARG	BUILD_TARGET
+ARG	FROM_PARENT
 
 FROM	golang:1-bullseye	as	gobuild
 
@@ -17,6 +18,7 @@ ADD	.	.
 ARG	GIT_VERSION
 ENV	GIT_VERSION="${GIT_VERSION}"
 
+RUN find cmd
 RUN	make livepeer-log
 
 FROM	ubuntu:22.04	as	catalyst-full-build
@@ -88,13 +90,13 @@ RUN	apt update && apt install -yqq \
 	perl \
 	&& rm -rf /var/lib/apt/lists/*
 
-RUN curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-amd64.tgz \
-	&& tar xzvf cockroach-v23.1.5.linux-amd64.tgz \
-	&& mv cockroach-v23.1.5.linux-amd64/cockroach /usr/bin/cockroach \
-	&& rm -rf cockroach-v23.1.5.linux-amd64.tgz cockroach-v23.1.5.linux-amd64
+RUN curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-arm64.tgz \
+	&& tar xzvf cockroach-v23.1.5.linux-arm64.tgz \
+	&& mv cockroach-v23.1.5.linux-arm64/cockroach /usr/bin/cockroach \
+	&& rm -rf cockroach-v23.1.5.linux-arm64.tgz cockroach-v23.1.5.linux-arm64
 
-RUN curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-amd64/minio \
-	&& curl -o /usr/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc \
+RUN curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-arm64/minio \
+	&& curl -o /usr/bin/mc https://dl.min.io/client/mc/release/linux-arm64/mc \
 	&& chmod +x /usr/bin/minio /usr/bin/mc
 
 ADD ./scripts /usr/local/bin
@@ -108,3 +110,9 @@ ENV COCKROACH_DB_SNAPSHOT https://github.com/iameli-streams/livepeer-in-a-box-da
 RUN mkdir /data
 
 CMD	["/usr/local/bin/catalyst-downloader", "--", "/usr/local/bin/MistController", "-c", "/config/full-stack.json"]
+
+FROM	${FROM_PARENT} AS box-local
+
+LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
+
+ADD	./bin	/usr/local/bin
