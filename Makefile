@@ -7,7 +7,7 @@ GIT_VERSION?=$(shell git describe --always --long --abbrev=8 --dirty)
 GO_LDFLAG_VERSION := -X 'main.Version=$(GIT_VERSION)'
 MIST_COMMIT ?= "catalyst"
 DOCKER_TAG ?= "livepeer/catalyst"
-FROM_PARENT ?= "livepeer/catalyst:parent"
+FROM_LOCAL_PARENT ?= "scratch" # for `make docker-local` and `make box-local`
 DOCKER_TARGET ?= "catalyst"
 BUILD_TARGET ?= "full"
 KILL ?= "false"
@@ -60,6 +60,7 @@ livepeer-task-runner:
 .PHONY: livepeer-catalyst-api
 livepeer-catalyst-api:
 	set -x \
+	&& export GOOS=linux \
 	&& cd ../catalyst-api \
 	&& make build \
 	&& cd - \
@@ -157,6 +158,7 @@ docker:
 		--target=$(DOCKER_TARGET) \
 		--build-arg=GIT_VERSION=$(GIT_VERSION) \
 		--build-arg=BUILD_TARGET=$(BUILD_TARGET) \
+		--build-arg=FROM_LOCAL_PARENT=$(FROM_LOCAL_PARENT) \
 		.
 
 .PHONY: docker-local
@@ -167,7 +169,7 @@ docker-local: downloader livepeer-log scripts
 		-t "$(DOCKER_TAG)" \
 		--build-arg=GIT_VERSION=$(GIT_VERSION) \
 		--build-arg=BUILD_TARGET=$(BUILD_TARGET) \
-		--build-arg=FROM_PARENT=$(FROM_PARENT) \
+		--build-arg=FROM_LOCAL_PARENT=$(FROM_LOCAL_PARENT) \
 		-
 
 .PHONY: box
@@ -178,7 +180,7 @@ box: scripts docker
 .PHONY: box-local
 box-local: DOCKER_TAG=livepeer/in-a-box
 box-local: DOCKER_TARGET=livepeer-in-a-box
-box-local: FROM_PARENT=livepeer/in-a-box:parent
+box-local: FROM_LOCAL_PARENT=livepeer/in-a-box:parent
 box-local: docker-local
 
 .PHONY: test
@@ -197,15 +199,15 @@ scripts:
 box-dev: scripts
 	ulimit -c unlimited \
 	&& exec docker run \
-	-v $$(realpath data):/data \
 	-v $$(realpath bin):/usr/local/bin \
-	-v $$(realpath ../studio):/studio \
 	-v $$(realpath config):/config:ro \
-	-v $$(realpath ./coredumps):$$(realpath ./coredumps) \
 	-e CORE_DUMP_DIR=$$(realpath ./coredumps) \
 	--rm \
 	-it \
 	--name catalyst \
 	--shm-size=4gb \
-	--network=host \
+	-p 8888:8888 \
+	-p 5432:5432 \
+	-p 1935:1935 \
+	-p 4242:4242 \
 	livepeer/in-a-box
