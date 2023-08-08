@@ -18,13 +18,13 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: a0a33c18f443670dffdbb76ccc8e464e8ee38220
-    release: v0.15.1
+      commit: 1995c9fc6bb8abf2d30ec6bf37f8c8788b403bfa
+    release: v0.15.2
   - name: catalyst-api
     strategy:
       download: bucket
       project: catalyst-api
-      commit: 0966990af121a11a29a8bb74a3fb9fb97d29c74f
+      commit: 27e68b0b4dbe0eeaf8bb1e912f1b7f42dcb67e44
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -62,7 +62,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: cdb231d0692df2fd2462e84347ca05bc553cf528
+      commit: 8501d6c4fd7e3de937d05bb70ade9909163c6169
     release: catalyst
     skipGpg: true
     srcFilenames:
@@ -77,6 +77,18 @@ box:
       commit: bd7eb09dafefc95ec7d9d33d33e12e7f86a8cc83
     binary: livepeer-mist-bigquery-uploader
     release: v1.2.1
+  - name: task-runner
+    strategy:
+      download: bucket
+      project: task-runner
+      commit: ca8f23565a48276470242b9c570d03f95e103254
+    binary: livepeer-task-runner
+    release: main
+    srcFilenames:
+      darwin-amd64: livepeer-task-runner-darwin-amd64.tar.gz
+      darwin-arm64: livepeer-task-runner-darwin-arm64.tar.gz
+      linux-amd64: livepeer-task-runner-linux-amd64.tar.gz
+      linux-arm64: livepeer-task-runner-linux-arm64.tar.gz
   - name: victoria-metrics
     strategy:
       download: github
