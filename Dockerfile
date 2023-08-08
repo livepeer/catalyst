@@ -111,7 +111,7 @@ RUN mkdir /data
 
 CMD	["/usr/local/bin/catalyst-downloader", "--", "/usr/local/bin/MistController", "-c", "/config/full-stack.json"]
 
-FROM	${FROM_PARENT} AS box-local
+FROM	${FROM_LOCAL_PARENT} AS box-local
 
 LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
 
