@@ -1,6 +1,6 @@
 ARG	GIT_VERSION=unknown
 ARG	BUILD_TARGET
-ARG	FROM_PARENT
+ARG	FROM_LOCAL_PARENT
 
 FROM	golang:1-bullseye	as	gobuild
 
