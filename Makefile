@@ -108,8 +108,8 @@ download: downloader
 	./bin/catalyst-downloader -v=5 $(ARGS)
 
 .PHONY: manifest
-manifest:
-	go run cmd/downloader/manifest/manifest.go -v=9 $(ARGS)
+manifest: downloader
+	./bin/catalyst-downloader -update-manifest=true -download=false $(ARGS)
 
 .PHONY: dev
 dev:
