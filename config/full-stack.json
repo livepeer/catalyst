@@ -7,7 +7,7 @@
   "autopushes": [
     [
       "videorec+",
-      "s3+http://admin:password@localhost:9000/os-recordings/$wildcard/$uuid/source/$segmentCounter.ts?m3u8=../output.m3u8&split=5&video=source&audio=source&append=1"
+      "s3+http://admin:password@localhost:9000/os-recordings/$wildcard/$uuid/source/$segmentCounter.ts?m3u8=../output.m3u8&split=5&video=source&audio=AAC&append=1&waittrackcount=2&recstart=-1"
     ]
   ],
   "config": {
@@ -229,6 +229,24 @@
               "x-LSP-name": ""
             }
           ]
+        },
+        {
+          "exec": "gst-launch-1.0 -q fdsrc fd=0 ! matroskademux ! faad ! audioresample ! opusenc inband-fec=true perfect-timestamp=true ! matroskamux ! fdsink fd=1",
+          "exit_unmask": false,
+          "process": "MKVExec",
+          "track_inhibit": "audio=opus&video=source,|bframes",
+          "track_select": "video=none&audio=aac,|source,|maxbps",
+          "x-LSP-name": "AAC to Opus",
+          "leastlive": 1
+        },
+        {
+          "exec": "gst-launch-1.0 -q fdsrc fd=0 ! matroskademux ! opusdec use-inband-fec=true ! audioresample ! voaacenc perfect-timestamp=true ! matroskamux ! fdsink fd=1",
+          "exit_unmask": false,
+          "process": "MKVExec",
+          "track_inhibit": "audio=aac",
+          "track_select": "video=none&audio=opus,|source,|maxbps",
+          "x-LSP-name": "Opus to AAC",
+          "leastlive": 1
         }
       ],
       "segmentsize": 1,
@@ -257,6 +275,24 @@
               "x-LSP-name": ""
             }
           ]
+        },
+        {
+          "exec": "gst-launch-1.0 -q fdsrc fd=0 ! matroskademux ! faad ! audioresample ! opusenc inband-fec=true perfect-timestamp=true ! matroskamux ! fdsink fd=1",
+          "exit_unmask": false,
+          "process": "MKVExec",
+          "track_inhibit": "audio=opus&video=source,|bframes",
+          "track_select": "video=none&audio=aac,|source,|maxbps",
+          "x-LSP-name": "AAC to Opus",
+          "leastlive": 1
+        },
+        {
+          "exec": "gst-launch-1.0 -q fdsrc fd=0 ! matroskademux ! opusdec use-inband-fec=true ! audioresample ! voaacenc perfect-timestamp=true ! matroskamux ! fdsink fd=1",
+          "exit_unmask": false,
+          "process": "MKVExec",
+          "track_inhibit": "audio=aac",
+          "track_select": "video=none&audio=opus,|source,|maxbps",
+          "x-LSP-name": "Opus to AAC",
+          "leastlive": 1
         }
       ],
       "segmentsize": 1,
