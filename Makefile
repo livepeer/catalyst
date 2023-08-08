@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 PROC_COUNT+="$(shell nproc)"
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 # The -DCMAKE_OSX_ARCHITECTURES flag should be ignored on non-OSX platforms
@@ -9,6 +10,7 @@ DOCKER_TAG ?= "livepeer/catalyst"
 FROM_PARENT ?= "livepeer/catalyst:parent"
 DOCKER_TARGET ?= "catalyst"
 BUILD_TARGET ?= "full"
+KILL ?= "false"
 
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
@@ -62,7 +64,8 @@ livepeer-catalyst-api:
 	&& make build \
 	&& cd - \
 	&& mv ../catalyst-api/build/catalyst-api ./bin/livepeer-catalyst-api \
-	&& mv ../catalyst-api/build/mist-cleanup.sh ./bin/mist-cleanup
+	&& mv ../catalyst-api/build/mist-cleanup.sh ./bin/mist-cleanup \
+	&& [[ "$$KILL" == "true" ]] && docker exec catalyst pkill -f /usr/local/bin/livepeer-catalyst-api || echo "Not restarting"
 
 .PHONY: livepeer-catalyst-uploader
 livepeer-catalyst-uploader:
@@ -82,10 +85,11 @@ livepeer-analyzer:
 
 .PHONY: livepeer-api
 livepeer-api:
-	&& cd ../studio \
+	cd ../studio \
 	&& yarn run pkg:local \
 	&& cd - \
-	&& mv ../studio/packages/api/bin/api ./bin/livepeer-api
+	&& mv ../studio/packages/api/bin/api ./bin/livepeer-api \
+	&& [ $$KILL == "true" ] && docker exec catalyst pkill -f /usr/local/bin/livepeer-api
 
 .PHONY: livepeer-api-local
 livepeer-api-local:
