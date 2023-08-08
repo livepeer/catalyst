@@ -47,7 +47,8 @@ go-livepeer:
 	&& PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig make livepeer livepeer_cli \
 	&& cd - \
 	&& mv ../go-livepeer/livepeer ./bin/livepeer \
-	&& mv ../go-livepeer/livepeer_cli ./bin/livepeer-cli
+	&& mv ../go-livepeer/livepeer_cli ./bin/livepeer-cli \
+	&& $(MAKE) box-kill BIN=livepeer
 
 .PHONY: livepeer-task-runner
 livepeer-task-runner:
@@ -55,7 +56,8 @@ livepeer-task-runner:
 	&& cd ../task-runner \
 	&& PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig make \
 	&& cd - \
-	&& mv ../task-runner/build/task-runner ./bin/livepeer-task-runner
+	&& mv ../task-runner/build/task-runner ./bin/livepeer-task-runner \
+	&& $(MAKE) box-kill BIN=livepeer-task-runner
 
 .PHONY: livepeer-catalyst-api
 livepeer-catalyst-api:
@@ -66,7 +68,7 @@ livepeer-catalyst-api:
 	&& cd - \
 	&& mv ../catalyst-api/build/catalyst-api ./bin/livepeer-catalyst-api \
 	&& mv ../catalyst-api/build/mist-cleanup.sh ./bin/mist-cleanup \
-	&& [[ "$$KILL" == "true" ]] && docker exec catalyst pkill -f /usr/local/bin/livepeer-catalyst-api || echo "Not restarting"
+	&& $(MAKE) box-kill BIN=livepeer-catalyst-api
 
 .PHONY: livepeer-catalyst-uploader
 livepeer-catalyst-uploader:
@@ -82,19 +84,20 @@ livepeer-analyzer:
 	&& cd ../livepeer-data \
 	&& make analyzer \
 	&& cd - \
-	&& mv ../livepeer-data/build/analyzer ./bin/livepeer-analyzer
+	&& mv ../livepeer-data/build/analyzer ./bin/livepeer-analyzer \
+	&& $(MAKE) box-kill BIN=livepeer-analyzer
 
 .PHONY: livepeer-api
 livepeer-api:
-	cd ../studio \
-	&& yarn run pkg:local \
+	cd ../studio/packages/api \
+	&& yarn run esbuild \
 	&& cd - \
-	&& mv ../studio/packages/api/bin/api ./bin/livepeer-api \
-	&& [ $$KILL == "true" ] && docker exec catalyst pkill -f /usr/local/bin/livepeer-api
+	&& mv ../studio/packages/api/dist-esbuild/api.js ./bin/livepeer-api \
+	&& $(MAKE) box-kill BIN=livepeer-api
 
-.PHONY: livepeer-api-local
-livepeer-api-local:
-	cp ./scripts/local-livepeer-api ./bin/livepeer-api
+.PHONY: box-kill
+box-kill:
+	[[ "$$KILL" == "true" ]] && docker exec catalyst pkill -f /usr/local/bin/$(BIN) || echo "Not restarting $(BIN), use KILL=true if you want that"
 
 .PHONY: downloader
 downloader:
@@ -126,7 +129,8 @@ dev:
 
 .PHONY: livepeer-log
 livepeer-log:
-	go build -o ./bin/livepeer-log ./cmd/livepeer-log/livepeer-log.go
+	go build -o ./bin/livepeer-log ./cmd/livepeer-log/livepeer-log.go \
+	&& $(MAKE) box-kill BIN=livepeer-log
 
 .PHONY: catalyst
 catalyst:
