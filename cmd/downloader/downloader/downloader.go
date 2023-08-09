@@ -1,9 +1,10 @@
-package main
+package downloader
 
 import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -12,10 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 
 	"github.com/livepeer/catalyst/cmd/downloader/bucket"
-	"github.com/livepeer/catalyst/cmd/downloader/cli"
 	"github.com/livepeer/catalyst/cmd/downloader/github"
 	"github.com/livepeer/catalyst/cmd/downloader/manifest"
 	"github.com/livepeer/catalyst/cmd/downloader/types"
@@ -23,8 +22,6 @@ import (
 	"github.com/livepeer/catalyst/cmd/downloader/verification"
 	glog "github.com/magicsong/color-glog"
 )
-
-var Version = "undefined"
 
 // DownloadService works on downloading services for the box to
 // machine and extracting the required binaries from artifacts.
@@ -184,35 +181,34 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service *types.Servi
 	return nil
 }
 
+// little chart to reason about error handling here:
+// manifest download cant-read               cant-write
+// yes      yes      continue (if not exist) continue (assume read-only)
+// no       yes      continue (if not exist) n/a
+// yes      no       fail                    fail
+// no       no       n/a                     n/a
+
 // Run is the entrypoint for main program.
-func Run(buildFlags types.BuildFlags) {
-	cliFlags, err := cli.GetCliFlags(buildFlags)
-	if err != nil {
-		glog.Fatal(err)
-		return
-	}
+func Run(cliFlags types.CliFlags) error {
 	m, err := utils.ParseYamlManifest(cliFlags.ManifestFile, cliFlags.ManifestURL)
 	if err != nil {
-		if !cliFlags.Download {
-			glog.Fatal(err)
+		if os.IsNotExist(err) && cliFlags.Download {
+			glog.Infof("No manifest detected at %s, downloader exiting", cliFlags.ManifestFile)
+			return nil
 		}
-		if os.IsNotExist(err) {
-			glog.Infof("No manifest detected at %s, downloader continuing", cliFlags.ManifestFile)
-			ExecNext(cliFlags)
-			return
-		}
-		glog.Fatal(err)
-		return
+
+		return fmt.Errorf("error parsing manifest: %w", err)
 	}
 	if cliFlags.UpdateManifest {
 		wrote := manifest.UpdateManifest(cliFlags, m)
-		// if we're ONLY updating a manifest, fail if we can't. otherwise we can just use the in-memory one.
+		// might be a read-only filesystem. that's okay, as long as we're also downloading
+		// using our in-memory manifest
 		if !cliFlags.Download && !wrote {
-			glog.Fatalf("failed to update manifest")
+			return fmt.Errorf("failed to update manifest")
 		}
 	}
 	if !cliFlags.Download {
-		return
+		return nil
 	}
 	var waitGroup sync.WaitGroup
 
@@ -234,39 +230,22 @@ func Run(buildFlags types.BuildFlags) {
 
 	if !cliFlags.Cleanup {
 		glog.Info("Not cleaning up after extraction")
-		return
-	}
-
-	files, err := ioutil.ReadDir(cliFlags.DownloadPath)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	for _, file := range files {
-		if utils.IsCleanupFile(file.Name()) {
-			fullpath := filepath.Join(cliFlags.DownloadPath, file.Name())
-			glog.V(9).Infof("Cleaning up %s", fullpath)
-			err = os.Remove(fullpath)
-			if err != nil {
-				glog.Fatal(err)
+	} else {
+		files, err := ioutil.ReadDir(cliFlags.DownloadPath)
+		if err != nil {
+			glog.Fatal(err)
+		}
+		for _, file := range files {
+			if utils.IsCleanupFile(file.Name()) {
+				fullpath := filepath.Join(cliFlags.DownloadPath, file.Name())
+				glog.V(9).Infof("Cleaning up %s", fullpath)
+				err = os.Remove(fullpath)
+				if err != nil {
+					glog.Fatal(err)
+				}
 			}
 		}
 	}
-	ExecNext(cliFlags)
-}
 
-// Done! Move on to the provided next application, if it exists.
-func ExecNext(cliFlags types.CliFlags) {
-	if len(cliFlags.ExecCommand) == 0 {
-		// Nothing to do.
-		return
-	}
-	glog.Infof("downloader complete, now we will exec %v", cliFlags.ExecCommand)
-	execErr := syscall.Exec(cliFlags.ExecCommand[0], cliFlags.ExecCommand, os.Environ())
-	if execErr != nil {
-		glog.Fatalf("error running next command: %s", execErr)
-	}
-}
-
-func main() {
-	Run(types.BuildFlags{Version: Version})
+	return nil
 }

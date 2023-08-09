@@ -109,7 +109,7 @@ ENV COCKROACH_DB_SNAPSHOT https://github.com/iameli-streams/livepeer-in-a-box-da
 
 RUN mkdir /data
 
-CMD	["/usr/local/bin/catalyst-downloader", "--", "/usr/local/bin/MistController", "-c", "/config/full-stack.json"]
+CMD	["/usr/local/bin/catalyst", "--", "/usr/local/bin/MistController", "-c", "/config/full-stack.json"]
 
 FROM	${FROM_LOCAL_PARENT} AS box-local
 

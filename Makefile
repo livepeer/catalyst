@@ -20,7 +20,7 @@ $(shell mkdir -p $(HOME)/.config/livepeer)
 buildpath=$(realpath ./build)
 
 .PHONY: all
-all: download livepeer-log
+all: download catalyst livepeer-log
 
 .PHONY: ffmpeg
 ffmpeg:
@@ -99,17 +99,17 @@ livepeer-api:
 box-kill:
 	[[ "$$KILL" == "true" ]] && docker exec catalyst pkill -f /usr/local/bin/$(BIN) || echo "Not restarting $(BIN), use KILL=true if you want that"
 
-.PHONY: downloader
-downloader:
-	go build -o ./bin/catalyst-downloader ./cmd/downloader/downloader/downloader.go
+.PHONY: catalyst
+catalyst:
+	go build -o ./bin/catalyst ./cmd/catalyst/catalyst.go
 
 .PHONY: download
-download: downloader
-	./bin/catalyst-downloader -v=5 $(ARGS)
+download:
+	go run cmd/downloader/downloader.go -v=5 $(ARGS)
 
 .PHONY: manifest
-manifest: downloader
-	./bin/catalyst-downloader -update-manifest=true -download=false $(ARGS)
+manifest:
+	go run cmd/downloader/downloader.go -update-manifest=true -download=false $(ARGS)
 
 .PHONY: dev
 dev:
@@ -131,10 +131,6 @@ dev:
 livepeer-log:
 	go build -o ./bin/livepeer-log ./cmd/livepeer-log/livepeer-log.go \
 	&& $(MAKE) box-kill BIN=livepeer-log
-
-.PHONY: catalyst
-catalyst:
-	go build -o ./bin/catalyst ./cmd/catalyst/catalyst.go
 
 .PHONY: clean
 clean:
