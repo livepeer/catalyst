@@ -73,7 +73,7 @@ func GetCliFlags(buildFlags types.BuildFlags) (types.CliFlags, error) {
 	version := fs.Bool("version", false, "Get version information")
 
 	if *version {
-		fmt.Printf("livepeer-box version: %s\n", buildFlags.Version)
+		fmt.Printf("catalyst version: %s\n", buildFlags.Version)
 		os.Exit(0)
 	}
 
