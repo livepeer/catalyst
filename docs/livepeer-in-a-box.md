@@ -135,6 +135,10 @@ will have to use the above instructions to boot up the frontend on your host.
 
 ## Notes
 
+-   Your CockroachDB (Postgres) database and your Minio (S3) object store will
+    be saved in the `data` subdirectory of your Catalyst installation. If you
+    want to start from scratch again with the `admin@example.com` database
+    snapshot, shut down your box and `rm -rf data`.
 -   You can press `Ctrl+C` to trigger a graceful shutdown of the container. If
     you're impatient, following it up with a `Ctrl+\` can uncleanly shut things
     down a bit more cleanly.
