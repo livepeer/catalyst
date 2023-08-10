@@ -47,6 +47,8 @@ ARG	LIVEPEER_W3_VERSION=v0.2.2
 WORKDIR /app
 RUN	git clone --depth 1 --branch ${LIVEPEER_W3_VERSION} https://github.com/livepeer/go-tools.git
 RUN	npm install --prefix /app/go-tools/w3
+# chown needed to make everything owned by one user for userspace podman execution
+RUN	chown -R root:root /app/go-tools/w3
 
 FROM	ubuntu:22.04	AS	catalyst
 
@@ -80,6 +82,8 @@ CMD	["/usr/local/bin/MistController", "-c", "/etc/livepeer/catalyst.json"]
 
 FROM catalyst AS livepeer-in-a-box
 
+ARG TARGETARCH
+
 RUN	apt update && apt install -yqq \
 	rabbitmq-server \
 	nginx \
@@ -90,26 +94,29 @@ RUN	apt update && apt install -yqq \
 	perl \
 	&& rm -rf /var/lib/apt/lists/*
 
-RUN curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-arm64.tgz \
-	&& tar xzvf cockroach-v23.1.5.linux-arm64.tgz \
-	&& mv cockroach-v23.1.5.linux-arm64/cockroach /usr/bin/cockroach \
-	&& rm -rf cockroach-v23.1.5.linux-arm64.tgz cockroach-v23.1.5.linux-arm64
+RUN curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-$TARGETARCH.tgz \
+	&& tar xzvf cockroach-v23.1.5.linux-$TARGETARCH.tgz \
+	&& mv cockroach-v23.1.5.linux-$TARGETARCH/cockroach /usr/bin/cockroach \
+	&& rm -rf cockroach-v23.1.5.linux-$TARGETARCH.tgz cockroach-v23.1.5.linux-$TARGETARCH \
+	&& cockroach --version
 
-RUN curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-arm64/minio \
-	&& curl -o /usr/bin/mc https://dl.min.io/client/mc/release/linux-arm64/mc \
-	&& chmod +x /usr/bin/minio /usr/bin/mc
+RUN curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-$TARGETARCH/minio \
+	&& curl -o /usr/bin/mc https://dl.min.io/client/mc/release/linux-$TARGETARCH/mc \
+	&& chmod +x /usr/bin/minio /usr/bin/mc \
+	&& minio --version \
+	&& mc --version
 
 ADD ./scripts /usr/local/bin
-ADD ./config/full-stack.json /config/full-stack.json
+ADD ./config/full-stack.json /etc/livepeer/full-stack.json
 
-ENV CATALYST_DOWNLOADER_PATH /usr/local/bin
-ENV CATALYST_DOWNLOADER_MANIFEST /config/manifest.yaml
-ENV CATALYST_DOWNLOADER_UPDATE_MANIFEST true
-ENV COCKROACH_DB_SNAPSHOT https://github.com/iameli-streams/livepeer-in-a-box-database-snapshots/raw/f59e7ce7a631dbcd176580a54b4fe5f31f9e4dbc/livepeer-studio-bootstrap.tar.gz
+ENV CATALYST_DOWNLOADER_PATH /usr/local/bin \
+	CATALYST_DOWNLOADER_MANIFEST /etc/livepeer/manifest.yaml \
+	CATALYST_DOWNLOADER_UPDATE_MANIFEST true \
+	COCKROACH_DB_SNAPSHOT https://github.com/iameli-streams/livepeer-in-a-box-database-snapshots/raw/f59e7ce7a631dbcd176580a54b4fe5f31f9e4dbc/livepeer-studio-bootstrap.tar.gz
 
 RUN mkdir /data
 
-CMD	["/usr/local/bin/catalyst", "--", "/usr/local/bin/MistController", "-c", "/config/full-stack.json"]
+CMD	["/usr/local/bin/catalyst", "--", "/usr/local/bin/MistController", "-c", "/etc/livepeer/full-stack.json"]
 
 FROM	${FROM_LOCAL_PARENT} AS box-local
 

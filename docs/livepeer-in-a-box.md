@@ -8,7 +8,7 @@ macOS hosts.
 
 You'll need the following things installed locally:
 
--   Docker (or Podman, which works even better)
+-   Docker (or Podman 4.6.0+, which works even better)
 -   Go v1.20+
 -   Node.js v18+ (Studio development only)
 -   Make

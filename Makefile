@@ -152,24 +152,26 @@ full-reset: docker-compose-rm clean all
 
 .PHONY: docker
 docker:
-	docker build \
+	docker buildx build \
 		-t "$(DOCKER_TAG)" \
 		-t "$(DOCKER_TAG):parent" \
 		--target=$(DOCKER_TARGET) \
 		--build-arg=GIT_VERSION=$(GIT_VERSION) \
 		--build-arg=BUILD_TARGET=$(BUILD_TARGET) \
 		--build-arg=FROM_LOCAL_PARENT=$(FROM_LOCAL_PARENT) \
+		$(ARGS) \
 		.
 
 .PHONY: docker-local
 docker-local: downloader livepeer-log scripts 
 	tar ch ./bin Dockerfile.local ./config \
-	| docker build \
+	| docker buildx build \
 		-f Dockerfile.local \
 		-t "$(DOCKER_TAG)" \
 		--build-arg=GIT_VERSION=$(GIT_VERSION) \
 		--build-arg=BUILD_TARGET=$(BUILD_TARGET) \
 		--build-arg=FROM_LOCAL_PARENT=$(FROM_LOCAL_PARENT) \
+		$(ARGS) \
 		-
 
 .PHONY: box
@@ -200,7 +202,7 @@ box-dev: scripts
 	ulimit -c unlimited \
 	&& exec docker run \
 	-v $$(realpath bin):/usr/local/bin \
-	-v $$(realpath config):/config:ro \
+	-v $$(realpath config):/etc/livepeer:ro \
 	-e CORE_DUMP_DIR=$$(realpath ./coredumps) \
 	--rm \
 	-it \
