@@ -203,6 +203,7 @@ box-dev: scripts
 	&& exec docker run \
 	-v $$(realpath bin):/usr/local/bin \
 	-v $$(realpath config):/etc/livepeer:ro \
+	-v $$(realpath ./coredumps):$$(realpath ./coredumps) \
 	-e CORE_DUMP_DIR=$$(realpath ./coredumps) \
 	--rm \
 	-it \
