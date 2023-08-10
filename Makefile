@@ -153,6 +153,7 @@ full-reset: docker-compose-rm clean all
 .PHONY: docker
 docker:
 	docker buildx build \
+		--load \
 		-t "$(DOCKER_TAG)" \
 		-t "$(DOCKER_TAG):parent" \
 		--target=$(DOCKER_TARGET) \
@@ -166,6 +167,7 @@ docker:
 docker-local: downloader livepeer-log scripts 
 	tar ch ./bin Dockerfile.local ./config \
 	| docker buildx build \
+		--load \
 		-f Dockerfile.local \
 		-t "$(DOCKER_TAG)" \
 		--build-arg=GIT_VERSION=$(GIT_VERSION) \
