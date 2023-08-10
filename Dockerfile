@@ -109,10 +109,10 @@ RUN curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-$TARGETA
 ADD ./scripts /usr/local/bin
 ADD ./config/full-stack.json /etc/livepeer/full-stack.json
 
-ENV CATALYST_DOWNLOADER_PATH /usr/local/bin \
-	CATALYST_DOWNLOADER_MANIFEST /etc/livepeer/manifest.yaml \
-	CATALYST_DOWNLOADER_UPDATE_MANIFEST true \
-	COCKROACH_DB_SNAPSHOT https://github.com/iameli-streams/livepeer-in-a-box-database-snapshots/raw/f59e7ce7a631dbcd176580a54b4fe5f31f9e4dbc/livepeer-studio-bootstrap.tar.gz
+ENV CATALYST_DOWNLOADER_PATH=/usr/local/bin \
+	CATALYST_DOWNLOADER_MANIFEST=/etc/livepeer/manifest.yaml \
+	CATALYST_DOWNLOADER_UPDATE_MANIFEST=true \
+	COCKROACH_DB_SNAPSHOT=https://github.com/iameli-streams/livepeer-in-a-box-database-snapshots/raw/f59e7ce7a631dbcd176580a54b4fe5f31f9e4dbc/livepeer-studio-bootstrap.tar.gz
 
 RUN mkdir /data
 
