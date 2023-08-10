@@ -60,9 +60,19 @@ func GetCliFlags(buildFlags types.BuildFlags) (types.CliFlags, error) {
 	vFlag := flag.Lookup("v")
 	fs := flag.NewFlagSet(constants.AppName, flag.ExitOnError)
 
+	goos := runtime.GOOS
+	if os.Getenv("GOOS") != "" {
+		goos = os.Getenv("GOOS")
+	}
+
+	goarch := runtime.GOARCH
+	if os.Getenv("GOARCH") != "" {
+		goarch = os.Getenv("GOARCH")
+	}
+
 	fs.StringVar(&cliFlags.Verbosity, "v", "3", "Log verbosity. Integer value from 0 to 9")
-	fs.StringVar(&cliFlags.Platform, "platform", runtime.GOOS, "One of linux/windows/darwin")
-	fs.StringVar(&cliFlags.Architecture, "architecture", runtime.GOARCH, "System architecture (amd64/arm64)")
+	fs.StringVar(&cliFlags.Platform, "platform", goos, "One of linux/windows/darwin")
+	fs.StringVar(&cliFlags.Architecture, "architecture", goarch, "System architecture (amd64/arm64)")
 	fs.StringVar(&cliFlags.DownloadPath, "path", fmt.Sprintf(".%sbin", string(os.PathSeparator)), "Path to store binaries")
 	fs.StringVar(&cliFlags.ManifestFile, "manifest", "manifest.yaml", "Path (or URL) to manifest yaml file")
 	fs.BoolVar(&cliFlags.SkipDownloaded, "skip-downloaded", false, "Skip already downloaded archive (if found)")
