@@ -27,10 +27,6 @@ ffmpeg:
 	mkdir -p build
 	cd ../go-livepeer && ./install_ffmpeg.sh $(buildpath)
 
-.PHONY: build
-build:
-	go build -ldflags="$(GO_LDFLAG_VERSION)" -o build/downloader cmd/downloader/downloader/downloader.go
-
 .PHONY: mistserver
 mistserver:
 	set -x \
@@ -105,7 +101,8 @@ catalyst:
 
 .PHONY: download
 download:
-	go run cmd/downloader/downloader.go -v=5 $(ARGS)
+	GOOS="" GOARCH="" go build -o ./build/downloader cmd/downloader/downloader.go \
+	&& ./build/downloader
 
 .PHONY: manifest
 manifest:
