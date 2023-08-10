@@ -201,6 +201,7 @@ box-dev: scripts
 	ulimit -c unlimited \
 	&& exec docker run \
 	-v $$(realpath bin):/usr/local/bin \
+	-v $$(realpath data):/data \
 	-v $$(realpath config):/etc/livepeer:ro \
 	-v $$(realpath ./coredumps):$$(realpath ./coredumps) \
 	-e CORE_DUMP_DIR=$$(realpath ./coredumps) \
