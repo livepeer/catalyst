@@ -5,7 +5,7 @@ box:
     strategy:
       download: bucket
       project: livepeer-data
-      commit: 82256487362c65a51c6841e66ef5252d0f493482
+      commit: d0fe3f6d35ff87dd51f0ee9ea824d69ca202ab9d
     release: main
     srcFilenames:
       darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
@@ -18,13 +18,13 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: f65dde353dff011929d187a153616141e305a0ca
-    release: v0.15.0
+      commit: 1995c9fc6bb8abf2d30ec6bf37f8c8788b403bfa
+    release: v0.15.2
   - name: catalyst-api
     strategy:
       download: bucket
       project: catalyst-api
-      commit: 2a9d60007dac8f083e9e8e3aed9d748ce33edbdf
+      commit: ff5110645b85e6dac3cb03b1d5b076f064a0efe0
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-uploader
-      commit: 5457805c3706059ca4c1f08d10b99823edaf8387
+      commit: 8160a2b29b6d104964b05c8f546d0292956bec53
     binary: livepeer-catalyst-uploader
     release: main
     srcFilenames:
@@ -47,7 +47,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: 9e1924fd03f5102e262b5a960ede9f2331f3cae4
+      commit: 3f624087983b1ca0e161e7be0159d60b158b7727
     binary: livepeer
     release: master
     archivePath: livepeer
@@ -62,7 +62,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: 9c609914821ce27bdca7855a164905f3ee3be79d
+      commit: 81966625c8f0f3e7d68e12eee7c4fc5329e37411
     release: catalyst
     skipGpg: true
     srcFilenames:
@@ -77,13 +77,6 @@ box:
       commit: bd7eb09dafefc95ec7d9d33d33e12e7f86a8cc83
     binary: livepeer-mist-bigquery-uploader
     release: v1.2.1
-  - name: www
-    strategy:
-      download: github
-      project: livepeer/studio
-      commit: f65dde353dff011929d187a153616141e305a0ca
-    binary: livepeer-www
-    release: v0.15.0
   - name: victoria-metrics
     strategy:
       download: github
