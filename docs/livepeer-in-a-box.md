@@ -9,6 +9,7 @@ macOS hosts.
 You'll need the following things installed locally:
 
 -   Docker (or Podman 4.6.0+, which works even better)
+-   Buildah (for `docker buildx`, included with Podman and Docker for Mac)
 -   Go v1.20+
 -   Node.js v18+ (Studio development only)
 -   Make
