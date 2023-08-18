@@ -21,8 +21,6 @@ if [[ "$DIR" == "" ]]; then
   exec tail -f /dev/null
 fi
 
-logOfChanges="/tmp/changes.log.csv" # Set your file name here.
-
 function echored() {
   echo -e "\033[31;1;4m${1}\033[0m"
 }
