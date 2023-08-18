@@ -162,10 +162,9 @@ docker:
 
 .PHONY: docker-local
 docker-local: downloader livepeer-log scripts 
-	tar ch ./bin Dockerfile.local ./config \
+	tar ch ./bin ./config \
 	| docker buildx build \
 		--load \
-		-f Dockerfile.local \
 		-t "$(DOCKER_TAG)" \
 		--build-arg=GIT_VERSION=$(GIT_VERSION) \
 		--build-arg=BUILD_TARGET=$(BUILD_TARGET) \
