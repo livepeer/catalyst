@@ -17,7 +17,7 @@ You'll need the following things installed locally:
 You'll first need to clone the Catalyst repo if you haven't already.
 
 ```shell
-git clone git@github.com:livepeer/catalyst.git
+git clone https://github.com/livepeer/catalyst.git
 cd catalyst
 ```
 
