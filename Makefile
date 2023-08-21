@@ -11,6 +11,13 @@ FROM_LOCAL_PARENT ?= "scratch" # for `make docker-local` and `make box-local`
 DOCKER_TARGET ?= "catalyst"
 BUILD_TARGET ?= "full"
 KILL ?= "false"
+export GOOS ?= linux
+
+ifeq ($(shell uname), Darwin)
+	ifeq ($(GOOS), linux)
+		CROSS_ARGS = "--cross-file=$(realpath ./config/mistserver-linux-arm64-cross.txt)"
+	endif
+endif
 
 $(shell mkdir -p ./bin)
 $(shell mkdir -p ./build)
@@ -22,17 +29,21 @@ buildpath=$(realpath ./build)
 .PHONY: all
 all: download catalyst livepeer-log
 
+.PHONY: wtf
+wtf:
+	echo $(CROSS_ARGS)
+
 .PHONY: ffmpeg
 ffmpeg:
 	mkdir -p build
 	cd ../go-livepeer && ./install_ffmpeg.sh $(buildpath)
 
 .PHONY: mistserver
-mistserver:
+mistserver: build/sysroot-aarch64-gnu-linux
 	set -x \
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
-	&& meson ../../../mistserver -DLOAD_BALANCE=true -Dprefix=${CMAKE_INSTALL_PREFIX} -Dbuildtype=debugoptimized --default-library static \
+	&& meson ../../../mistserver $(CROSS_ARGS) -DLOAD_BALANCE=true -Dprefix=${CMAKE_INSTALL_PREFIX} -Dbuildtype=debugoptimized --default-library static \
 	&& ninja \
 	&& ninja install
 
@@ -213,3 +224,13 @@ box-dev: scripts
 	-p 1935:1935 \
 	-p 4242:4242 \
 	livepeer/in-a-box
+
+build/sysroot-aarch64-gnu-linux: sysroot.Dockerfile
+	rm -rf ./build/tmp-sysroot-aarch64-gnu-linux \
+	&& mkdir -p ./build/tmp-sysroot-aarch64-gnu-linux \
+	&& docker build -t sysroot-aarch64-gnu-linux -f sysroot.Dockerfile . \
+	&& docker run --rm -v $$(realpath build):/build --platform linux/arm64 sysroot-aarch64-gnu-linux tar cf - /lib /usr/include /usr/lib /usr/local/lib /usr/local/include \
+	| tar xf - -C $$(realpath build)/tmp-sysroot-aarch64-gnu-linux \
+	&& rm -rf ./build/sysroot-aarch64-gnu-linux \
+	&& mv ./build/tmp-sysroot-aarch64-gnu-linux ./build/sysroot-aarch64-gnu-linux \
+	&& ln -s $$(realpath ./build/sysroot-aarch64-gnu-linux) /tmp/sysroot-aarch64-gnu-linux
