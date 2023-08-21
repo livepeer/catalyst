@@ -14,6 +14,7 @@ You'll need the following things installed locally:
 -   Node.js v18+ (Studio development only)
 -   Make
 -   git
+-   llvm (`brew install llvm` for compiling MistServer on MacOS only)
 
 You'll first need to clone the Catalyst repo if you haven't already.
 
@@ -93,11 +94,7 @@ commands:
 | [task-runner]               | `make livepeer-task-runner`       |
 | [analyzer]                  | `make livepeer-analyzer`          |
 | [Studio Node.js API Server] | `make livepeer-api`               |
-| [MistServer]\*              | `make mistserver`                 |
-
-\* Cross-compilation of MistServer from macOS to Linux is currently not
-supported. If you need to make changes on a Mac, you may have to use a dev
-server or a Linux VM for now.
+| [MistServer]                | `make mistserver`                 |
 
 [catalyst-api]: https://github.com/livepeer/catalyst-api
 [catalyst-uploader]: https://github.com/livepeer/catalyst-uploader
