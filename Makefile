@@ -191,11 +191,11 @@ box-local: FROM_LOCAL_PARENT=livepeer/in-a-box:parent
 box-local: docker-local
 
 .PHONY: test
-test: docker
+test: docker box
 	go test ./test/e2e/*.go -v --logtostderr
 
 .PHONY: test-local
-test-local: docker-local
+test-local: docker-local box-local
 	go test ./test/e2e/*.go -v --logtostderr
 
 .PHONY: scripts
