@@ -18,12 +18,12 @@ var Version = "undefined"
 func main() {
 	cliFlags, err := cli.GetCliFlags(types.BuildFlags{Version: Version})
 	if err != nil {
-		glog.Fatal("error parsing cli flags: %s", err)
+		glog.Fatalf("error parsing cli flags: %s", err)
 		return
 	}
 	err = downloader.Run(cliFlags)
 	if err != nil {
-		glog.Fatalf("error running downloader: %s")
+		glog.Fatalf("error running downloader: %s", err)
 	}
 	execNext(cliFlags)
 }
