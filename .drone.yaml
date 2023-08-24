@@ -13,7 +13,7 @@ steps:
       - go mod download
       - export CI_CATALYST_TEST_IMAGE="${DRONE_REPO}-${DRONE_BUILD_NUMBER}"
       - make docker DOCKER_TAG="$CI_CATALYST_TEST_IMAGE"
-      - 'parallel go test $(go list ./... | grep "test/e2e") --logtostderr=true -v --image "$CI_CATALYST_TEST_IMAGE" --network "catalyst-test-${DRONE_BUILD_NUMBER}-0{}" ::: $(seq 0 2)'
+      - 'go test $(go list ./... | grep "test/e2e") --logtostderr=true -v --image "$CI_CATALYST_TEST_IMAGE" --network "catalyst-test-${DRONE_BUILD_NUMBER}"'
 
 trigger:
   event:
