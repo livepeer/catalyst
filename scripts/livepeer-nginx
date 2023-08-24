@@ -19,29 +19,31 @@ include /etc/nginx/modules-enabled/*.conf;
 daemon off;
 
 events {
-	worker_connections 768;
-	# multi_accept on;
+    worker_connections 768;
+    # multi_accept on;
 }
 
 http {
-	sendfile on;
-	tcp_nopush on;
-	types_hash_max_size 2048;
+    sendfile on;
+    tcp_nopush on;
+    types_hash_max_size 2048;
+    client_max_body_size 10G;
 
-	include /etc/nginx/mime.types;
-	default_type application/octet-stream;
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
 
-	ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
-	ssl_prefer_server_ciphers on;
+    ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
 
-	access_log /proc/1/fd/2;
-	error_log /proc/1/fd/2;
+    access_log /proc/1/fd/2;
+    error_log /proc/1/fd/2;
 
-	gzip on;
+    gzip on;
 
     server {
         listen       8888;
         server_name  _;
+        absolute_redirect off;
         
         location /mist/hls/ {
             proxy_pass http://localhost:8081/hls/;
@@ -67,7 +69,7 @@ http {
             proxy_set_header X-Mst-Path "\$scheme://\$host:\$server_port/mist";
         }
 
-        proxy_set_header Host \$host:9000;
+        proxy_set_header Host \$host:\$server_port;
         proxy_set_header X-Forwarded-For \$remote_addr;
 
         location /hls/ {
