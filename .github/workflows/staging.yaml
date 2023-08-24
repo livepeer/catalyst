@@ -32,7 +32,7 @@ jobs:
 
       - name: Generate new manifest
         run: |
-          go run cmd/downloader/downloader/downloader.go -v=9 --manifest=./manifest.yaml --download=false --update-manifest=true
+          go run cmd/downloader/downloader.go -v=9 --manifest=./manifest.yaml --download=false --update-manifest=true
 
       - name: Commit and push changes
         id: branch-commit

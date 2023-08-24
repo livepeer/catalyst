@@ -58,7 +58,7 @@ jobs:
       - name: Run downloader script
         run: |
           mkdir -p "${CI_CATALYST_BIN_DIR}/" "releases/"
-          go run cmd/downloader/downloader/downloader.go \
+          go run cmd/downloader/downloader.go \
             --platform "${{ matrix.platform.name }}" \
             --architecture "${{ matrix.architecture }}" \
             --path "./${CI_CATALYST_BIN_DIR}/" \
