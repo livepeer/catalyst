@@ -39,11 +39,13 @@ jobs:
           - target: catalyst
             label: livepeer/catalyst
             refs: |
+              livepeer/catalyst
               livepeerci/catalyst
               ghcr.io/livepeer/catalyst
           - target: livepeer-in-a-box
             label: livepeer/in-a-box
             refs: |
+              livepeer/in-a-box
               livepeerci/in-a-box
               ghcr.io/livepeer/in-a-box
 
