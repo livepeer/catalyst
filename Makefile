@@ -1,16 +1,16 @@
 SHELL := /bin/bash
-PROC_COUNT+="$(shell nproc)"
+PROC_COUNT+=$(shell nproc)
 CMAKE_INSTALL_PREFIX=$(shell realpath .)
 # The -DCMAKE_OSX_ARCHITECTURES flag should be ignored on non-OSX platforms
 CMAKE_OSX_ARCHITECTURES=$(shell uname -m)
 GIT_VERSION?=$(shell git describe --always --long --abbrev=8 --dirty)
 GO_LDFLAG_VERSION := -X 'main.Version=$(GIT_VERSION)'
-MIST_COMMIT ?= "catalyst"
-DOCKER_TAG ?= "livepeer/catalyst"
-FROM_LOCAL_PARENT ?= "scratch" # for `make docker-local` and `make box-local`
-DOCKER_TARGET ?= "catalyst"
-BUILD_TARGET ?= "full"
-KILL ?= "false"
+MIST_COMMIT ?= catalyst
+DOCKER_TAG ?= livepeer/catalyst
+FROM_LOCAL_PARENT ?= scratch # for `make docker-local` and `make box-local`
+DOCKER_TARGET ?= catalyst
+BUILD_TARGET ?= full
+KILL ?= false
 export GOOS ?= linux
 
 ifeq ($(shell uname), Darwin)
@@ -180,15 +180,12 @@ docker-local: downloader livepeer-log scripts
 		-
 
 .PHONY: box
-box: DOCKER_TAG=livepeer/in-a-box
-box: DOCKER_TARGET=livepeer-in-a-box
-box: scripts docker
+box: scripts
+	$(MAKE) docker DOCKER_TAG=livepeer/in-a-box DOCKER_TARGET=livepeer-in-a-box
 
 .PHONY: box-local
-box-local: DOCKER_TAG=livepeer/in-a-box
-box-local: DOCKER_TARGET=livepeer-in-a-box
-box-local: FROM_LOCAL_PARENT=livepeer/in-a-box:parent
-box-local: docker-local
+box-local: scripts
+	$(MAKE) docker-local DOCKER_TAG=livepeer/in-a-box DOCKER_TARGET=livepeer-in-a-box FROM_LOCAL_PARENT=livepeer/in-a-box:parent
 
 .PHONY: test
 test: docker box
