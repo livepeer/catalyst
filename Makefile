@@ -168,7 +168,7 @@ docker:
 		.
 
 .PHONY: docker-local
-docker-local: downloader livepeer-log scripts 
+docker-local: download livepeer-log scripts
 	tar ch ./bin ./config \
 	| docker buildx build \
 		--load \
@@ -212,10 +212,13 @@ box-dev: scripts
 	-it \
 	--name catalyst \
 	--shm-size=4gb \
+	--security-opt="apparmor=unconfined" \
+	--cap-add=SYS_PTRACE \
 	-p 8888:8888 \
 	-p 5432:5432 \
 	-p 1935:1935 \
 	-p 4242:4242 \
+	-p 13004:13004 \
 	livepeer/in-a-box
 
 build/sysroot-aarch64-gnu-linux: sysroot.Dockerfile
@@ -227,3 +230,7 @@ build/sysroot-aarch64-gnu-linux: sysroot.Dockerfile
 	&& rm -rf ./build/sysroot-aarch64-gnu-linux \
 	&& mv ./build/tmp-sysroot-aarch64-gnu-linux ./build/sysroot-aarch64-gnu-linux \
 	&& ln -s $$(realpath ./build/sysroot-aarch64-gnu-linux) /tmp/sysroot-aarch64-gnu-linux
+
+.PHONY: debug-%
+debug-%:
+	docker exec catalyst dlv attach $$(ps -o pid= -C "$*") "/usr/local/bin/$*" --continue --listen=0.0.0.0:13004 --headless=true --api-version=2 --accept-multiclient
