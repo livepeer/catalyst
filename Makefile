@@ -233,4 +233,4 @@ build/sysroot-aarch64-gnu-linux: sysroot.Dockerfile
 
 .PHONY: debug-%
 debug-%:
-	docker exec catalyst dlv attach $$(ps -o pid= -C "$*") "/usr/local/bin/$*" --continue --listen=0.0.0.0:13004 --headless=true --api-version=2 --accept-multiclient
+	docker exec catalyst /bin/sh -c 'dlv attach $$(ps -o pid= -C "$*") "/usr/local/bin/$*" --continue --listen=0.0.0.0:13004 --headless=true --api-version=2 --accept-multiclient'
