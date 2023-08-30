@@ -37,6 +37,9 @@
         "connector": "livepeer-core-dump-monitor"
       },
       {
+        "connector": "livepeer-coturn"
+      },
+      {
         "connector": "livepeer-api",
         "postgres-url": "postgresql://root@localhost:5432/defaultdb?sslmode=disable",
         "cors-jwt-allowlist": "[\"http://localhost:8080\", \"http://localhost:3000\", \"http://localhost:8888\",\"http://127.0.0.1:8080\", \"http://127.0.0.1:3000\", \"http://127.0.0.1:8888\"]",
@@ -183,7 +186,19 @@
         "connector": "WAV"
       },
       {
-        "connector": "WebRTC"
+        "connector": "WebRTC",
+        "bindhost": "127.0.0.1",
+        "iceservers": [
+          {
+            "urls": "stun:localhost"
+          },
+          {
+            "credential": "livepeer",
+            "urls": "turn:localhost",
+            "username": "livepeer"
+          }
+        ],
+        "pubhost": "127.0.0.1"
       }
     ],
     "sessionInputMode": 15,
@@ -221,12 +236,13 @@
           "process": "Livepeer",
           "target_profiles": [
             {
+              "x-LSP-name": "144p",
               "bitrate": 400000,
               "fps": 30,
               "height": 144,
               "name": "P144p30fps16x9",
               "width": 256,
-              "x-LSP-name": ""
+              "profile": "H264ConstrainedHigh"
             }
           ]
         },
@@ -267,12 +283,13 @@
           "process": "Livepeer",
           "target_profiles": [
             {
+              "x-LSP-name": "144p",
               "bitrate": 400000,
               "fps": 30,
               "height": 144,
               "name": "P144p30fps16x9",
               "width": 256,
-              "x-LSP-name": ""
+              "profile": "H264ConstrainedHigh"
             }
           ]
         },

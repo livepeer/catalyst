@@ -91,6 +91,7 @@ RUN	apt update && apt install -yqq \
 	file \
 	# for `shasum`
 	perl \
+	coturn \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-$TARGETARCH.tgz \
