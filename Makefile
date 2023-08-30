@@ -216,6 +216,10 @@ box-dev: scripts
 	-p 5432:5432 \
 	-p 1935:1935 \
 	-p 4242:4242 \
+	-p 3478:3478 \
+	-p 3478:3478/udp \
+	-p 5349:5349 \
+	-p 40000-40100:40000-40100/udp \
 	livepeer/in-a-box
 
 build/sysroot-aarch64-gnu-linux: sysroot.Dockerfile
