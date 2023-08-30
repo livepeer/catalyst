@@ -19,6 +19,5 @@ exec turnserver \
   --no-tls \
   --no-dtls \
   --lt-cred-mech \
-  -X 192.168.230.130 \
   --allow-loopback-peers \
   --cli-password livepeer
