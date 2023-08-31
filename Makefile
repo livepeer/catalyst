@@ -113,7 +113,7 @@ download:
 
 .PHONY: manifest
 manifest:
-	go run cmd/downloader/downloader.go -update-manifest=true -download=false $(ARGS)
+	GOOS="" GOARCH="" go run cmd/downloader/downloader.go -update-manifest=true -download=false $(ARGS)
 
 .PHONY: dev
 dev:
