@@ -18,8 +18,8 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: 7338d3e3adcaf1bf7d2e83852d74b862404e4921
-    release: v0.15.3
+      commit: 4d6b5a1f8f69b98457d300934352090eafcb49c8
+    release: v0.15.4
   - name: catalyst-api
     strategy:
       download: bucket
