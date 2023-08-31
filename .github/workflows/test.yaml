@@ -13,7 +13,7 @@ concurrency:
 jobs:
   test:
     name: Test the catalyst project
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -22,6 +22,11 @@ jobs:
           # Check https://github.com/livepeer/go-livepeer/pull/1891
           # for ref value discussion
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install podman
+        run: |-
+          sudo apt install -y podman \
+          && echo 'unqualified-search-registries = ["docker.io"]' | sudo tee -a /etc/containers/registries.conf
 
       - name: Set up go
         id: go
@@ -55,11 +60,8 @@ jobs:
       - name: Run tests with coverage
         run: go test --covermode=atomic --coverprofile=coverage.out $(go list ./... | grep -v 'test/e2e')
 
-      - name: Build Docker image
-        run: make docker DOCKER_TAG=catalyst-e2e-test
-
-      - name: Run E2E tests
-        run: go test $(go list ./... | grep 'test/e2e') --timeout 15m --image catalyst-e2e-test
+      - name: Build Docker image & run tests
+        run: DOCKER=podman make test
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
