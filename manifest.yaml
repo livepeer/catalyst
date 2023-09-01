@@ -18,8 +18,8 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: 4d6b5a1f8f69b98457d300934352090eafcb49c8
-    release: v0.15.4
+      commit: 9a025f3b860b1969ebab403c4f665522d238707f
+    release: v0.15.5
   - name: catalyst-api
     strategy:
       download: bucket
@@ -81,7 +81,7 @@ box:
     strategy:
       download: bucket
       project: task-runner
-      commit: 182acb0ddf39bc2dfaac018f2505473d89bf9256
+      commit: 10cd899372cf6468e37b882c55fdeece96b36129
     binary: livepeer-task-runner
     release: main
     srcFilenames:
