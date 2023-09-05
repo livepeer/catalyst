@@ -36,11 +36,14 @@ type BuildFlags struct {
 type CliFlags struct {
 	SkipDownloaded bool
 	Cleanup        bool
+	UpdateManifest bool
+	Download       bool
 	DownloadPath   string
 	Platform       string
 	Architecture   string
 	ManifestFile   string
 	Verbosity      string
+	ExecCommand    []string
 
 	ManifestURL bool
 }

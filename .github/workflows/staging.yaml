@@ -2,7 +2,7 @@ name: Generate staging manifest
 
 on:
   repository_dispatch:
-    types: ['staging-manifest']
+    types: ["staging-manifest"]
 
 jobs:
   staging-manifest:
@@ -32,7 +32,7 @@ jobs:
 
       - name: Generate new manifest
         run: |
-          go run cmd/downloader/manifest/manifest.go -v=9 --manifest=./manifest.yaml
+          go run cmd/downloader/downloader.go -v=9 --manifest=./manifest.yaml --download=false --update-manifest=true
 
       - name: Commit and push changes
         id: branch-commit
@@ -41,7 +41,7 @@ jobs:
           github_token: ${{ secrets.PUSH_TOKEN }}
           target_branch: staging
           commit_prefix: "[AUTO-COMMIT] "
-          commit_message: 'Update `manifest.yaml`'
+          commit_message: "Update `manifest.yaml`"
           force: true
 
       - name: Create pull request
@@ -50,7 +50,7 @@ jobs:
           github_token: ${{ github.token }}
           source_branch: ${{ steps.branch-commit.outputs.branch_name }}
           target_branch: main
-          title: '[BOT] Update `manifest.yaml` for staging'
+          title: "[BOT] Update `manifest.yaml` for staging"
           reviewer: iameli, thomshutt
           assignee: ${{ github.actor }}
           label: enhancement
