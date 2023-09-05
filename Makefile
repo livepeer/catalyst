@@ -200,11 +200,11 @@ box-local: scripts
 
 .PHONY: test
 test: docker box
-	go test ./test/e2e/*.go -v --logtostderr
+	GOOS="" GOARCH="" go test ./test/e2e/*.go -v --logtostderr
 
 .PHONY: test-local
 test-local: docker-local box-local
-	go test ./test/e2e/*.go -v --logtostderr
+	GOOS="" GOARCH="" go test ./test/e2e/*.go -v --logtostderr
 
 .PHONY: scripts
 scripts:
