@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  catalyst:
+  docker:
     name: ${{ matrix.docker_images.label }} (${{ matrix.targets.suffix }}${{ matrix.build.suffix }})
     runs-on: ubuntu-latest
     permissions:
@@ -106,3 +106,30 @@ jobs:
       - name: Notify new build upload
         if: ${{ matrix.targets.suffix == '-amd64' && matrix.build.target == 'stripped' }}
         run: curl -X POST https://holy-bread-207a.livepeer.workers.dev
+
+  # https://brunoscheufler.com/blog/2022-04-09-the-required-github-status-check-that-wasnt
+  after-docker:
+    needs: docker # run after docker
+    runs-on: ubuntu-latest
+    if: success() # only run when all shards have passed
+    # store success output flag for ci job
+    outputs:
+      success: ${{ steps.setoutput.outputs.success }}
+    steps:
+      - id: setoutput
+        run: echo "::set-output name=success::true"
+
+  ci:
+    runs-on: ubuntu-latest
+    if: always() # always run, so we never skip the check
+    needs: [docker, after-docker]
+    steps:
+      - run: |
+          passed="${{ needs.after-docker.outputs.success }}"
+          if [[ $passed == "true" ]]; then
+            echo "Docker builds passed"
+            exit 0
+          else
+            echo "Docker builds failed"
+            exit 1
+          fi
