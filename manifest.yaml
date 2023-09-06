@@ -77,18 +77,6 @@ box:
       commit: bd7eb09dafefc95ec7d9d33d33e12e7f86a8cc83
     binary: livepeer-mist-bigquery-uploader
     release: v1.2.1
-  - name: task-runner
-    strategy:
-      download: bucket
-      project: task-runner
-      commit: 10cd899372cf6468e37b882c55fdeece96b36129
-    binary: livepeer-task-runner
-    release: main
-    srcFilenames:
-      darwin-amd64: livepeer-task-runner-darwin-amd64.tar.gz
-      darwin-arm64: livepeer-task-runner-darwin-arm64.tar.gz
-      linux-amd64: livepeer-task-runner-linux-amd64.tar.gz
-      linux-arm64: livepeer-task-runner-linux-arm64.tar.gz
   - name: victoria-metrics
     strategy:
       download: github

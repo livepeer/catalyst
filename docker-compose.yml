@@ -1,0 +1,55 @@
+# docker-compose file just for rabbit and postgres
+
+version: "3.2"
+services:
+  postgres:
+    image: postgres
+    container_name: box-postgres
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - 5432:5432
+    volumes:
+      - ./.docker/postgres/data:/var/lib/postgresql/data
+      - ./config/box.sql:/docker-entrypoint-initdb.d/create_tables.sql
+
+  rabbitmq:
+    image: rabbitmq:3.9.13-management
+    hostname: localhost
+    container_name: box-rabbitmq
+    ports:
+      - 5552:5552
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ./.docker/rabbitmq/data/:/var/lib/rabbitmq/
+    networks:
+      - default
+    environment:
+      RABBITMQ_NODENAME: rabbit@localhost
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbitmq_stream advertised_host localhost"
+    entrypoint: bash -c
+    command: |
+      'set -ex
+      cat > /etc/rabbitmq/rabbitmq.conf <<EOF
+        default_vhost = livepeer
+        loopback_users = none
+      EOF
+      rabbitmq-plugins enable --offline rabbitmq_stream
+      bash <<EOF &
+        until rabbitmqadmin --vhost=livepeer declare exchange name=lp_golivepeer_metadata type=topic && \
+              rabbitmqadmin --vhost=livepeer declare exchange name=webhook_default_exchange type=topic && \
+              rabbitmqadmin --vhost=livepeer declare exchange name=lp_mist_api_connector type=topic && \
+              rabbitmqadmin --vhost=livepeer declare exchange name=lp_global_replication type=topic; do
+          sleep 1;
+        done
+      EOF
+      exec docker-entrypoint.sh rabbitmq-server'
+    healthcheck:
+      test: rabbitmq-diagnostics check_running
+      start_period: 5s
+      interval: 10s
+
+networks:
+  default:
+    driver: bridge

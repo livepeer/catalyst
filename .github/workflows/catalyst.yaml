@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  docker:
-    name: ${{ matrix.docker_images.label }} (${{ matrix.targets.target_suffix }}${{ matrix.targets.debug_suffix }})
+  catalyst:
+    name: livepeerci/catalyst${{ matrix.targets.suffix }}${{ matrix.build.suffix }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -24,47 +24,17 @@ jobs:
       fail-fast: false
       matrix:
         targets:
-          # example: livepeer/catalyst:latest
-          # primary multi-platform stripped build
-          - platforms: linux/amd64, linux/arm64
+          - suffix: ""
+            platforms: linux/amd64, linux/arm64
+          - suffix: "-amd64"
+            platforms: linux/amd64
+          - suffix: "-arm64"
+            platforms: linux/arm64
+        build:
+          - suffix: ""
             target: stripped
-            target_suffix: ""
-            debug_suffix: ""
-          # example: livepeer/catalyst:latest-amd64
-          # primarily useful so we can deploy the amd64 version prior to the slow, emulated arm64 build to succeed
-          - platforms: linux/amd64
-            target: stripped
-            target_suffix: "-amd64"
-            debug_suffix: ""
-          # example: livepeer/catalyst:latest-arm64
-          - platforms: linux/arm64
-            target: stripped
-            target_suffix: "-arm64"
-            debug_suffix: ""
-          # example: livepeer/catalyst:latest-amd-debug
-          # unstripped binaries for use with gdb coredump debugging
-          - platforms: linux/amd64
+          - suffix: "-debug"
             target: full
-            target_suffix: "-amd64"
-            debug_suffix: "-debug"
-          # example: livepeer/catalyst:latest-arm64-debug
-          - platforms: linux/arm64
-            target: full
-            target_suffix: "-arm64"
-            debug_suffix: "-debug"
-        docker_images:
-          - target: catalyst
-            label: livepeer/catalyst
-            refs: |
-              livepeer/catalyst
-              livepeerci/catalyst
-              ghcr.io/livepeer/catalyst
-          - target: livepeer-in-a-box
-            label: livepeer/in-a-box
-            refs: |
-              livepeer/in-a-box
-              livepeerci/in-a-box
-              ghcr.io/livepeer/in-a-box
 
     steps:
       - name: Set up QEMU
@@ -91,9 +61,10 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           flavor: |
-            suffix=${{ matrix.targets.target_suffix }}${{ matrix.targets.debug_suffix }},onlatest=true
+            suffix=${{ matrix.targets.suffix }}${{ matrix.build.suffix }},onlatest=true
           images: |
-            ${{ matrix.docker_images.refs }}
+            livepeerci/catalyst
+            ghcr.io/${{ github.repository }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
@@ -110,43 +81,15 @@ jobs:
         with:
           platforms: ${{ matrix.targets.platforms }}
           push: true
-          target: ${{ matrix.docker_images.target }}
+          target: catalyst
           build-args: |
             GIT_VERSION=${{ github.ref_type == 'tag' && github.ref_name || github.event.pull_request.head.sha || github.sha }}
-            BUILD_TARGET=${{ matrix.targets.target }}
-            FROM_LOCAL_PARENT=scratch
+            BUILD_TARGET=${{ matrix.build.target }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Notify new build upload
-        if: ${{ matrix.targets.target_suffix == '-amd64' && matrix.targets.target == 'stripped' }}
+        if: ${{ matrix.targets.suffix == '-amd64' && matrix.build.target == 'stripped' }}
         run: curl -X POST https://holy-bread-207a.livepeer.workers.dev
-
-  # https://brunoscheufler.com/blog/2022-04-09-the-required-github-status-check-that-wasnt
-  after-docker:
-    needs: docker # run after docker
-    runs-on: ubuntu-latest
-    if: success() # only run when all shards have passed
-    # store success output flag for ci job
-    outputs:
-      success: ${{ steps.setoutput.outputs.success }}
-    steps:
-      - id: setoutput
-        run: echo "::set-output name=success::true"
-
-  ci:
-    runs-on: ubuntu-latest
-    if: always() # always run, so we never skip the check
-    needs: [docker, after-docker]
-    steps:
-      - run: |
-          passed="${{ needs.after-docker.outputs.success }}"
-          if [[ $passed == "true" ]]; then
-            echo "Docker builds passed!"
-            exit 0
-          else
-            echo "Docker builds failed; check the CI tasks adjacent to this one for the actual cause of failure. Sometimes if a runner runs out of disk space it shows up as 'Skipped'."
-            exit 1
-          fi
