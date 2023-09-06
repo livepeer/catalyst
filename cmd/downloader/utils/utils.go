@@ -34,10 +34,14 @@ func IsSupportedPlatformArch(platform, arch string) bool {
 func ParseYamlManifest(manifestPath string, isURL bool) (*types.BoxManifest, error) {
 	var manifestConfig types.BoxManifest
 	var file []byte
+	var err error
 	glog.Infof("reading manifest file=%q", manifestPath)
 	glog.V(9).Infof("manifestPath=%s isURL=%t", manifestPath, isURL)
 	if !isURL {
-		file, _ = ioutil.ReadFile(manifestPath)
+		file, err = ioutil.ReadFile(manifestPath)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		response, err := http.Get(manifestPath)
 		if err != nil || response.StatusCode != http.StatusOK {
@@ -49,7 +53,7 @@ func ParseYamlManifest(manifestPath string, isURL bool) (*types.BoxManifest, err
 			return nil, err
 		}
 	}
-	err := yaml.Unmarshal(file, &manifestConfig)
+	err = yaml.Unmarshal(file, &manifestConfig)
 	if err != nil {
 		return nil, err
 	}

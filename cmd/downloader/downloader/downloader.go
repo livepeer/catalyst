@@ -1,9 +1,10 @@
-package main
+package downloader
 
 import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -14,15 +15,13 @@ import (
 	"sync"
 
 	"github.com/livepeer/catalyst/cmd/downloader/bucket"
-	"github.com/livepeer/catalyst/cmd/downloader/cli"
 	"github.com/livepeer/catalyst/cmd/downloader/github"
+	"github.com/livepeer/catalyst/cmd/downloader/manifest"
 	"github.com/livepeer/catalyst/cmd/downloader/types"
 	"github.com/livepeer/catalyst/cmd/downloader/utils"
 	"github.com/livepeer/catalyst/cmd/downloader/verification"
 	glog "github.com/magicsong/color-glog"
 )
-
-var Version = "undefined"
 
 // DownloadService works on downloading services for the box to
 // machine and extracting the required binaries from artifacts.
@@ -182,28 +181,45 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service *types.Servi
 	return nil
 }
 
+// little chart to reason about error handling here:
+// manifest download cant-read               cant-write
+// yes      yes      continue (if not exist) continue (assume read-only)
+// no       yes      continue (if not exist) n/a
+// yes      no       fail                    fail
+// no       no       n/a                     n/a
+
 // Run is the entrypoint for main program.
-func Run(buildFlags types.BuildFlags) {
-	cliFlags, err := cli.GetCliFlags(buildFlags)
+func Run(cliFlags types.CliFlags) error {
+	m, err := utils.ParseYamlManifest(cliFlags.ManifestFile, cliFlags.ManifestURL)
 	if err != nil {
-		glog.Fatal(err)
-		return
+		if os.IsNotExist(err) && cliFlags.Download {
+			glog.Infof("No manifest detected at %s, downloader exiting", cliFlags.ManifestFile)
+			return nil
+		}
+
+		return fmt.Errorf("error parsing manifest: %w", err)
+	}
+	if cliFlags.UpdateManifest {
+		wrote := manifest.UpdateManifest(cliFlags, m)
+		// might be a read-only filesystem. that's okay, as long as we're also downloading
+		// using our in-memory manifest
+		if !cliFlags.Download && !wrote {
+			return fmt.Errorf("failed to update manifest")
+		}
+	}
+	if !cliFlags.Download {
+		return nil
 	}
 	var waitGroup sync.WaitGroup
-	manifest, err := utils.ParseYamlManifest(cliFlags.ManifestFile, cliFlags.ManifestURL)
-	if err != nil {
-		glog.Fatal(err)
-		return
-	}
 
-	for _, element := range manifest.Box {
+	for _, element := range m.Box {
 		if element.Skip {
 			continue
 		}
 		waitGroup.Add(1)
 		go func(element *types.Service) {
 			glog.V(8).Infof("triggering async task for %s", element.Name)
-			err := DownloadService(cliFlags, manifest, element)
+			err := DownloadService(cliFlags, m, element)
 			if err != nil {
 				glog.Fatalf("failed to download %s: %s", element.Name, err)
 			}
@@ -214,25 +230,22 @@ func Run(buildFlags types.BuildFlags) {
 
 	if !cliFlags.Cleanup {
 		glog.Info("Not cleaning up after extraction")
-		return
-	}
-
-	files, err := ioutil.ReadDir(cliFlags.DownloadPath)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	for _, file := range files {
-		if utils.IsCleanupFile(file.Name()) {
-			fullpath := filepath.Join(cliFlags.DownloadPath, file.Name())
-			glog.V(9).Infof("Cleaning up %s", fullpath)
-			err = os.Remove(fullpath)
-			if err != nil {
-				glog.Fatal(err)
+	} else {
+		files, err := ioutil.ReadDir(cliFlags.DownloadPath)
+		if err != nil {
+			glog.Fatal(err)
+		}
+		for _, file := range files {
+			if utils.IsCleanupFile(file.Name()) {
+				fullpath := filepath.Join(cliFlags.DownloadPath, file.Name())
+				glog.V(9).Infof("Cleaning up %s", fullpath)
+				err = os.Remove(fullpath)
+				if err != nil {
+					glog.Fatal(err)
+				}
 			}
 		}
 	}
-}
 
-func main() {
-	Run(types.BuildFlags{Version: Version})
+	return nil
 }

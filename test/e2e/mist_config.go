@@ -11,6 +11,7 @@ const (
 	advertisePort           = "9935"
 	catalystAPIPort         = "7979"
 	catalystAPIInternalPort = "7878"
+	boxPort                 = "8888"
 )
 
 type account struct {

@@ -58,7 +58,7 @@ jobs:
       - name: Run downloader script
         run: |
           mkdir -p "${CI_CATALYST_BIN_DIR}/" "releases/"
-          go run cmd/downloader/downloader/downloader.go \
+          go run cmd/downloader/downloader.go \
             --platform "${{ matrix.platform.name }}" \
             --architecture "${{ matrix.architecture }}" \
             --path "./${CI_CATALYST_BIN_DIR}/" \
@@ -86,7 +86,7 @@ jobs:
         if: matrix.platform.name == 'linux' && matrix.architecture == 'amd64'
         run: |
           cd "${CI_CATALYST_BIN_DIR}/"
-          find . -type f ! -name "*.sh" ! -name "livepeer-mist-bigquery-uploader" -exec strip -s {} \;
+          find . -type f ! -name "*.sh" ! -name "livepeer-mist-bigquery-uploader" ! -name "livepeer-api" -exec strip -s {} \;
 
       - name: Archive binaries for linux/macos
         if: matrix.platform.name != 'windows'
