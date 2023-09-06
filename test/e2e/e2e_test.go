@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/glog"
+	glog "github.com/magicsong/color-glog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -70,7 +70,6 @@ type catalystContainer struct {
 	rtmp                string
 	ip                  string
 	hostname            string
-	box                 string
 }
 
 func (c *catalystContainer) Terminate(ctx context.Context) {

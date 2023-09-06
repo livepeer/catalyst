@@ -52,7 +52,7 @@ in `manifest.yaml` (section below covers its structure).
 Run the following commands from the root of this repository directory:
 
     go build -o ./bin/livepeer-log ./cmd/livepeer-log/livepeer-log.go
-    go run cmd/downloader/downloader.go
+    go run cmd/downloader/downloader/downloader.go
 
     # or, single command:
     make all

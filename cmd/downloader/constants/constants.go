@@ -1,7 +1,7 @@
 package constants
 
 const (
-	AppName                 = "catalyst"
+	AppName                 = "box-livepeer"
 	LatestTagReleaseName    = "latest"
 	SignatureFileExtension  = "sig"
 	ChecksumFileSuffix      = "checksums.txt"
