@@ -13,7 +13,7 @@ concurrency:
 jobs:
   test:
     name: Test the catalyst project
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest-m
     steps:
       - name: Check out code
         uses: actions/checkout@v3
