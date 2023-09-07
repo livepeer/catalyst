@@ -16,7 +16,7 @@ concurrency:
 jobs:
   docker:
     name: ${{ matrix.docker_images.label }} (${{ matrix.targets.target_suffix }}${{ matrix.targets.debug_suffix }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-m
     permissions:
       packages: write
       contents: read
