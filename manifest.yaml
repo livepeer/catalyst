@@ -18,8 +18,8 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: 591d5f11d55d0b805859daa0de6e0347bc2a298f
-    release: v0.15.6
+      commit: da2af5ebe7f6e3b5ec68f8107be3e633e3023c87
+    release: v0.15.7
   - name: catalyst-api
     strategy:
       download: bucket
@@ -62,7 +62,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: 1ef1daa5871941927964789039d94c04fadfa63e
+      commit: c111e8bf474a12434548c6b2d94d99dd00e67bdf
     release: catalyst
     skipGpg: true
     srcFilenames:
