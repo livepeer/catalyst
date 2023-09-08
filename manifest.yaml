@@ -47,7 +47,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: 119f346c3835cfa5f77e23344b102462a52b78be
+      commit: eb25467f56d8288aadffe9592a299e37c43aa1e9
     binary: livepeer
     release: master
     archivePath: livepeer
@@ -62,7 +62,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: 014094222fe2a3cbb8ebf2ca43c12546c73090cc
+      commit: 86bb972b942d0cef51d0565b1b4f727eca43ba88
     release: catalyst
     skipGpg: true
     srcFilenames:
