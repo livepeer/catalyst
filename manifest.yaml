@@ -5,7 +5,7 @@ box:
     strategy:
       download: bucket
       project: livepeer-data
-      commit: 0fb42704c1deb97bd8f2b0a648296030e0273051
+      commit: 590d298e854eb916c3fb6bc1b6fcdfd601841da1
     release: main
     srcFilenames:
       darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
@@ -19,7 +19,7 @@ box:
       download: github
       project: livepeer/studio
       commit: 591d5f11d55d0b805859daa0de6e0347bc2a298f
-    release: v0.15.5
+    release: v0.15.6
   - name: catalyst-api
     strategy:
       download: bucket
@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-uploader
-      commit: 549ad12b28ca0a5c642a06c2a8c44023fb4ff582
+      commit: 56b9ef34f0243c08bce07148edcb7aad5d7e5336
     binary: livepeer-catalyst-uploader
     release: main
     srcFilenames:
@@ -62,7 +62,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: 6ab22fcb3484584ba436db44ece6e9c88d7642f6
+      commit: 4550f4ebd1b2531adf62ed4b70e1052b2749e6d8
     release: catalyst
     skipGpg: true
     srcFilenames:
@@ -81,7 +81,7 @@ box:
     strategy:
       download: bucket
       project: task-runner
-      commit: 34247f4c00aa5eb3e53ea0da684101cd3a662865
+      commit: aba5f6e23d3e4ab4f4a3b105ea04063087a3ef29
     binary: livepeer-task-runner
     release: main
     srcFilenames:
