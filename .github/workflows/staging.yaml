@@ -42,6 +42,8 @@ jobs:
       - name: Commit and push changes
         id: branch-commit
         uses: devops-infra/action-commit-push@v0.9.2
+        env:
+          GIT_COMMITTER_DATE: "Fri Sep 8 10:55:23 2023 -0700"
         with:
           github_token: ${{ secrets.PUSH_TOKEN }}
           target_branch: staging
