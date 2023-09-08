@@ -3,6 +3,10 @@ name: Generate staging manifest
 on:
   repository_dispatch:
     types: ["staging-manifest"]
+  # the push is for hacking on this without pushing to the main branch of catalyst
+  push:
+    branches:
+      - staging-generator
 
 jobs:
   staging-manifest:
