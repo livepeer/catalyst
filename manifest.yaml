@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-uploader
-      commit: 7b1111fa0ba279dfae52af4d83c5265d1b26b432
+      commit: 301c06ba5b7dc19ec47181e681d65c60c7a96fda
     binary: livepeer-catalyst-uploader
     release: main
     srcFilenames:
@@ -81,7 +81,7 @@ box:
     strategy:
       download: bucket
       project: task-runner
-      commit: bbe9672a7f18151e701eae6729f6d4db86e26da5
+      commit: 66bc5ba5c1b67611815e70ad55ef42699768a12f
     binary: livepeer-task-runner
     release: main
     srcFilenames:
