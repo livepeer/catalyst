@@ -62,7 +62,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: bb0b9bc0fdf54278f96522e51f757b6384e7d3e4
+      commit: 58d5443620159eafcc69cd99848b0c90b20834ca
     release: catalyst
     skipGpg: true
     srcFilenames:
@@ -81,7 +81,7 @@ box:
     strategy:
       download: bucket
       project: task-runner
-      commit: 18881f30b38098d894f63f52e34ffeebae69e1f5
+      commit: 9703dbc4fc47588f5de628d7d12dfc9dc9651cfd
     binary: livepeer-task-runner
     release: main
     srcFilenames:
