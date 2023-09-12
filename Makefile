@@ -242,3 +242,10 @@ build/sysroot-aarch64-gnu-linux: sysroot.Dockerfile
 	&& rm -rf ./build/sysroot-aarch64-gnu-linux \
 	&& mv ./build/tmp-sysroot-aarch64-gnu-linux ./build/sysroot-aarch64-gnu-linux \
 	&& ln -s $$(realpath ./build/sysroot-aarch64-gnu-linux) /tmp/sysroot-aarch64-gnu-linux
+
+.PHONY: snapshot
+snapshot:
+	rm -rf livepeer-studio-bootstrap.tar.gz \
+	&& cd data \
+	&& rm -rf cockroach/auxiliary/EMERGENCY_BALLAST \
+	&& tar czvf ../livepeer-studio-bootstrap.tar.gz cockroach
