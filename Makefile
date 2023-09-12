@@ -219,6 +219,7 @@ box-dev: scripts
 	-v $$(realpath config):/etc/livepeer:ro \
 	-v $$(realpath ./coredumps):$$(realpath ./coredumps) \
 	-e CORE_DUMP_DIR=$$(realpath ./coredumps) \
+	$(shell for line in $$(cat .env 2>/dev/null || echo ''); do printf -- "-e $$line "; done) \
 	--rm \
 	-it \
 	--name catalyst \
