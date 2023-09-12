@@ -131,6 +131,21 @@ Catalyst environment running locally! You can access it like so:
 -   Email: `admin@example.com`
 -   Password: `livepeer`
 
+### Customizing the Environment
+
+If you need to add additional parameters to things running inside the box, you
+can create a `.env` file that contains key-value pairs:
+
+```shell
+echo "CATALYST_API_CDN_REDIRECT_PREFIX=https://externalcdn.livepeer.com/mist/" >> .env
+echo "CATALYST_API_CDN_REDIRECT_PLAYBACK_IDS=222222222222" >> .env
+```
+
+Note that this mechanism is limited to adding new configuration; existing
+configuration cannot be modified this way. If you need to modify existing
+configuration you can manually change the file in `config/full-stack.json`. A
+more robust configuration management system is under development.
+
 ### Making changes
 
 TLDR: Use a command like this and the Makefile will take care of it for you:
