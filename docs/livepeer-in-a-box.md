@@ -1,10 +1,95 @@
 # Livepeer in a Box
 
-Livepeer in a Box is our development environment for the full Livepeer stack,
-including Livepeer Studio and Livepeer Catalyst. We currently support Linux and
-macOS hosts.
+Livepeer in a Box allows you to run the full Livepeer Studio stack as a single
+Docker image. This stack includes Catalyst, MistServer, the Studio API server,
+and a packaged Studio frontend.
 
-## Dependencies
+What the box does:
+
+-   Boots up a full-stack Livepeer experience on your laptop with a single
+    command
+-   Facilitates easy development of various components of the Livepeer stack
+-   Allows for development of applications against the Livepeer Studio API
+    locally that can then transfer to the hosted version at
+    [livepeer.studio](https://livepeer.studio) when you're ready to go to
+    production
+-   Bundles a fully-local offchain go-livepeer broadcaster and orchestrator, so
+    that you may test transcoding with no external dependencies
+
+What the box doesn't do (yet):
+
+-   Allow for easy deployment to a server. There are presently many hardcoded
+    references to `localhost`, and these things will break in any other
+    environment.
+-   No multi-user streaming (Livekit) integration
+-   No usage or billing data
+-   No GPU transcoding support. We recommend using very low-bitrate test files,
+    especially if running the box using Docker for Mac or Docker for Windows.
+    The built-in profiles for livestream transcoding use a single 240p
+    low-quality rendition.
+
+## Running the Box
+
+First, select a directory for persisting your database and video content; in
+this example we will be using `$HOME/livepeer-in-a-box`.
+
+```shell
+BOX_DIR="$HOME/livepeer-in-a-box"
+mkdir -p $BOX_DIR
+docker run \
+	-v $BOX_DIR:/data \
+	--rm \
+	-it \
+	--name box \
+	--shm-size=4gb \
+	-p 8888:8888 \
+	-p 5432:5432 \
+	-p 1935:1935 \
+	-p 4242:4242 \
+	-p 3478:3478 \
+	-p 3478:3478/udp \
+	-p 5349:5349 \
+	-p 40000-40100:40000-40100/udp \
+	livepeer/in-a-box
+```
+
+You will be greeted with a very large amount of spam — give it a minute or so to
+boot up. You can then connect to your local box instance:
+
+Address: [https://localhost:8888](https://localhost:8888)  
+Email: `admin@example.com`  
+Password: `livepeer`
+
+To get you started, the database snapshot includes a few predefined streams.
+
+| Stream           | Stream Key          | Playback ID  | Recording enabled? |
+| ---------------- | ------------------- | ------------ | ------------------ |
+| [tiny-transcode] | 2222-2222-2222-2222 | 222222222222 | No                 |
+| [tiny-recording] | 4444-4444-4444-4444 | 444444444444 | Yes                |
+
+[tiny-transcode]:
+    http://localhost:8888/dashboard/streams/22222222-2222-2222-2222-222222222222
+[tiny-recording]:
+    http://localhost:8888/dashboard/streams/44444444-4444-4444-4444-444444444444
+
+For properly testing a livestream input comparable to OBS output, you will want
+a low-bitrate test file with no B-Frames and a short GOP length.
+[Here's a sample appropriately-formatted Big Buck Bunny file you can use](BBB).
+To stream in to your local box, you can use an `ffmpeg` command such as:
+
+```shell
+curl -LO https://test-harness-gcp.livepeer.fish/Big_Buck_Bunny_360p_1sGOP_NoBFrames.mp4
+ffmpeg -stream_loop -1 -re -i Big_Buck_Bunny_360p_1sGOP_NoBFrames.mp4 -c copy -f flv rtmp://localhost/live/2222-2222-2222-2222
+```
+
+[BBB]:
+    https://test-harness-gcp.livepeer.fish/Big_Buck_Bunny_360p_1sGOP_NoBFrames.mp4
+
+## Developing with the Box
+
+Developing using the box is currently supported on macOS and Linux.
+
+### Dependencies
 
 You'll need the following things installed locally:
 
@@ -23,12 +108,9 @@ git clone https://github.com/livepeer/catalyst.git
 cd catalyst
 ```
 
-Then you'll need to download/build all the binaries that you'll need. On MacOS,
-you'll need to export a GOOS variable so that you're downloading and
-cross-compiling the Linux versions of binaries.
+Then you'll need to download/build all the binaries that you'll need.
 
 ```shell
-export GOOS=linux # only if you're not already running linux
 make              # downloads all the external binaries & builds the local ones
 make box          # builds the livepeer/in-a-box Docker image
 ```
@@ -45,16 +127,16 @@ Lots and lots of logs will print out while all the dependencies finish booting
 up. After that, you'll now have a fully-functioning full-stack Livepeer Studio +
 Catalyst environment running locally! You can access it like so:
 
--   URL: [http://127.0.0.1:8888](http://127.0.0.1:8888)
+-   URL: [http://localhost:8888](http://localhost:8888)
 -   Email: `admin@example.com`
 -   Password: `livepeer`
 
-## Making changes
+### Making changes
 
 TLDR: Use a command like this and the Makefile will take care of it for you:
 
 ```shell
-make livepeer-catalyst-api KILL=true
+make livepeer-catalyst-api
 ```
 
 The general Livepeer in a Box development cycle works like this:
@@ -80,7 +162,7 @@ projects that go into the full stack. All that's necessary to build a new
 binary, package it in the container, and trigger a restart is a single command:
 
 ```shell
-make livepeer-task-runner KILL=true
+make livepeer-task-runner
 ```
 
 Note that the names of all subprojects are prefixed with `livepeer`, just like
@@ -103,7 +185,7 @@ commands:
 [Studio Node.js API Server]: https://github.com/livepeer/studio
 [MistServer]: https://github.com/livepeer/mistserver
 
-## Connecting the Frontend
+### Connecting the Frontend
 
 Livepeer in a Box comes with a [pkg](https://github.com/vercel/pkg)-bundled
 version of the Livepeer Studio API server and frontend, but does not include a
@@ -120,7 +202,7 @@ to override the API server URL. Open your browser console and type in the
 following:
 
 ```javascript
-localStorage.setItem("LP_API_SERVER_OVERRIDE", "http://127.0.0.1:8888");
+localStorage.setItem("LP_API_SERVER_OVERRIDE", "http://localhost:8888");
 ```
 
 Reload the page and your frontend should be connecting to the box as an API
@@ -131,7 +213,11 @@ package the frontend within the `livepeer-api` binary that it builds, so if you
 experience your frontend suddently 404ing after you run `make livepeer-api` you
 will have to use the above instructions to boot up the frontend on your host.
 
-## Notes
+You can also build the full API server with a bundled frontend using
+`make livepeer-api-pkg`, but be aware this frequently takes 3-4 minutes to
+complete.
+
+### Notes
 
 -   Your CockroachDB (Postgres) database and your Minio (S3) object store will
     be saved in the `data` subdirectory of your Catalyst installation. If you
@@ -146,15 +232,15 @@ will have to use the above instructions to boot up the frontend on your host.
     shutting down the Docker image. You can start everything back up with
     `docker rm -f catalyst` and `make box-dev`.
 
-# Video
+## Changelog
 
-[This intro video](https://lvpr.tv?v=98c42pmz87zmy5rh) goes over everything you
-need to get started with the Livepeer development environment, as well as
-covering some of the background. Some timestamps:
+### 2023-08-12
 
--   `1:15`: Getting started
--   `5:43`: Making changes to applications and bundling them back in the box
--   `8:07`: Embedded nginx, adding new routes, MistServer config file
--   `10:13`: ~~Development on the Livepeer Studio API Server~~ Out of date;
-    `make livepeer-api` now works in three seconds.
--   `14:03`: Running the Livepeer Studio frontend development server
+-   Changed the hardcoded streams in the database snapshots to have
+    easy-to-remember stream keys like `2222-2222-2222-2222`
+-   Changed the built-in streams to use the H264ConstrainedHigh profile so there
+    are no B-Frames in the output
+-   Moved all references from `127.0.0.1` to `localhost`; this is needed for
+    WebRTC/Coturn to work properly
+-   Removed outdated references to `GOOS=linux` and `KILL=true`; these are the
+    defaults now
