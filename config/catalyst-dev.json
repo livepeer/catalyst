@@ -92,6 +92,8 @@
         "metricsClientIP": true,
         "metricsPerStream": true,
         "monitor": true,
+        "cliAddr":  "127.0.0.1:1935",
+        "httpAddr": "127.0.0.1:8935",
         "orchAddr": "localhost:8936",
         "rtmpAddr": "127.0.0.1:1936"
       },

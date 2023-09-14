@@ -82,6 +82,8 @@
         "metricsClientIP": true,
         "metricsPerStream": true,
         "monitor": true,
+        "cliAddr":  "127.0.0.1:1935",
+        "httpAddr": "127.0.0.1:8935",
         "orchAddr": "127.0.0.1:8936",
         "rtmpAddr": "127.0.0.1:1936",
         "authWebhookUrl": "http://9c2936b5-143f-4b10-b302-6a21b5f29c3d:f61b3cdb-d173-4a7a-a0d3-547b871a56f9@127.0.0.1:3004/api/stream/hook",
