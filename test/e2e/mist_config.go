@@ -35,6 +35,7 @@ type protocol struct {
 	Broadcaster      bool   `json:"broadcaster,omitempty"`
 	Orchestrator     bool   `json:"orchestrator,omitempty"`
 	Transcoder       bool   `json:"transcoder,omitempty"`
+	HTTPRPCAddr      string `json:"httpAddr,omitempty"`
 	OrchAddr         string `json:"orchAddr,omitempty"`
 	ServiceAddr      string `json:"serviceAddr,omitempty"`
 	CliAddr          string `json:"cliAddr,omitempty"`
@@ -153,14 +154,16 @@ func defaultMistConfig(host, sourceOutput string) mistConfig {
 				{
 					Connector:   "livepeer",
 					Broadcaster: true,
+					CliAddr:     "127.0.0.1:7935",
+					HTTPRPCAddr: "127.0.0.1:8935",
 					OrchAddr:    "127.0.0.1:8936",
 					RtmpAddr:    "127.0.0.1:1936",
 				},
 				{
 					Connector:    "livepeer",
-					CliAddr:      "127.0.0.1:7936",
 					Orchestrator: true,
 					Transcoder:   true,
+					CliAddr:      "127.0.0.1:7936",
 					ServiceAddr:  "127.0.0.1:8936",
 				},
 				{
