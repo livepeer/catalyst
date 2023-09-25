@@ -104,6 +104,14 @@ http {
             proxy_pass http://127.0.0.1:9000;
         }
 
+        location /stream/ {
+            proxy_pass http://127.0.0.1:8935;
+        }
+
+        location /live/ {
+            proxy_pass http://127.0.0.1:8935;
+        }
+
         location / {
             proxy_pass http://127.0.0.1:3004;
         }
