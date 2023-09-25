@@ -27,14 +27,36 @@ func TestBoxRecording(t *testing.T) {
 	boxName := randomString("box-")
 
 	// when
-	box := startBoxWithEnv(ctx, t, boxName, network.name)
+	box := startBoxWithEnv(ctx, t, boxName, network.name, []string{})
 	defer box.Terminate(ctx)
 
 	err := startRecordTester(ctx)
 	require.NoError(t, err)
 }
 
-func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network string) *catalystContainer {
+func TestMistSegmentation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping testing in short mode")
+	}
+
+	// given
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	network := createNetwork(ctx, t)
+	defer network.Remove(ctx)
+
+	boxName := randomString("box-")
+
+	// when
+	box := startBoxWithEnv(ctx, t, boxName, network.name, []string{"Transcode failed"})
+	defer box.Terminate(ctx)
+
+	err := streamMissingHeaders(ctx)
+	require.NoError(t, err)
+}
+
+func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network string, failLogs []string) *catalystContainer {
 	req := testcontainers.ContainerRequest{
 		Image:        "livepeer/in-a-box",
 		Hostname:     hostname,
@@ -51,7 +73,11 @@ func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network string
 	require.NoError(t, err)
 
 	// Redirect container logs to the standard logger
-	lc := logConsumer{name: hostname}
+	lc := logConsumer{
+		name:     hostname,
+		t:        t,
+		failLogs: failLogs,
+	}
 	err = container.StartLogProducer(ctx)
 	require.NoError(t, err)
 	container.FollowOutput(&lc)
@@ -97,6 +123,26 @@ func startRecordTester(ctx context.Context) error {
 	)
 	if err != nil {
 		return fmt.Errorf("error running recordtester: %w", err)
+	}
+
+	return nil
+}
+
+func streamMissingHeaders(ctx context.Context) error {
+	err := run(
+		ctx,
+		"ffmpeg",
+		"-re",
+		"-i",
+		"https://storage.googleapis.com/lp_testharness_assets/missing-ts-headers.mkv",
+		"-c",
+		"copy",
+		"-f",
+		"flv",
+		"rtmp://127.0.0.1/live/4444-4444-4444-4444",
+	)
+	if err != nil {
+		return fmt.Errorf("error running ffmpeg: %w", err)
 	}
 
 	return nil
