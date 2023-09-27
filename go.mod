@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/ProtonMail/gopenpgp/v2 v2.4.10
 	github.com/golang/glog v1.1.1
+	github.com/icza/dyno v0.0.0-20230330125955-09f820a8d9c0
 	github.com/livepeer/stream-tester v0.12.30-0.20230823234013-5cfb4bbcf27d
 	github.com/magicsong/color-glog v0.0.1
 	github.com/minio/minio-go/v7 v7.0.46

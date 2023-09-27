@@ -1,13 +1,17 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"syscall"
 
+	"github.com/icza/dyno"
 	"github.com/livepeer/catalyst/cmd/downloader/cli"
 	"github.com/livepeer/catalyst/cmd/downloader/downloader"
 	"github.com/livepeer/catalyst/cmd/downloader/types"
 	glog "github.com/magicsong/color-glog"
+	"gopkg.in/yaml.v3"
 )
 
 var Version = "undefined"
@@ -34,6 +38,11 @@ func execNext(cliFlags types.CliFlags) {
 		// Nothing to do.
 		return
 	}
+	configStr, err := handleConfigFile("/home/iameli/code/catalyst/config/full-stack.yaml")
+	if err != nil {
+		panic(err)
+	}
+	panic(configStr)
 	glog.Infof("downloader complete, now we will exec %v", cliFlags.ExecCommand)
 	execErr := syscall.Exec(cliFlags.ExecCommand[0], cliFlags.ExecCommand, os.Environ())
 	if execErr != nil {
