@@ -1,17 +1,15 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
+	"os/exec"
 	"syscall"
 
-	"github.com/icza/dyno"
-	"github.com/livepeer/catalyst/cmd/downloader/cli"
+	"github.com/livepeer/catalyst/cmd/catalyst/cli"
+	"github.com/livepeer/catalyst/cmd/catalyst/config"
 	"github.com/livepeer/catalyst/cmd/downloader/downloader"
 	"github.com/livepeer/catalyst/cmd/downloader/types"
 	glog "github.com/magicsong/color-glog"
-	"gopkg.in/yaml.v3"
 )
 
 var Version = "undefined"
@@ -25,27 +23,41 @@ func main() {
 		glog.Fatalf("error parsing cli flags: %s", err)
 		return
 	}
-	err = downloader.Run(cliFlags)
-	if err != nil {
-		glog.Fatalf("error running downloader: %s", err)
+	if cliFlags.Download {
+		err = downloader.Run(cliFlags)
+		if err != nil {
+			glog.Fatalf("error running downloader: %s", err)
+		}
 	}
-	execNext(cliFlags)
+	err = execNext(cliFlags)
+	if err != nil {
+		glog.Fatalf("error executing MistController: %s", err)
+	}
 }
 
 // Done! Move on to the provided next application, if it exists.
-func execNext(cliFlags types.CliFlags) {
-	if len(cliFlags.ExecCommand) == 0 {
-		// Nothing to do.
-		return
-	}
-	configStr, err := handleConfigFile("/home/iameli/code/catalyst/config/full-stack.yaml")
+func execNext(cliFlags types.CliFlags) error {
+	jsonBytes, err := config.HandleConfigStack(cliFlags.ConfigStack)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	panic(configStr)
-	glog.Infof("downloader complete, now we will exec %v", cliFlags.ExecCommand)
-	execErr := syscall.Exec(cliFlags.ExecCommand[0], cliFlags.ExecCommand, os.Environ())
+	f, err := os.CreateTemp("", "catalyst-generated-*.json")
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(jsonBytes)
+	if err != nil {
+		return err
+	}
+	glog.Infof("downloader complete, now we will exec %v", cliFlags.MistController)
+	binary, err := exec.LookPath(cliFlags.MistController)
+	if err != nil {
+		return err
+	}
+	args := []string{binary, "-c", f.Name()}
+	execErr := syscall.Exec(binary, args, os.Environ())
 	if execErr != nil {
 		glog.Fatalf("error running next command: %s", execErr)
 	}
+	return nil
 }

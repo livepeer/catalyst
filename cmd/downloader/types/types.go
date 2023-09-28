@@ -43,9 +43,10 @@ type CliFlags struct {
 	Architecture   string
 	ManifestFile   string
 	Verbosity      string
-	ExecCommand    []string
 
-	ManifestURL bool
+	ManifestURL    bool
+	MistController string
+	ConfigStack    string
 }
 
 type DownloadStrategy struct {
