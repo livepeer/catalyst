@@ -96,6 +96,7 @@ func readYAMLFile(filePath string) (map[string]any, error) {
 	return jsonMap, nil
 }
 
+// Return a (mutable) reference to the map at the given key, returning an empty one if none present
 func optionalMap(parent map[string]any, key string) (map[string]any, error) {
 	child, ok := parent[key]
 	if !ok {
@@ -107,43 +108,4 @@ func optionalMap(parent map[string]any, key string) (map[string]any, error) {
 		return nil, fmt.Errorf("unable to convert '%s' to a string map", key)
 	}
 	return childMap, nil
-}
-
-func handleConfigFile(configPath string) (string, error) {
-	var conf map[any]any
-	dat, err := os.ReadFile(configPath)
-	if err != nil {
-		return "", err
-	}
-	err = yaml.Unmarshal(dat, &conf)
-	if err != nil {
-		return "", err
-	}
-	jsonConf := dyno.ConvertMapI2MapS(conf)
-	jsonMap, ok := jsonConf.(map[string]any)
-	if !ok {
-		return "", fmt.Errorf("unable to convert config to a string map")
-	}
-	config, err := optionalMap(jsonMap, "config")
-	if err != nil {
-		return "", err
-	}
-	protocols, err := optionalMap(config, "protocols")
-	if err != nil {
-		return "", err
-	}
-	protocolArray := []map[string]any{}
-	for k, v := range protocols {
-		vMap, ok := v.(map[string]any)
-		if !ok {
-			return "", fmt.Errorf("unable to convert protocol '%s' to a string map", k)
-		}
-		protocolArray = append(protocolArray, vMap)
-	}
-	config["protocols"] = protocolArray
-	str, err := json.MarshalIndent(jsonConf, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(str), nil
 }

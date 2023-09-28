@@ -16,16 +16,22 @@ config:
   protocols:
     livepeer-cockroach:
       connector: livepeer-cockroach
+
     livepeer-rabbitmq:
       connector: livepeer-rabbitmq
+
     livepeer-nginx:
       connector: livepeer-nginx
+
     livepeer-minio:
       connector: livepeer-minio
+
     livepeer-core-dump-monitor:
       connector: livepeer-core-dump-monitor
+
     livepeer-coturn:
       connector: livepeer-coturn
+
     livepeer-api:
       connector: livepeer-api
       postgres-url: postgresql://root@localhost:5432/defaultdb?sslmode=disable
@@ -45,12 +51,14 @@ config:
       vodCatalystPrivateAssetsObjectStore: cab9266f-5583-4532-9630-7be10d92affe
       recordCatalystObjectStoreId: 0926e4ba-b726-4386-92ee-5c4583f62f0a
       own-region: box
+
     livepeer-stream-info-service:
       connector: livepeer-api
       postgres-url: postgresql://root@localhost:5432/defaultdb?sslmode=disable
       own-region: box
       stream-info-service: true
       port: "3040"
+
     livepeer-catalyst-api:
       connector: livepeer-catalyst-api
       api-server: http://127.0.0.1:3004
@@ -64,6 +72,7 @@ config:
       own-region: box
       v: "8"
       broadcaster-url: http://127.0.0.1:8937
+
     livepeer-broadcaster:
       connector: livepeer
       broadcaster: true
@@ -78,6 +87,7 @@ config:
         http://9c2936b5-143f-4b10-b302-6a21b5f29c3d:f61b3cdb-d173-4a7a-a0d3-547b871a56f9@127.0.0.1:3004/api/stream/hook
       metadataQueueUri: amqp://localhost:5672/livepeer
       v: "2"
+
     livepeer-broadcaster-vod:
       connector: livepeer
       broadcaster: true
@@ -89,6 +99,7 @@ config:
       orchAddr: 127.0.0.1:8936
       rtmpAddr: 127.0.0.1:1937
       v: "2"
+
     livepeer-orchestrator:
       connector: livepeer
       orchestrator: true
@@ -99,6 +110,7 @@ config:
       monitor: true
       serviceAddr: 127.0.0.1:8936
       v: "2"
+
     livepeer-analyzer:
       connector: livepeer-analyzer
       livepeer-access-token: f61b3cdb-d173-4a7a-a0d3-547b871a56f9
@@ -106,6 +118,7 @@ config:
       rabbitmq-uri: amqp://localhost:5672/livepeer
       disable-bigquery: true
       v: "8"
+
     livepeer-task-runner:
       connector: livepeer-task-runner
       amqp-uri: amqp://localhost:5672/livepeer
@@ -114,44 +127,64 @@ config:
       livepeer-access-token: f61b3cdb-d173-4a7a-a0d3-547b871a56f9
       own-base-url: http://127.0.0.1:3060/task-runner
       port: "3060"
+
     AAC:
       connector: AAC
+
     CMAF:
       connector: CMAF
+
     DTSC:
       connector: DTSC
+
     EBML:
       connector: EBML
+
     FLV:
       connector: FLV
+
     H264:
       connector: H264
+
     HDS:
       connector: HDS
+
     HLS:
       connector: HLS
+
     HTTP:
       connector: HTTP
+
     HTTPTS:
       connector: HTTPTS
+
     JSON:
       connector: JSON
+
     MP3:
       connector: MP3
+
     MP4:
       connector: MP4
+
     OGG:
       connector: OGG
+
     RTMP:
       connector: RTMP
+
     RTSP:
       connector: RTSP
+
     SRT:
       connector: SRT
+
     TSSRT:
       connector: TSSRT
+
     WAV:
       connector: WAV
+
     WebRTC:
       connector: WebRTC
       bindhost: 127.0.0.1
@@ -161,6 +194,7 @@ config:
           urls: turn:localhost
           username: livepeer
       pubhost: 127.0.0.1
+
   sessionInputMode: 15
   sessionOutputMode: 15
   sessionStreamInfoMode: 1
