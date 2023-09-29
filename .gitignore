@@ -150,3 +150,6 @@ victoria-metrics-data
 key
 /catalyst-node
 coredumps
+
+# environment configuration
+.env
