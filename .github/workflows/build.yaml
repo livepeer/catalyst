@@ -20,8 +20,8 @@ env:
 
 jobs:
   build:
-    name: Build and download binaries from manifest for ${{ matrix.platform.name }}-${{ matrix.architecture }}
-    runs-on: ubuntu-latest
+    name: Download binaries for ${{ matrix.platform.name }}-${{ matrix.architecture }}
+    runs-on: ${{ matrix.platform.name }}
     strategy:
       fail-fast: false
       matrix:
@@ -30,9 +30,7 @@ jobs:
           - amd64
         platform:
           - name: linux
-            os: ubuntu-latest
           - name: darwin
-            os: macos-latest
 
     steps:
       - name: Check out code

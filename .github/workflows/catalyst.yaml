@@ -40,7 +40,7 @@ jobs:
             target: stripped
             target_suffix: "-arm64"
             debug_suffix: ""
-          # example: livepeer/catalyst:latest-amd-debug
+          # example: livepeer/catalyst:latest-amd64-debug
           # unstripped binaries for use with gdb coredump debugging
           - platforms: linux/amd64
             target: full
