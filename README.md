@@ -174,7 +174,7 @@ where the `PLAYBACK_ID` is `foo`.
 
 ### Using OBS Studio
 
-Under OBS Studio streaming settings, select "Serive" as "Custom..."
+Under OBS Studio streaming settings, select "Service" as "Custom..."
 which should display text input options asking for "Server" and
 "Stream Key" (ref. screenshot below). Use following values for the
 same:

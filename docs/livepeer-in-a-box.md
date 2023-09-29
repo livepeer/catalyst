@@ -172,7 +172,7 @@ example, if you're hacking on `task-runner`, you might have
 /home/user/code/task-runner
 ```
 
-The catalyst Makefile is aware of of the common paths for all of the other
+The catalyst Makefile is aware of the common paths for all of the other
 projects that go into the full stack. All that's necessary to build a new
 binary, package it in the container, and trigger a restart is a single command:
 
@@ -225,7 +225,7 @@ server.
 
 Additional note: in the interest of build speed, `make livepeer-api` does not
 package the frontend within the `livepeer-api` binary that it builds, so if you
-experience your frontend suddently 404ing after you run `make livepeer-api` you
+experience your frontend suddenly 404ing after you run `make livepeer-api` you
 will have to use the above instructions to boot up the frontend on your host.
 
 You can also build the full API server with a bundled frontend using
