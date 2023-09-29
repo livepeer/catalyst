@@ -41,7 +41,7 @@ RUN	find /opt/bin -type f ! -name "*.sh" ! -name "livepeer-mist-bigquery-uploade
 FROM	catalyst-${BUILD_TARGET}-build	as	catalyst-build
 
 # Install livepeer-w3 required to use web3.storage
-FROM	node:18.14.0 as node-build
+FROM	node:20.7.0 as node-build
 ARG	LIVEPEER_W3_VERSION=v0.2.2
 WORKDIR /app
 RUN	git clone --depth 1 --branch ${LIVEPEER_W3_VERSION} https://github.com/livepeer/go-tools.git
