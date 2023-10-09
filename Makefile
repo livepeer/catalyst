@@ -30,7 +30,7 @@ buildpath=$(realpath ./build)
 all: download catalyst livepeer-log
 
 .PHONY: ffmpeg
-ffmpeg:
+ffmpeg: build/sysroot-aarch64-gnu-linux
 	mkdir -p build
 	cd ../go-livepeer && ./install_ffmpeg.sh $(buildpath)
 
@@ -40,11 +40,11 @@ mistserver: build/sysroot-aarch64-gnu-linux
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
 	&& meson ../../../mistserver $(CROSS_ARGS) -DLOAD_BALANCE=true -Dprefix=${CMAKE_INSTALL_PREFIX} -Dbuildtype=debugoptimized --default-library static \
-	&& ninja \
+	&& ninja -v \
 	&& ninja install
 
 .PHONY: go-livepeer
-go-livepeer:
+go-livepeer: build/sysroot-aarch64-gnu-linux
 	set -x \
 	&& cd ../go-livepeer \
 	&& PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig make livepeer livepeer_cli \
@@ -238,11 +238,12 @@ build/sysroot-aarch64-gnu-linux: sysroot.Dockerfile
 	rm -rf ./build/tmp-sysroot-aarch64-gnu-linux \
 	&& mkdir -p ./build/tmp-sysroot-aarch64-gnu-linux \
 	&& docker build -t sysroot-aarch64-gnu-linux -f sysroot.Dockerfile . \
-	&& docker run --rm -v $$(realpath build):/build --platform linux/arm64 sysroot-aarch64-gnu-linux tar cf - /lib /usr/include /usr/lib /usr/local/lib /usr/local/include \
-	| tar xf - -C $$(realpath build)/tmp-sysroot-aarch64-gnu-linux \
+	&& docker run --rm -v $$(realpath build):/build --platform linux/arm64 sysroot-aarch64-gnu-linux \
+	tar czfh - /lib /usr/include /usr/lib /usr/local/lib /usr/local/include \
+	| tar xzf - -C $$(realpath build)/tmp-sysroot-aarch64-gnu-linux \
 	&& rm -rf ./build/sysroot-aarch64-gnu-linux \
 	&& mv ./build/tmp-sysroot-aarch64-gnu-linux ./build/sysroot-aarch64-gnu-linux \
-	&& ln -s $$(realpath ./build/sysroot-aarch64-gnu-linux) /tmp/sysroot-aarch64-gnu-linux
+	&& ln -sf $$(realpath ./build/sysroot-aarch64-gnu-linux) /tmp/sysroot-aarch64-gnu-linux
 
 .PHONY: snapshot
 snapshot:

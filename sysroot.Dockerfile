@@ -1,3 +1,3 @@
-FROM ubuntu:22.04
+FROM ubuntu:20.04
 
-RUN apt update && apt install -y libc6-dev build-essential
+RUN apt update && apt install -y libc6-dev build-essential libgcc-9-dev
