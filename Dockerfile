@@ -70,6 +70,8 @@ RUN	apt update && apt install -yqq \
 	"$(if [ "$BUILD_TARGET" != "stripped" ]; then echo "gdb"; fi)" \
 	&& rm -rf /var/lib/apt/lists/*
 
+# Most of ./scripts is for livepeer-in-a-box except livepeer-vmagent, which is used in production in Catalyst proper
+ADD ./scripts/livepeer-vmagent /usr/local/bin
 COPY --from=catalyst-build	/opt/bin/		/usr/local/bin/
 COPY --from=node-build		/app/go-tools/w3	/opt/local/lib/livepeer-w3
 RUN	ln -s /opt/local/lib/livepeer-w3/livepeer-w3.js /usr/local/bin/livepeer-w3 && \
