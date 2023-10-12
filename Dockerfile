@@ -18,7 +18,7 @@ ADD	.	.
 ARG	GIT_VERSION
 ENV	GIT_VERSION="${GIT_VERSION}"
 
-RUN	make livepeer-log catalyst
+RUN	make catalyst
 
 FROM	ubuntu:22.04	as	catalyst-full-build
 

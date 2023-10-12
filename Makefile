@@ -27,7 +27,7 @@ $(shell mkdir -p $(HOME)/.config/livepeer)
 buildpath=$(realpath ./build)
 
 .PHONY: all
-all: download catalyst livepeer-log
+all: download catalyst
 
 .PHONY: ffmpeg
 ffmpeg:
@@ -142,11 +142,6 @@ dev:
 	&& stat $(HOME)/.config/livepeer/catalyst.json || cp ./config/catalyst-dev.json $(HOME)/.config/livepeer/catalyst.json \
 	&& ./bin/MistController -c $(HOME)/.config/livepeer/catalyst.json
 
-.PHONY: livepeer-log
-livepeer-log:
-	go build -o ./bin/livepeer-log ./cmd/livepeer-log/livepeer-log.go \
-	&& $(MAKE) box-kill BIN=livepeer-log
-
 .PHONY: clean
 clean:
 	git clean -ffdx && mkdir -p bin build
@@ -179,7 +174,7 @@ docker:
 		.
 
 .PHONY: docker-local
-docker-local: downloader livepeer-log scripts 
+docker-local: downloader scripts 
 	tar ch ./bin ./config \
 	| docker buildx build \
 		--load \
