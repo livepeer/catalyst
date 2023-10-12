@@ -103,7 +103,7 @@ box:
       darwin-arm64: victoria-metrics-darwin-arm64-v1.79.1.tar.gz
       linux-amd64: victoria-metrics-linux-amd64-v1.79.1.tar.gz
       linux-arm64: victoria-metrics-linux-arm64-v1.79.1.tar.gz
-    outputPath: livepeer-victoria-metrics
+    outputPath: lp-victoria-metrics
     skipManifestUpdate: true
   - name: vmagent
     strategy:
@@ -119,5 +119,5 @@ box:
       darwin-arm64: vmutils-darwin-arm64-v1.80.0.tar.gz
       linux-amd64: vmutils-linux-amd64-v1.80.0.tar.gz
       linux-arm64: vmutils-linux-arm64-v1.80.0.tar.gz
-    outputPath: livepeer-vmagent
+    outputPath: lp-vmagent
     skipManifestUpdate: true

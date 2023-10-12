@@ -35,7 +35,7 @@ ffmpeg:
 	cd ../go-livepeer && ./install_ffmpeg.sh $(buildpath)
 
 .PHONY: mistserver
-mistserver: build/sysroot-aarch64-gnu-linux
+mistserver:
 	set -x \
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
