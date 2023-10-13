@@ -10,12 +10,28 @@ DOCKER_TAG ?= livepeer/catalyst
 FROM_LOCAL_PARENT ?= scratch # for `make docker-local` and `make box-local`
 DOCKER_TARGET ?= catalyst
 BUILD_TARGET ?= full
+CROSS_BUILD_PREREQ :=
 export KILL ?= true
-export GOOS ?= linux
 
-ifeq ($(shell uname), Darwin)
+# Build platform flags
+BUILDOS ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
+BUILDARCH ?= $(shell uname -m | tr '[:upper:]' '[:lower:]')
+ifeq ($(BUILDARCH),aarch64)
+		BUILDARCH=arm64
+endif
+ifeq ($(BUILDARCH),x86_64)
+		BUILDARCH=amd64
+endif
+
+export GOOS ?= linux
+export GOARCH ?= $(BUILDARCH)
+
+ifeq ($(BUILDOS), darwin)
 	ifeq ($(GOOS), linux)
-		CROSS_ARGS = "--cross-file=$(realpath ./config/mistserver-linux-arm64-cross.txt)"
+		ifeq ($(GOARCH), arm64)
+			MESON_CROSS_ARGS = --cross-file=$(realpath ./config/mistserver-linux-arm64-cross.txt)
+			CROSS_BUILD_PREREQ = build/sysroot-aarch64-linux-gnu
+		endif
 	endif
 endif
 
@@ -30,21 +46,21 @@ buildpath=$(realpath ./build)
 all: download catalyst livepeer-log
 
 .PHONY: ffmpeg
-ffmpeg: build/sysroot-aarch64-gnu-linux
+ffmpeg: $(CROSS_BUILD_PREREQ)
 	mkdir -p build
 	cd ../go-livepeer && ./install_ffmpeg.sh $(buildpath)
 
 .PHONY: mistserver
-mistserver: build/sysroot-aarch64-gnu-linux
+mistserver: $(CROSS_BUILD_PREREQ)
 	set -x \
 	&& mkdir -p ./build/mistserver \
 	&& cd ./build/mistserver \
-	&& meson ../../../mistserver $(CROSS_ARGS) -DLOAD_BALANCE=true -Dprefix=${CMAKE_INSTALL_PREFIX} -Dbuildtype=debugoptimized --default-library static \
+	&& meson ../../../mistserver $(MESON_CROSS_ARGS) -DLOAD_BALANCE=true -Dprefix=${CMAKE_INSTALL_PREFIX} -Dbuildtype=debugoptimized --default-library static \
 	&& ninja -v \
 	&& ninja install
 
 .PHONY: go-livepeer
-go-livepeer: build/sysroot-aarch64-gnu-linux
+go-livepeer: ffmpeg
 	set -x \
 	&& cd ../go-livepeer \
 	&& PKG_CONFIG_PATH=$(buildpath)/compiled/lib/pkgconfig make livepeer livepeer_cli \
@@ -234,16 +250,16 @@ box-dev: scripts
 	-p 40000-40100:40000-40100/udp \
 	livepeer/in-a-box
 
-build/sysroot-aarch64-gnu-linux: sysroot.Dockerfile
-	rm -rf ./build/tmp-sysroot-aarch64-gnu-linux \
-	&& mkdir -p ./build/tmp-sysroot-aarch64-gnu-linux \
-	&& docker build -t sysroot-aarch64-gnu-linux -f sysroot.Dockerfile . \
-	&& docker run --rm -v $$(realpath build):/build --platform linux/arm64 sysroot-aarch64-gnu-linux \
+build/sysroot-aarch64-linux-gnu: sysroot.Dockerfile
+	rm -rf ./build/tmp-sysroot-aarch64-linux-gnu \
+	&& mkdir -p ./build/tmp-sysroot-aarch64-linux-gnu \
+	&& docker build -t sysroot-aarch64-linux-gnu -f sysroot.Dockerfile . \
+	&& docker run --rm -v $$(realpath build):/build --platform linux/arm64 sysroot-aarch64-linux-gnu \
 	tar czfh - /lib /usr/include /usr/lib /usr/local/lib /usr/local/include \
-	| tar xzf - -C $$(realpath build)/tmp-sysroot-aarch64-gnu-linux \
-	&& rm -rf ./build/sysroot-aarch64-gnu-linux \
-	&& mv ./build/tmp-sysroot-aarch64-gnu-linux ./build/sysroot-aarch64-gnu-linux \
-	&& ln -sf $$(realpath ./build/sysroot-aarch64-gnu-linux) /tmp/sysroot-aarch64-gnu-linux
+	| tar xzf - -C $$(realpath build)/tmp-sysroot-aarch64-linux-gnu \
+	&& rm -rf ./build/sysroot-aarch64-linux-gnu \
+	&& mv ./build/tmp-sysroot-aarch64-linux-gnu ./build/sysroot-aarch64-linux-gnu \
+	&& ln -sf $$(realpath ./build/sysroot-aarch64-linux-gnu) /tmp/sysroot-aarch64-linux-gnu
 
 .PHONY: snapshot
 snapshot:
