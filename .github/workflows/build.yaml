@@ -75,6 +75,8 @@ jobs:
             -ldflags="-X 'main.Version=${{ github.ref_type == 'tag' && github.ref_name || github.event.pull_request.head.sha || github.sha }}'" \
             cmd/catalyst/catalyst.go
 
+          cp ./scripts/livepeer-vmagent ./bin/livepeer-vmagent
+
       - name: Strip binaries of debug symbols
         if: matrix.platform.name == 'linux' && matrix.architecture == 'amd64'
         run: |
