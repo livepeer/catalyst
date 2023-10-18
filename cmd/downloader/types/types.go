@@ -47,6 +47,7 @@ type CliFlags struct {
 	ManifestURL    bool
 	MistController string
 	ConfigStack    string
+	Exec           bool
 }
 
 type DownloadStrategy struct {

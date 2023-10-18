@@ -29,6 +29,9 @@ func main() {
 			glog.Fatalf("error running downloader: %s", err)
 		}
 	}
+	if !cliFlags.Exec {
+		return
+	}
 	err = execNext(cliFlags)
 	if err != nil {
 		glog.Fatalf("error executing MistController: %s", err)

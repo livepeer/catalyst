@@ -22,6 +22,7 @@ func GetCliFlags(buildFlags types.BuildFlags) (types.CliFlags, error) {
 	downloaderCli.AddDownloaderFlags(fs, &cliFlags)
 
 	fs.StringVar(&cliFlags.MistController, "mist-controller", "MistController", "Path to MistController binary to exec when done")
+	fs.BoolVar(&cliFlags.Exec, "exec", true, "Exec MistController when (optional) update is complete")
 	fs.StringVar(&cliFlags.ConfigStack, "config", "/etc/livepeer/catalyst.yaml", "Path to multiple Catalyst config files to use. Can contain multiple entries e.g. /conf1:/conf2")
 
 	version := fs.Bool("version", false, "Get version information")
