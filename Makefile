@@ -113,9 +113,11 @@ livepeer-api-pkg:
 box-kill:
 	[[ "$$KILL" == "true" ]] && docker exec catalyst pkill -f /usr/local/bin/$(BIN) || echo "Not restarting $(BIN), use KILL=true if you want that"
 
-.PHONY: catalyst
-catalyst:
-	go build -o ./bin/catalyst ./cmd/catalyst/catalyst.go
+catalyst: livepeer-catalyst
+
+.PHONY: livepeer-catalyst
+livepeer-catalyst:
+	go build -o ./bin/livepeer-catalyst ./cmd/catalyst/catalyst.go
 
 .PHONY: download
 download:

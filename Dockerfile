@@ -118,7 +118,7 @@ ENV CATALYST_DOWNLOADER_PATH=/usr/local/bin \
 
 RUN mkdir /data
 
-CMD	["/usr/local/bin/catalyst", "--", "/usr/local/bin/MistController", "-c", "/etc/livepeer/full-stack.json"]
+CMD	["/usr/local/bin/livepeer-catalyst", "--", "/usr/local/bin/MistController", "-c", "/etc/livepeer/full-stack.json"]
 
 FROM	${FROM_LOCAL_PARENT} AS box-local
 
