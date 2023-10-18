@@ -163,6 +163,7 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service *types.Servi
 			if output == "" {
 				output = filepath.Join(extractPath, path.Base(header.Name))
 			}
+			output = output + "-new"
 			glog.V(9).Infof("extracting to %q", output)
 			outfile, err := os.Create(output)
 			if err != nil {
@@ -176,6 +177,7 @@ func ExtractTarGzipArchive(archiveFile, extractPath string, service *types.Servi
 			}
 			outfile.Chmod(fs.FileMode(header.Mode))
 			outfile.Close()
+			os.Rename(output, filepath.Join(extractPath, path.Base(header.Name)))
 		}
 	}
 	return nil
