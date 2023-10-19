@@ -18,7 +18,7 @@ ADD	.	.
 ARG	GIT_VERSION
 ENV	GIT_VERSION="${GIT_VERSION}"
 
-RUN	make livepeer-log catalyst
+RUN	make catalyst
 
 FROM	ubuntu:22.04	as	catalyst-full-build
 
@@ -73,6 +73,8 @@ RUN	apt update && apt install -yqq \
 	"$(if [ "$BUILD_TARGET" != "stripped" ]; then echo "gdb"; fi)" \
 	&& rm -rf /var/lib/apt/lists/*
 
+# Most of ./scripts is for livepeer-in-a-box except livepeer-vmagent, which is used in production in Catalyst proper
+ADD ./scripts/livepeer-vmagent /usr/local/bin
 COPY --from=catalyst-build	/opt/bin/		/usr/local/bin/
 COPY --from=rust-build 		/usr/local/cargo/bin/c2patool /usr/local/bin/
 COPY --from=node-build		/app/go-tools/w3	/opt/local/lib/livepeer-w3

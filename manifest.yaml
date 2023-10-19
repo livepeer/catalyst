@@ -24,7 +24,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-api
-      commit: fa3f85d1fb28e3591bcfc5a603976afdff08b9ea
+      commit: 3356c1bff1316ffa0c7350a45172ea228a21841e
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -62,7 +62,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: 15901ce4abf2aaaa0ccb40f3e219e23cfdf9dbe2
+      commit: 1600ab7b1d736755147b1d4cd6e57aa18c27a4b7
     release: catalyst
     skipGpg: true
     srcFilenames:
@@ -103,7 +103,7 @@ box:
       darwin-arm64: victoria-metrics-darwin-arm64-v1.79.1.tar.gz
       linux-amd64: victoria-metrics-linux-amd64-v1.79.1.tar.gz
       linux-arm64: victoria-metrics-linux-arm64-v1.79.1.tar.gz
-    outputPath: livepeer-victoria-metrics
+    outputPath: lp-victoria-metrics
     skipManifestUpdate: true
   - name: vmagent
     strategy:
@@ -119,5 +119,5 @@ box:
       darwin-arm64: vmutils-darwin-arm64-v1.80.0.tar.gz
       linux-amd64: vmutils-linux-amd64-v1.80.0.tar.gz
       linux-arm64: vmutils-linux-arm64-v1.80.0.tar.gz
-    outputPath: livepeer-vmagent
+    outputPath: lp-vmagent
     skipManifestUpdate: true
