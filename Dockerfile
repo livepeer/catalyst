@@ -64,11 +64,22 @@ RUN	apt update && apt install -yqq \
 	ca-certificates \
 	musl \
 	python3 \
-	ffmpeg \
     	nodejs \
+    	xz-utils \
 	gstreamer1.0-tools gstreamer1.0-plugins-good gstreamer1.0-plugins-base gstreamer1.0-plugins-bad \
 	"$(if [ "$BUILD_TARGET" != "stripped" ]; then echo "gdb"; fi)" \
 	&& rm -rf /var/lib/apt/lists/*
+
+RUN apt update && apt -yqq install gcc
+
+# TODO figure out which libs are needed
+RUN	curl https://ffmpeg.org/releases/ffmpeg-6.0.tar.xz -o ffmpeg.tar.xz && \
+    tar xvf ffmpeg.tar.xz && \
+    cd ffmpeg-6.0 && \
+    ./configure \
+    --enable-gpl \
+    --enable-shared && \
+    make && make install
 
 # Most of ./scripts is for livepeer-in-a-box except livepeer-vmagent, which is used in production in Catalyst proper
 ADD ./scripts/livepeer-vmagent /usr/local/bin
