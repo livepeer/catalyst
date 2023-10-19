@@ -77,6 +77,14 @@ jobs:
 
           cp ./scripts/livepeer-vmagent ./bin/livepeer-vmagent
 
+      - name: Build c2patool
+        run: |
+          apt update && apt install -y curl build-essential git
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source "$HOME/.cargo/env"
+          cargo install c2patool
+          cp "${HOME}/.cargo/bin/c2patool" ./bin/c2patool
+
       - name: Strip binaries of debug symbols
         if: matrix.platform.name == 'linux' && matrix.architecture == 'amd64'
         run: |
