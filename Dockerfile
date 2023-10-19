@@ -49,6 +49,8 @@ RUN	npm install --prefix /app/go-tools/w3
 # chown needed to make everything owned by one user for userspace podman execution
 RUN	chown -R root:root /app/go-tools/w3
 
+FROM linuxserver/ffmpeg:version-6.0-cli as ffmpeg-build
+
 FROM	ubuntu:22.04	AS	catalyst
 
 ENV	DEBIAN_FRONTEND=noninteractive
@@ -64,7 +66,6 @@ RUN	apt update && apt install -yqq \
 	ca-certificates \
 	musl \
 	python3 \
-	ffmpeg \
     	nodejs \
 	gstreamer1.0-tools gstreamer1.0-plugins-good gstreamer1.0-plugins-base gstreamer1.0-plugins-bad \
 	"$(if [ "$BUILD_TARGET" != "stripped" ]; then echo "gdb"; fi)" \
@@ -74,6 +75,7 @@ RUN	apt update && apt install -yqq \
 ADD ./scripts/livepeer-vmagent /usr/local/bin
 COPY --from=catalyst-build	/opt/bin/		/usr/local/bin/
 COPY --from=node-build		/app/go-tools/w3	/opt/local/lib/livepeer-w3
+COPY --from=ffmpeg-build	/usr/local/bin/*		/usr/local/bin/
 RUN	ln -s /opt/local/lib/livepeer-w3/livepeer-w3.js /usr/local/bin/livepeer-w3 && \
     	npm install -g ipfs-car
 
@@ -117,6 +119,7 @@ ENV CATALYST_DOWNLOADER_PATH=/usr/local/bin \
 	COCKROACH_DB_SNAPSHOT=https://github.com/iameli-streams/livepeer-in-a-box-database-snapshots/raw/2eb77195f64f22abf3f0de39e6f6930b82a4c098/livepeer-studio-bootstrap.tar.gz
 
 RUN mkdir /data
+COPY --from=ffmpeg-build	/usr/local/bin/*		/usr/local/bin/
 
 CMD	["/usr/local/bin/catalyst", "--", "/usr/local/bin/MistController", "-c", "/etc/livepeer/full-stack.json"]
 
@@ -125,3 +128,4 @@ FROM	${FROM_LOCAL_PARENT} AS box-local
 LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
 
 ADD	./bin	/usr/local/bin
+COPY --from=ffmpeg-build	/usr/local/bin/*		/usr/local/bin/
