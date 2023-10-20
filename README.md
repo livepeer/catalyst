@@ -51,7 +51,6 @@ in `manifest.yaml` (section below covers its structure).
 
 Run the following commands from the root of this repository directory:
 
-    go build -o ./bin/livepeer-log ./cmd/livepeer-log/livepeer-log.go
     go run cmd/downloader/downloader.go
 
     # or, single command:
@@ -71,7 +70,6 @@ listed below (but not limited to):
 
 -   [go-livepeer]
 -   [MistServer]
--   [Catalyst] (for `livepeer-log`)
 -   [catalyst-api]
 -   [victoria-metrics] (recommended to just download a stable binary
     from github releases)
@@ -101,7 +99,6 @@ be symlinked instead).
 ```sh
 make mistserver
 make go-livepeer
-make livepeer-log
 ```
 
 ## Running Catalyst

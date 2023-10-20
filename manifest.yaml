@@ -5,7 +5,7 @@ box:
     strategy:
       download: bucket
       project: livepeer-data
-      commit: b938ac1dc665d7127e785bdc503920cc8712d0b3
+      commit: 06f1f383fb183c8128aa4309de5ddbd7d34ead3b
     release: main
     srcFilenames:
       darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
@@ -24,7 +24,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-api
-      commit: d9288cf68838551f91ddc29bf1d016bc42a0afa6
+      commit: 3356c1bff1316ffa0c7350a45172ea228a21841e
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-uploader
-      commit: b299a0eb57a7a021f6c1076c2876faa79459169f
+      commit: 7306780f60c52e64abaf6486f144e494a90d4623
     binary: livepeer-catalyst-uploader
     release: main
     srcFilenames:
@@ -47,7 +47,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: ecc2839dfeaf0476bcf002bea5767e047a8992e6
+      commit: 1c2ce0737109c58f24e7f10b2373c4b1080e1b7a
     binary: livepeer
     release: master
     archivePath: livepeer
@@ -62,7 +62,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: dea15c2e893bad2ad3d864141e4b49323b477cd0
+      commit: 1600ab7b1d736755147b1d4cd6e57aa18c27a4b7
     release: catalyst
     skipGpg: true
     srcFilenames:
@@ -81,7 +81,7 @@ box:
     strategy:
       download: bucket
       project: task-runner
-      commit: 29b8cd91532af55b02cf597a2412f52051df26b2
+      commit: d8fa8b655bee6b02446895731319dc5d7b11e6cc
     binary: livepeer-task-runner
     release: main
     srcFilenames:
@@ -103,7 +103,7 @@ box:
       darwin-arm64: victoria-metrics-darwin-arm64-v1.79.1.tar.gz
       linux-amd64: victoria-metrics-linux-amd64-v1.79.1.tar.gz
       linux-arm64: victoria-metrics-linux-arm64-v1.79.1.tar.gz
-    outputPath: livepeer-victoria-metrics
+    outputPath: lp-victoria-metrics
     skipManifestUpdate: true
   - name: vmagent
     strategy:
@@ -119,5 +119,5 @@ box:
       darwin-arm64: vmutils-darwin-arm64-v1.80.0.tar.gz
       linux-amd64: vmutils-linux-amd64-v1.80.0.tar.gz
       linux-arm64: vmutils-linux-arm64-v1.80.0.tar.gz
-    outputPath: livepeer-vmagent
+    outputPath: lp-vmagent
     skipManifestUpdate: true

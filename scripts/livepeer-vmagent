@@ -1,0 +1,58 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [[ $* == *-j* ]]; then
+    echo '{
+  "name": "Livepeer Victoria Metrics Agent",
+  "desc": "Livepeer-in-a-Box packaged Victoria Metrics. Useful for remote writing metrics.",
+  "friendly": "Livepeer-in-a-Box packaged Victoria Metrics Agent (exporter)",
+  "optional": {
+    "envflag.enable": {
+      "name": "envflag.enable",
+      "help": "Whether to enable reading flags from environment variables additionally to command line. Command line flag values have priority over values from environment vars. Flags are read only from command line if this flag is not set. See https://docs.victoriametrics.com/#environment-variables for more details",
+      "option": "-envflag.enable",
+      "default": "true"
+    },
+    "envflag.prefix": {
+      "name": "envflag.prefix",
+      "help": "Prefix for environment variables if -envflag.enable is set",
+      "option": "-envflag.prefix",
+      "default": "VM_",
+      "type": "str"
+    },
+    "loggerLevel": {
+      "name": "loggerLevel",
+      "help": "Minimum level of errors to log. Possible values: INFO, WARN, ERROR, FATAL, PANIC (default INFO)",
+      "option": "-loggerLevel",
+      "default": "FATAL",
+      "type": "str"
+    },
+    "promscrape.config": {
+      "name": "promscrape.config",
+      "help": "Location of promscape.config file",
+      "option": "-promscrape.config",
+      "default": "./config/scrape_config.yaml",
+      "type": "str"
+    },
+    "remoteWrite.label": {
+      "name": "remoteWrite.label",
+      "help": "array of labels to add to metrics example label=value,label2=value2",
+      "option": "-remoteWrite.label",
+      "default": "region=dev",
+      "type": "str"
+    },
+    "remoteWrite.url": {
+      "name": "remoteWrite.url",
+      "help": "array of urls of the Victoria Metrics remote endpoint",
+      "option": "-remoteWrite.url",
+      "default": "http://localhost/",
+      "type": "str"
+    }
+  },
+  "version": "0.0.1"
+}'
+    exit 0
+fi
+
+exec lp-vmagent "$@"
