@@ -120,6 +120,21 @@ box:
       darwin-arm64: ffmpeg-darwin-arm64
     outputPath: ffmpeg
     skipManifestUpdate: true
+  - name: ffprobe
+    strategy:
+      download: github
+      project: eugeneware/ffmpeg-static
+      commit: 7407c144d1e7b3ad93c6ef029827051c23c5e094
+    release: b6.0
+    skipGpg: true
+    skipChecksum: true
+    srcFilenames:
+      linux-amd64: ffprobe-linux-x64
+      linux-arm64: ffprobe-linux-arm64
+      darwin-amd64: ffprobe-darwin-x64
+      darwin-arm64: ffprobe-darwin-arm64
+    outputPath: ffprobe
+    skipManifestUpdate: true
   - name: vmagent
     strategy:
       download: github
