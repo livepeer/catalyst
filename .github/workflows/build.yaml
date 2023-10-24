@@ -78,11 +78,13 @@ jobs:
           cp ./scripts/livepeer-vmagent ./bin/livepeer-vmagent
 
       - name: Build c2patool
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: c2patool
+          version: "0.6.2"
+
+      - name: Copy c2patool
         run: |
-          apt update && apt install -y curl build-essential git
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source "$HOME/.cargo/env"
-          cargo install --version 0.6.2 c2patool
           cp "${HOME}/.cargo/bin/c2patool" ./bin/c2patool
 
       - name: Strip binaries of debug symbols
