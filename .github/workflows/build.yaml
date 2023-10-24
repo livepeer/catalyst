@@ -77,6 +77,11 @@ jobs:
 
           cp ./scripts/livepeer-vmagent ./bin/livepeer-vmagent
 
+      - name: Configure Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
       - name: Build c2patool
         uses: baptiste0928/cargo-install@v2
         with:
