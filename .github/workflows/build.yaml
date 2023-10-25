@@ -77,6 +77,21 @@ jobs:
 
           cp ./scripts/livepeer-vmagent ./bin/livepeer-vmagent
 
+      - name: Configure Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Build c2patool
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: c2patool
+          version: "0.6.2"
+
+      - name: Copy c2patool
+        run: |
+          cp "${HOME}/.cargo/bin/c2patool" ./bin/c2patool
+
       - name: Strip binaries of debug symbols
         if: matrix.platform.name == 'linux' && matrix.architecture == 'amd64'
         run: |

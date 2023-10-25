@@ -49,6 +49,9 @@ RUN	npm install --prefix /app/go-tools/w3
 # chown needed to make everything owned by one user for userspace podman execution
 RUN	chown -R root:root /app/go-tools/w3
 
+FROM	rust:1.73.0 as rust-build
+RUN	cargo install --version 0.6.2 c2patool
+
 FROM	ubuntu:22.04	AS	catalyst
 
 ENV	DEBIAN_FRONTEND=noninteractive
@@ -73,6 +76,7 @@ RUN	apt update && apt install -yqq \
 # Most of ./scripts is for livepeer-in-a-box except livepeer-vmagent, which is used in production in Catalyst proper
 ADD ./scripts/livepeer-vmagent /usr/local/bin
 COPY --from=catalyst-build	/opt/bin/		/usr/local/bin/
+COPY --from=rust-build 		/usr/local/cargo/bin/c2patool /bin/
 COPY --from=node-build		/app/go-tools/w3	/opt/local/lib/livepeer-w3
 RUN	ln -s /opt/local/lib/livepeer-w3/livepeer-w3.js /usr/local/bin/livepeer-w3 && \
     	npm install -g ipfs-car
