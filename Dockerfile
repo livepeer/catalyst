@@ -44,10 +44,11 @@ FROM	catalyst-${BUILD_TARGET}-build	as	catalyst-build
 FROM	node:18.14.0 as node-build
 ARG	LIVEPEER_W3_VERSION=v0.2.2
 WORKDIR /app
-RUN	git clone --depth 1 --branch ${LIVEPEER_W3_VERSION} https://github.com/livepeer/go-tools.git
-RUN	npm install --prefix /app/go-tools/w3
+
 # chown needed to make everything owned by one user for userspace podman execution
-RUN	chown -R root:root /app/go-tools/w3
+RUN	git clone --depth 1 --branch ${LIVEPEER_W3_VERSION} https://github.com/livepeer/go-tools.git \
+	&& npm install --prefix /app/go-tools/w3 \
+	&& chown -R root:root /app/go-tools/w3
 
 FROM	rust:1.73.0 as rust-build
 RUN	cargo install --version 0.6.2 c2patool
@@ -60,8 +61,10 @@ LABEL	maintainer="Amritanshu Varshney <amritanshu+github@livepeer.org>"
 
 ARG	BUILD_TARGET
 
-RUN	apt update && apt install -yqq wget
-RUN	wget -O - https://deb.nodesource.com/setup_18.x | bash
+RUN	apt update && apt install -yqq wget software-properties-common \
+	&& wget -O - https://deb.nodesource.com/setup_18.x | bash \
+	&& add-apt-repository -y ppa:ubuntuhandbook1/ffmpeg6
+
 RUN	apt update && apt install -yqq \
 	curl \
 	ca-certificates \
@@ -74,12 +77,14 @@ RUN	apt update && apt install -yqq \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Most of ./scripts is for livepeer-in-a-box except livepeer-vmagent, which is used in production in Catalyst proper
-ADD ./scripts/livepeer-vmagent /usr/local/bin
+ADD	./scripts/livepeer-vmagent	/usr/local/bin
+
 COPY --from=catalyst-build	/opt/bin/		/usr/local/bin/
 COPY --from=rust-build 		/usr/local/cargo/bin/c2patool /bin/
 COPY --from=node-build		/app/go-tools/w3	/opt/local/lib/livepeer-w3
-RUN	ln -s /opt/local/lib/livepeer-w3/livepeer-w3.js /usr/local/bin/livepeer-w3 && \
-    	npm install -g ipfs-car
+
+RUN	ln -s /opt/local/lib/livepeer-w3/livepeer-w3.js /usr/local/bin/livepeer-w3 \
+	&& npm install -g ipfs-car
 
 EXPOSE	1935	4242	8080	8889/udp
 
@@ -100,27 +105,27 @@ RUN	apt update && apt install -yqq \
 	coturn \
 	&& rm -rf /var/lib/apt/lists/*
 
-RUN curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-$TARGETARCH.tgz \
+RUN	curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-$TARGETARCH.tgz \
 	&& tar xzvf cockroach-v23.1.5.linux-$TARGETARCH.tgz \
 	&& mv cockroach-v23.1.5.linux-$TARGETARCH/cockroach /usr/bin/cockroach \
 	&& rm -rf cockroach-v23.1.5.linux-$TARGETARCH.tgz cockroach-v23.1.5.linux-$TARGETARCH \
 	&& cockroach --version
 
-RUN curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-$TARGETARCH/minio \
+RUN	curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-$TARGETARCH/minio \
 	&& curl -o /usr/bin/mc https://dl.min.io/client/mc/release/linux-$TARGETARCH/mc \
 	&& chmod +x /usr/bin/minio /usr/bin/mc \
 	&& minio --version \
 	&& mc --version
 
-ADD ./scripts /usr/local/bin
-ADD ./config/full-stack.json /etc/livepeer/full-stack.json
+COPY --link	./scripts /usr/local/bin
+COPY --link	./config/full-stack.json /etc/livepeer/full-stack.json
 
-ENV CATALYST_DOWNLOADER_PATH=/usr/local/bin \
+ENV	CATALYST_DOWNLOADER_PATH=/usr/local/bin \
 	CATALYST_DOWNLOADER_MANIFEST=/etc/livepeer/manifest.yaml \
 	CATALYST_DOWNLOADER_UPDATE_MANIFEST=true \
 	COCKROACH_DB_SNAPSHOT=https://github.com/iameli-streams/livepeer-in-a-box-database-snapshots/raw/2eb77195f64f22abf3f0de39e6f6930b82a4c098/livepeer-studio-bootstrap.tar.gz
 
-RUN mkdir /data
+RUN	mkdir /data
 
 CMD	["/usr/local/bin/catalyst", "--", "/usr/local/bin/MistController", "-c", "/etc/livepeer/full-stack.json"]
 

@@ -78,15 +78,21 @@ func DownloadService(flags types.CliFlags, manifest *types.BoxManifest, service 
 	}
 
 	glog.Infof("downloaded %s. Getting ready for extraction!", projectInfo.ArchiveFileName)
-	if projectInfo.Platform == "windows" {
+	if strings.HasSuffix(projectInfo.ArchiveFileName, ".zip") {
 		glog.V(7).Info("extracting zip archive!")
 		err = ExtractZipArchive(archivePath, downloadPath, service)
 		if err != nil {
 			return err
 		}
-	} else {
+	} else if strings.HasSuffix(projectInfo.ArchiveFileName, ".tar.gz") {
 		glog.V(7).Infof("extracting tarball archive!")
 		err = ExtractTarGzipArchive(archivePath, downloadPath, service)
+		if err != nil {
+			return err
+		}
+	} else {
+		glog.V(7).Infof("moving %s to %s!", archivePath, downloadPath)
+		err = MoveBinaryIntoPlace(archivePath, downloadPath, service)
 		if err != nil {
 			return err
 		}
@@ -127,6 +133,20 @@ func ExtractZipArchive(archiveFile, extractPath string, service *types.Service) 
 			outfile.Close()
 		}
 	}
+	return nil
+}
+
+// no gzip, no anything, just put it there!
+func MoveBinaryIntoPlace(archiveFile, extractPath string, service *types.Service) error {
+	var outputPath string
+	if len(service.ArchivePath) > 0 {
+		outputPath = filepath.Join(extractPath, service.ArchivePath)
+	}
+	if len(service.OutputPath) > 0 {
+		outputPath = filepath.Join(extractPath, service.OutputPath)
+	}
+	os.Rename(archiveFile, outputPath)
+	os.Chmod(outputPath, 0755)
 	return nil
 }
 
