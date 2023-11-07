@@ -21,7 +21,7 @@ env:
 jobs:
   build:
     name: Download binaries for ${{ matrix.platform.name }}-${{ matrix.architecture }}
-    runs-on: ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.name }}-${{ matrix.architecture }}
     strategy:
       fail-fast: false
       matrix:
@@ -87,6 +87,7 @@ jobs:
         with:
           crate: c2patool
           version: "0.6.2"
+          cache-key: "${{ matrix.platform.name }}-${{ matrix.architecture }}"
 
       - name: Copy c2patool
         run: |
