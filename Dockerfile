@@ -117,8 +117,8 @@ RUN	curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-$TARGETA
 	&& minio --version \
 	&& mc --version
 
-COPY --link	./scripts /usr/local/bin
-COPY --link	./config/full-stack.json /etc/livepeer/full-stack.json
+COPY	./scripts /usr/local/bin
+COPY	./config/full-stack.json /etc/livepeer/full-stack.json
 
 ENV	CATALYST_DOWNLOADER_PATH=/usr/local/bin \
 	CATALYST_DOWNLOADER_MANIFEST=/etc/livepeer/manifest.yaml \
