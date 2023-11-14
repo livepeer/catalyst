@@ -174,7 +174,7 @@ docker:
 		.
 
 .PHONY: docker-local
-docker-local: downloader scripts 
+docker-local: scripts
 	tar ch ./bin ./config \
 	| docker buildx build \
 		--load \
