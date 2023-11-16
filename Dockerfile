@@ -50,7 +50,7 @@ RUN	git clone --depth 1 --branch ${LIVEPEER_W3_VERSION} https://github.com/livep
 	&& npm install --prefix /app/go-tools/w3 \
 	&& chown -R root:root /app/go-tools/w3
 
-FROM	rust:1.73.0 as rust-build
+FROM	rust:1.74.0 as rust-build
 RUN	cargo install --version 0.6.2 c2patool
 
 FROM	ubuntu:22.04	AS	catalyst
