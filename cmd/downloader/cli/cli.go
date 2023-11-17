@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"net/url"
@@ -15,7 +14,7 @@ import (
 	"github.com/peterbourgon/ff/v3"
 )
 
-func validateFlags(flags *types.CliFlags) error {
+func ValidateFlags(flags *types.CliFlags) error {
 	if !utils.IsSupportedPlatformArch(flags.Platform, flags.Architecture) {
 		return fmt.Errorf(
 			"invalid combination of platform+architecture detected: %s+%s",
@@ -30,8 +29,6 @@ func validateFlags(flags *types.CliFlags) error {
 		}
 		if manifestURL.Scheme == "https" {
 			flags.ManifestURL = true
-		} else if len(flags.ExecCommand) == 0 {
-			return errors.New("invalid path/url to manifest file")
 		}
 	}
 	if info, err := os.Stat(flags.DownloadPath); !(err == nil && info.IsDir()) {
@@ -47,19 +44,38 @@ func validateFlags(flags *types.CliFlags) error {
 // with useful values set after parsing the same.
 func GetCliFlags(buildFlags types.BuildFlags) (types.CliFlags, error) {
 	cliFlags := types.CliFlags{}
-	args := []string{}
-	// Handle post-exec string
-	for i, arg := range os.Args[1:] {
-		if arg == "--" {
-			cliFlags.ExecCommand = os.Args[i+2:]
-			break
-		}
-		args = append(args, arg)
-	}
+
 	flag.Set("logtostderr", "true")
 	vFlag := flag.Lookup("v")
 	fs := flag.NewFlagSet(constants.AppName, flag.ExitOnError)
 
+	AddDownloaderFlags(fs, &cliFlags)
+
+	version := fs.Bool("version", false, "Get version information")
+
+	if *version {
+		fmt.Printf("catalyst version: %s\n", buildFlags.Version)
+		os.Exit(0)
+	}
+
+	ff.Parse(
+		fs, os.Args[1:],
+		ff.WithConfigFileParser(ff.PlainParser),
+		ff.WithEnvVarPrefix("CATALYST_DOWNLOADER"),
+		ff.WithEnvVarSplit(","),
+	)
+	flag.CommandLine.Parse(nil)
+	vFlag.Value.Set(cliFlags.Verbosity)
+
+	err := ValidateFlags(&cliFlags)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	return cliFlags, err
+}
+
+// Populate a provided flagset with downloader flags
+func AddDownloaderFlags(fs *flag.FlagSet, cliFlags *types.CliFlags) {
 	goos := runtime.GOOS
 	if os.Getenv("GOOS") != "" {
 		goos = os.Getenv("GOOS")
@@ -79,27 +95,4 @@ func GetCliFlags(buildFlags types.BuildFlags) (types.CliFlags, error) {
 	fs.BoolVar(&cliFlags.Cleanup, "cleanup", true, "Cleanup downloaded archives after extraction")
 	fs.BoolVar(&cliFlags.UpdateManifest, "update-manifest", false, "Update the manifest file commit shas from releases prior to downloading")
 	fs.BoolVar(&cliFlags.Download, "download", true, "Actually do a download. Only useful for -update-manifest=true -download=false")
-
-	version := fs.Bool("version", false, "Get version information")
-
-	if *version {
-		fmt.Printf("catalyst version: %s\n", buildFlags.Version)
-		os.Exit(0)
-	}
-
-	ff.Parse(
-		fs, args,
-		ff.WithConfigFileFlag("config"),
-		ff.WithConfigFileParser(ff.PlainParser),
-		ff.WithEnvVarPrefix("CATALYST_DOWNLOADER"),
-		ff.WithEnvVarSplit(","),
-	)
-	flag.CommandLine.Parse(nil)
-	vFlag.Value.Set(cliFlags.Verbosity)
-
-	err := validateFlags(&cliFlags)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	return cliFlags, err
 }
