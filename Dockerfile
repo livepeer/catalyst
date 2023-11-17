@@ -84,7 +84,7 @@ RUN	apt update && apt install -yqq \
 ADD	./scripts/livepeer-vmagent	/usr/local/bin
 
 COPY --from=catalyst-build	/opt/bin/		/usr/local/bin/
-COPY --from=gobuild		/c2patool /bin/
+COPY --from=gobuild		/go/c2patool /bin/
 COPY --from=node-build		/app/go-tools/w3	/opt/local/lib/livepeer-w3
 
 RUN	ln -s /opt/local/lib/livepeer-w3/livepeer-w3.js /usr/local/bin/livepeer-w3 \
