@@ -8,7 +8,8 @@ ARG TARGETARCH
 
 # Download c2patool needed to sign our C2PA manifest
 # We download it from any of our previous builds, because building c2patool from source is very slow with QEMU
-ADD https://build.livepeer.live/catalyst/772a57003e6d96c9a47ef18fccb51a0c61207074/livepeer-catalyst-linux-${TARGETARCH}.tar.gz /catalyst/
+ADD https://build.livepeer.live/catalyst/772a57003e6d96c9a47ef18fccb51a0c61207074/livepeer-catalyst-linux-${TARGETARCH}.tar.gz /catalyst.tar.gz
+RUN tar xzf /catalyst.tar.gz
 
 WORKDIR	/src
 
@@ -83,7 +84,7 @@ RUN	apt update && apt install -yqq \
 ADD	./scripts/livepeer-vmagent	/usr/local/bin
 
 COPY --from=catalyst-build	/opt/bin/		/usr/local/bin/
-COPY --from=gobuild		/catalyst/c2patool /bin/
+COPY --from=gobuild		/c2patool /bin/
 COPY --from=node-build		/app/go-tools/w3	/opt/local/lib/livepeer-w3
 
 RUN	ln -s /opt/local/lib/livepeer-w3/livepeer-w3.js /usr/local/bin/livepeer-w3 \
