@@ -8,7 +8,10 @@ ARG TARGETARCH
 
 # Download c2patool needed to sign our C2PA manifest
 # We download it from any of our previous builds, because building c2patool from source is very slow with QEMU
-ADD https://build.livepeer.live/catalyst/772a57003e6d96c9a47ef18fccb51a0c61207074/livepeer-catalyst-linux-${TARGETARCH}.tar.gz /catalyst.tar.gz
+RUN	apt update && apt install -yqq \
+	curl \
+	ca-certificates
+RUN curl https://build.livepeer.live/catalyst/772a57003e6d96c9a47ef18fccb51a0c61207074/livepeer-catalyst-linux-${TARGETARCH}.tar.gz -o /catalyst.tar.gz
 RUN tar xzf /catalyst.tar.gz
 
 WORKDIR	/src
