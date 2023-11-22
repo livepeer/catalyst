@@ -4,6 +4,13 @@ ARG	FROM_LOCAL_PARENT
 
 FROM	golang:1-bullseye	as	gobuild
 
+ARG TARGETARCH
+
+# Download c2patool needed to sign our C2PA manifest
+# We download it from any of our previous builds, because building c2patool from source is very slow with QEMU
+ADD https://build.livepeer.live/catalyst/772a57003e6d96c9a47ef18fccb51a0c61207074/livepeer-catalyst-linux-${TARGETARCH}.tar.gz /catalyst.tar.gz
+RUN tar xzf /catalyst.tar.gz
+
 WORKDIR	/src
 
 ADD	go.mod go.sum	./
@@ -50,9 +57,6 @@ RUN	git clone --depth 1 --branch ${LIVEPEER_W3_VERSION} https://github.com/livep
 	&& npm install --prefix /app/go-tools/w3 \
 	&& chown -R root:root /app/go-tools/w3
 
-FROM	rust:1.73.0 as rust-build
-RUN	cargo install --version 0.6.2 c2patool
-
 FROM	ubuntu:22.04	AS	catalyst
 
 ENV	DEBIAN_FRONTEND=noninteractive
@@ -80,7 +84,7 @@ RUN	apt update && apt install -yqq \
 ADD	./scripts/livepeer-vmagent	/usr/local/bin
 
 COPY --from=catalyst-build	/opt/bin/		/usr/local/bin/
-COPY --from=rust-build 		/usr/local/cargo/bin/c2patool /bin/
+COPY --from=gobuild		/go/c2patool /bin/
 COPY --from=node-build		/app/go-tools/w3	/opt/local/lib/livepeer-w3
 
 RUN	ln -s /opt/local/lib/livepeer-w3/livepeer-w3.js /usr/local/bin/livepeer-w3 \
