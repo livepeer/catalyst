@@ -88,6 +88,7 @@ func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network string
 }
 
 func startRecordTester(ctx context.Context) error {
+	fmt.Println("starting record tester")
 	err := run(
 		ctx,
 		"go",
@@ -98,6 +99,7 @@ func startRecordTester(ctx context.Context) error {
 		"-test-dur=1m",
 		"-file=https://github.com/livepeer/catalyst-api/assets/136638730/1f71068a-0396-43c2-b870-95a6ad644ffb",
 	)
+	fmt.Println("record tester finished")
 	if err != nil {
 		return fmt.Errorf("error running recordtester: %w", err)
 	}
