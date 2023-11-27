@@ -60,6 +60,9 @@ jobs:
       - name: Build Docker image
         run: make docker DOCKER_TAG=catalyst-e2e-test
 
+      - name: Build Docker Box image
+        run: make box
+
       - name: Run E2E tests
         run:
           go test $(go list ./... | grep 'test/e2e') --timeout 15m --image
