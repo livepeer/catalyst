@@ -18,13 +18,13 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: 9a025f3b860b1969ebab403c4f665522d238707f
-    release: v0.15.5
+      commit: 591d5f11d55d0b805859daa0de6e0347bc2a298f
+    release: v0.15.6
   - name: catalyst-api
     strategy:
       download: bucket
       project: catalyst-api
-      commit: d117b221666d3dd5b3e6d8a73b9e5cc47e94ec95
+      commit: 19aa630d0e3c8c78d8fc5b0bdc716c799a1b41f6
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-uploader
-      commit: 7e5e1fec294326296b117358b5f1525f85f11b0a
+      commit: 549ad12b28ca0a5c642a06c2a8c44023fb4ff582
     binary: livepeer-catalyst-uploader
     release: main
     srcFilenames:
@@ -47,7 +47,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: b17a70dfe719c24c2fdba7b9202d5c5dc47a4720
+      commit: 68c80a1d24ddff0d50f538c3a0d39bb1c9385e7b
     binary: livepeer
     release: master
     archivePath: livepeer
@@ -62,7 +62,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: ce59f61f57fe42538bdeedf10c6fcab289f98c74
+      commit: 6ab22fcb3484584ba436db44ece6e9c88d7642f6
     release: catalyst
     skipGpg: true
     srcFilenames:
@@ -81,7 +81,7 @@ box:
     strategy:
       download: bucket
       project: task-runner
-      commit: e6d9ed47eee38d812cc9f5651d05872ecbdfc8ac
+      commit: 34247f4c00aa5eb3e53ea0da684101cd3a662865
     binary: livepeer-task-runner
     release: main
     srcFilenames:
