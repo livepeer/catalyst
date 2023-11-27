@@ -11,7 +11,7 @@ ARG TARGETARCH
 RUN	apt update && apt install -yqq \
 	curl \
 	ca-certificates
-RUN curl https://build.livepeer.live/catalyst/772a57003e6d96c9a47ef18fccb51a0c61207074/livepeer-catalyst-linux-${TARGETARCH}.tar.gz -o /catalyst.tar.gz
+RUN curl https://storage.googleapis.com/build.livepeer.live/catalyst/772a57003e6d96c9a47ef18fccb51a0c61207074/livepeer-catalyst-linux-${TARGETARCH}.tar.gz -o /catalyst.tar.gz
 RUN tar xzf /catalyst.tar.gz
 
 WORKDIR	/src
