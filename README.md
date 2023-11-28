@@ -10,4 +10,4 @@ Catalyst is Livepeer's decentralized media server, created to suppport the next 
 
 ### Get Involved
 
-Join the bi-weekly <a href="https://livepeer.notion.site/Livepeer-Catalyst-Community-Page-c14f04215caa4705a7f00930268fe853">Catalyst Hackers Group</a> to stay up-to-date on all developments Livepeer Catalyst.
+Join the bi-weekly <a href="https://livepeer.notion.site/Livepeer-Catalyst-Community-Page-c14f04215caa4705a7f00930268fe853">Catalyst Hackers Group</a> to stay up-to-date on all developments related to Livepeer Catalyst.
