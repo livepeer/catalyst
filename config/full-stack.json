@@ -212,7 +212,7 @@
     "sessionStreamInfoMode": 1,
     "sessionUnspecifiedMode": 0,
     "sessionViewerMode": 14,
-    "tknMode": 15,
+    "tknMode": 11,
     "triggers": {},
     "trustedproxy": ["0.0.0.0/1", "128.0.0.0/1"]
   },
