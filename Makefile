@@ -246,3 +246,7 @@ snapshot:
 	&& cd data \
 	&& rm -rf cockroach/auxiliary/EMERGENCY_BALLAST \
 	&& tar czvf ../livepeer-studio-bootstrap.tar.gz cockroach
+
+.PHONY: webrtc-hack
+webrtc-hack:
+	docker build -f webrtc-hack.Dockerfile -t iameli/webrtc-hack .
