@@ -41,6 +41,7 @@ type protocol struct {
 	CliAddr          string `json:"cliAddr,omitempty"`
 	RtmpAddr         string `json:"rtmpAddr,omitempty"`
 	SourceOutput     string `json:"source-output,omitempty"`
+	Catabalancer     string `json:"catabalancer,omitempty"`
 }
 
 type config struct {
@@ -174,6 +175,7 @@ func defaultMistConfig(host, sourceOutput string) mistConfig {
 					HTTPAddrInternal: fmt.Sprintf("0.0.0.0:%s", catalystAPIInternalPort),
 					RedirectPrefixes: "stream",
 					Debug:            "6",
+					Catabalancer:     "enabled",
 				},
 			},
 			SessionInputMode:       "14",
