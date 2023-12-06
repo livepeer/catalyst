@@ -90,8 +90,14 @@ COPY --from=catalyst-build	/opt/bin/		/usr/local/bin/
 COPY --from=gobuild		/go/c2patool /bin/
 COPY --from=node-build		/app/go-tools/w3	/opt/local/lib/livepeer-w3
 
+# providing self-signed certificate to avoid mist generating it for every single connection
 RUN	ln -s /opt/local/lib/livepeer-w3/livepeer-w3.js /usr/local/bin/livepeer-w3 \
-	&& npm install -g ipfs-car
+	&& npm install -g ipfs-car \
+	&& mkdir -p /etc/ssl/certs/localhost/ \
+	&& openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -days 36500 \
+	  -nodes -keyout /etc/ssl/certs/localhost/key.pem -out /etc/ssl/certs/localhost/cert.pem \
+	  -subj "/CN=localhost.domain" \
+	  -addext "subjectAltName=DNS:localhost.domain,DNS:*.localhost.domain,IP:127.0.0.1"
 
 EXPOSE	1935	4242	8080	8889/udp
 
