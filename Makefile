@@ -247,6 +247,11 @@ snapshot:
 	&& rm -rf cockroach/auxiliary/EMERGENCY_BALLAST \
 	&& tar czvf ../livepeer-studio-bootstrap.tar.gz cockroach
 
+WEBRTC_HACK_TAG ?= latest
+WEBRTC_NAME = docker.io/iameli/webrtc-hack-$(WEBRTC_HACK_TAG)-$$(date +%s)
+
 .PHONY: webrtc-hack
 webrtc-hack:
-	docker build -f webrtc-hack.Dockerfile -t iameli/webrtc-hack .
+	docker build -f webrtc-hack.Dockerfile -t $(WEBRTC_NAME) .
+	docker push $(WEBRTC_NAME)
+	docker run --rm $(WEBRTC_NAME) ldd /usr/local/bin/MistOutWebRTC
