@@ -62,8 +62,8 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: 1ef1daa5871941927964789039d94c04fadfa63e
-    release: catalyst
+      commit: ac24815ad6e03cb088b8f656053d546167703750
+    release: eli/srtp-openssl
     skipGpg: true
     srcFilenames:
       darwin-amd64: livepeer-mistserver-darwin-amd64.tar.gz
