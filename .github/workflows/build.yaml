@@ -20,7 +20,7 @@ env:
 
 jobs:
   build:
-    name: Download binaries for ${{ matrix.platform.name }}-${{ matrix.architecture }}
+    name: "Download binaries for ${{ matrix.platform.name }}-${{ matrix.architecture }}"
     runs-on: ${{ matrix.platform.name }}-${{ matrix.architecture }}
     strategy:
       fail-fast: false
@@ -106,7 +106,7 @@ jobs:
           tar -cvzf "../releases/livepeer-catalyst-${GOOS}-${GOARCH}.tar.gz" *
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v3
         with:
           name: release-artifacts
           path: releases/
