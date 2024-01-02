@@ -78,7 +78,7 @@ jobs:
           cp ./scripts/livepeer-vmagent ./bin/livepeer-vmagent
 
       - name: Configure Rust Toolchain
-        uses: actions-rs/toolchain@v1
+        uses: ructions/cargo@v1
         with:
           toolchain: stable
           override: true
