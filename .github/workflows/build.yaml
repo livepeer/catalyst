@@ -81,6 +81,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          override: true
 
       - name: Build c2patool
         uses: baptiste0928/cargo-install@v2
