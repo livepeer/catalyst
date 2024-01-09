@@ -77,8 +77,11 @@ jobs:
 
           cp ./scripts/livepeer-vmagent ./bin/livepeer-vmagent
 
+      - name: Cleanup ~/.rustup
+        run: rm -rf ~/.rustup
+
       - name: Configure Rust Toolchain
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Build c2patool
         uses: baptiste0928/cargo-install@v2
