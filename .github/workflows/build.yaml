@@ -83,16 +83,10 @@ jobs:
       - name: Configure Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Build c2patool
-        uses: baptiste0928/cargo-install@v2
-        with:
-          crate: c2patool
-          version: "0.6.2"
-          cache-key: "${{ matrix.platform.name }}-${{ matrix.architecture }}"
-
-      - name: Copy c2patool
+      - name: Download c2patool
         run: |
-          cp "${HOME}/.cargo/bin/c2patool" ./bin/c2patool
+          curl "https://storage.googleapis.com/build.livepeer.live/c2patool/0.6.2/c2patool-linux-${{ matrix.architecture }}" -o c2patool.tar.gz
+          tar -xvzf c2patool.tar.gz -C ./bin/c2patool
 
       - name: Strip binaries of debug symbols
         if: matrix.platform.name == 'linux' && matrix.architecture == 'amd64'
