@@ -86,7 +86,7 @@ jobs:
       - name: Download c2patool
         run: |
           curl "https://storage.googleapis.com/build.livepeer.live/c2patool/0.6.2/c2patool-${{ matrix.platform.name }}-${{ matrix.architecture }}.tar.gz" -o c2patool.tar.gz
-          tar -xvzf c2patool.tar.gz -C ./bin/c2patool
+          tar -xvzf c2patool.tar.gz -C ./bin/
 
       - name: Strip binaries of debug symbols
         if: matrix.platform.name == 'linux' && matrix.architecture == 'amd64'
