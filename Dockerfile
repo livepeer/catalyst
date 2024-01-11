@@ -11,7 +11,7 @@ ARG TARGETARCH
 RUN	apt update && apt install -yqq \
 	curl \
 	ca-certificates
-RUN curl https://storage.googleapis.com/build.livepeer.live/c2patool/0.6.2/c2patool-linux-${TARGETARCH}.tar.gz -o /c2patool.tar.gz
+RUN curl https://build.livepeer.live/c2patool/0.6.2/c2patool-linux-${TARGETARCH}.tar.gz -o /c2patool.tar.gz
 RUN tar xzf /c2patool.tar.gz
 
 WORKDIR	/src
