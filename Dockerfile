@@ -12,7 +12,7 @@ RUN	apt update && apt install -yqq \
 	curl \
 	ca-certificates \
 	&& curl https://build.livepeer.live/c2patool/0.6.2/c2patool-linux-${TARGETARCH}.tar.gz -o /c2patool.tar.gz \
-	&& tar xzf /c2patool.tar.gz \
+	&& tar xzf /c2patool.tar.gz
 
 # Install mp4box
 RUN	apt update && apt install -y build-essential pkg-config git zlib1g-dev \

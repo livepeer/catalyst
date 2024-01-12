@@ -84,7 +84,7 @@ jobs:
 
       - name: Install mp4box
         run: |
-          apt update && apt install -y build-essential pkg-config git zlib1g-dev
+          sudo apt update && sudo apt install -y build-essential pkg-config git zlib1g-dev
           git clone --depth 1 https://github.com/gpac/gpac.git gpac_public
           cd gpac_public && ./configure --static-bin && make && cd ..
           cp gpac_public/bin/gcc/MP4Box ./bin/mp4box
