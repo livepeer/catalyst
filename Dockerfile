@@ -10,9 +10,9 @@ ARG TARGETARCH
 # We download it from any of our previous builds, because building c2patool from source is very slow with QEMU
 RUN	apt update && apt install -yqq \
 	curl \
-	ca-certificates
-RUN curl https://build.livepeer.live/c2patool/0.6.2/c2patool-linux-${TARGETARCH}.tar.gz -o /c2patool.tar.gz
-RUN tar xzf /c2patool.tar.gz
+	ca-certificates \
+	&& curl https://build.livepeer.live/c2patool/0.6.2/c2patool-linux-${TARGETARCH}.tar.gz -o /c2patool.tar.gz
+	&& tar xzf /c2patool.tar.gz
 
 WORKDIR	/src
 
