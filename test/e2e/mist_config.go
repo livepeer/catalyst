@@ -14,123 +14,171 @@ const (
 	boxPort                 = "8888"
 )
 
-type account struct {
+type Account struct {
 	Password string `json:"password"`
 }
 
-type bandwidth struct {
+type Bandwidth struct {
 	Exceptions []string `json:"exceptions"`
 	Limit      int      `json:"limit"`
 }
 
-type protocol struct {
-	Connector        string `json:"connector"`
-	RetryJoin        string `json:"retry-join,omitempty"`
-	Advertise        string `json:"advertise,omitempty"`
-	RPCAddr          string `json:"rpc-addr,omitempty"`
-	RedirectPrefixes string `json:"redirect-prefixes,omitempty"`
-	Debug            string `json:"debug,omitempty"`
-	HTTPAddr         string `json:"http-addr,omitempty"`
-	HTTPAddrInternal string `json:"http-internal-addr,omitempty"`
-	Broadcaster      bool   `json:"broadcaster,omitempty"`
-	Orchestrator     bool   `json:"orchestrator,omitempty"`
-	Transcoder       bool   `json:"transcoder,omitempty"`
-	HTTPRPCAddr      string `json:"httpAddr,omitempty"`
-	OrchAddr         string `json:"orchAddr,omitempty"`
-	ServiceAddr      string `json:"serviceAddr,omitempty"`
-	CliAddr          string `json:"cliAddr,omitempty"`
-	RtmpAddr         string `json:"rtmpAddr,omitempty"`
-	SourceOutput     string `json:"source-output,omitempty"`
-	Catabalancer     string `json:"catabalancer,omitempty"`
+type ICEServer struct {
+	URLs       string `json:"urls,omitempty"`
+	Username   string `json:"username,omitempty"`
+	Credential string `json:"credential,omitempty"`
+}
+type Protocol struct {
+	Connector                           string      `json:"connector"`
+	RetryJoin                           string      `json:"retry-join,omitempty"`
+	Advertise                           string      `json:"advertise,omitempty"`
+	RPCAddr                             string      `json:"rpc-addr,omitempty"`
+	RedirectPrefixes                    string      `json:"redirect-prefixes,omitempty"`
+	Debug                               string      `json:"debug,omitempty"`
+	HTTPAddr                            string      `json:"http-addr,omitempty"`
+	HTTPAddrInternal                    string      `json:"http-internal-addr,omitempty"`
+	Broadcaster                         bool        `json:"broadcaster,omitempty"`
+	Orchestrator                        bool        `json:"orchestrator,omitempty"`
+	Transcoder                          bool        `json:"transcoder,omitempty"`
+	HTTPRPCAddr                         string      `json:"httpAddr,omitempty"`
+	OrchAddr                            string      `json:"orchAddr,omitempty"`
+	ServiceAddr                         string      `json:"serviceAddr,omitempty"`
+	CliAddr                             string      `json:"cliAddr,omitempty"`
+	RtmpAddr                            string      `json:"rtmpAddr,omitempty"`
+	SourceOutput                        string      `json:"source-output,omitempty"`
+	Catabalancer                        string      `json:"catabalancer,omitempty"`
+	BaseStreamName                      string      `json:"base-stream-name,omitempty"`
+	Broadcasters                        string      `json:"broadcasters,omitempty"`
+	JWTAudience                         string      `json:"jwt-audience,omitempty"`
+	JWTSecret                           string      `json:"jwt-secret,omitempty"`
+	OwnRegion                           string      `json:"own-region,omitempty"`
+	PostgresURL                         string      `json:"postgres-url,omitempty"`
+	RecordCatalystObjectStoreId         string      `json:"recordCatalystObjectStoreId,omitempty"`
+	VODCatalystObjectStoreId            string      `json:"vodCatalystObjectStoreId,omitempty"`
+	VODCatalystPrivateAssetsObjectStore string      `json:"vodCatalystPrivateAssetsObjectStore,omitempty"`
+	VODObjectStoreId                    string      `json:"vodObjectStoreId,omitempty"`
+	Port                                string      `json:"port,omitempty"`
+	StreamInfoService                   bool        `json:"stream-info-service,omitempty"`
+	V                                   string      `json:"v,omitempty"`
+	OwnBaseURL                          string      `json:"own-base-url,omitempty"`
+	Node                                string      `json:"node,omitempty"`
+	Monitor                             bool        `json:"monitor,omitempty"`
+	MetricsPerStream                    bool        `json:"metricsPerStream,omitempty"`
+	MetricsClientIP                     bool        `json:"metricsClientIP,omitempty"`
+	CatalystURL                         string      `json:"catalyst-url,omitempty"`
+	BroadcasterURL                      string      `json:"broadcaster-url,omitempty"`
+	DisableBigquery                     bool        `json:"disable-bigquery,omitempty"`
+	BindHost                            string      `json:"bindhost,omitempty"`
+	BalancerArgs                        string      `json:"balancer-args,omitempty"`
+	APIServer                           string      `json:"api-server,omitempty"`
+	PubHost                             string      `json:"pubhost,omitempty"`
+	ICEServers                          []ICEServer `json:"iceservers,omitempty"`
+	// And finally, four ways to spell the same thing:
+	AMQPURL          string `json:"amqp-url,omitempty"`
+	AMQPURI          string `json:"amqp-uri,omitempty"`
+	MetadataQueueUri string `json:"metadataQueueUri,omitempty"`
+	RabbitMQURI      string `json:"rabbitmq-uri,omitempty"`
 }
 
-type config struct {
-	Accesslog  string `json:"accesslog"`
-	Controller struct {
-		Interface interface{} `json:"interface"`
-		Port      interface{} `json:"port"`
-		Username  interface{} `json:"username"`
-	} `json:"controller"`
-	Debug         interface{} `json:"debug"`
-	DefaultStream interface{} `json:"defaultStream"`
-	Limits        interface{} `json:"limits"`
-	Location      struct {
-		Lat  float64 `json:"lat"`
-		Lon  float64 `json:"lon"`
-		Name string  `json:"name"`
-	} `json:"location"`
-	Prometheus             string               `json:"prometheus"`
-	Protocols              []protocol           `json:"protocols"`
-	ServerID               interface{}          `json:"serverid"`
-	SessionInputMode       string               `json:"sessionInputMode"`
-	SessionOutputMode      string               `json:"sessionOutputMode"`
-	SessionStreamInfoMode  string               `json:"sessionStreamInfoMode"`
-	SessionUnspecifiedMode string               `json:"sessionUnspecifiedMode"`
-	SessionViewerMode      string               `json:"sessionViewerMode"`
-	SidMode                string               `json:"sidMode"`
-	Triggers               map[string][]trigger `json:"triggers"`
-	Trustedproxy           []string             `json:"trustedproxy"`
+type Config struct {
+	Accesslog  string `json:"accesslog,omitempty"`
+	Controller *struct {
+		Interface *string `json:"interface,omitempty"`
+		Port      *string `json:"port,omitempty"`
+		Username  *string `json:"username,omitempty"`
+	} `json:"controller,omitempty"`
+	Debug         interface{} `json:"debug,omitempty"`
+	DefaultStream string      `json:"defaultStream,omitempty"`
+	Limits        interface{} `json:"limits,omitempty"`
+	Location      *struct {
+		Lat  float64 `json:"lat,omitempty"`
+		Lon  float64 `json:"lon,omitempty"`
+		Name string  `json:"name,omitempty"`
+	} `json:"location,omitempty"`
+	Prometheus             string               `json:"prometheus,omitempty"`
+	Protocols              []Protocol           `json:"protocols,omitempty"`
+	ServerID               interface{}          `json:"serverid,omitempty"`
+	SessionInputMode       int                  `json:"sessionInputMode"`
+	SessionOutputMode      int                  `json:"sessionOutputMode"`
+	SessionStreamInfoMode  int                  `json:"sessionStreamInfoMode"`
+	SessionUnspecifiedMode int                  `json:"sessionUnspecifiedMode"`
+	SessionViewerMode      int                  `json:"sessionViewerMode"`
+	SidMode                int                  `json:"sidMode,omitempty"`
+	TknMode                int                  `json:"tknMode,omitempty"`
+	Triggers               map[string][]Trigger `json:"triggers"`
+	Trustedproxy           []string             `json:"trustedproxy,omitempty"`
 }
 
-type stream struct {
+type Stream struct {
 	Name         string    `json:"name"`
-	Processes    []process `json:"processes,omitempty"`
-	Realtime     bool      `json:"realtime"`
+	Processes    []Process `json:"processes,omitempty"`
+	Realtime     bool      `json:"realtime,omitempty"`
 	Source       string    `json:"source"`
 	StopSessions bool      `json:"stop_sessions"`
+	DVR          int       `json:"DVR"`
+	MaxKeepAway  int       `json:"maxkeepaway"`
+	SegmentSize  int       `json:"segmentsize"`
 }
 
-type process struct {
-	Debug                 int             `json:"debug"`
-	HardcodedBroadcasters string          `json:"hardcoded_broadcasters"`
-	Leastlive             string          `json:"leastlive"`
-	Process               string          `json:"process"`
-	TargetProfiles        []targetProfile `json:"target_profiles"`
+type Process struct {
+	Debug                 int             `json:"debug,omitempty"`
+	HardcodedBroadcasters string          `json:"hardcoded_broadcasters,omitempty"`
+	Exec                  string          `json:"exec,omitempty"`
+	Leastlive             bool            `json:"leastlive,omitempty"`
+	Process               string          `json:"process,omitempty"`
+	TargetProfiles        []TargetProfile `json:"target_profiles,omitempty"`
+	AccessToken           string          `json:"access_token,omitempty"`
+	CustomURL             string          `json:"custom_url,omitempty"`
+	ExitUnmask            bool            `json:"exit_unmask"`
+	TrackInhibit          string          `json:"track_inhibit"`
+	TrackSelect           string          `json:"track_select"`
 }
 
-type targetProfile struct {
+type TargetProfile struct {
 	Bitrate  int    `json:"bitrate"`
 	Fps      int    `json:"fps"`
 	Height   int    `json:"height"`
 	Name     string `json:"name"`
+	Profile  string `json:"profile"`
 	Width    int    `json:"width"`
 	XLSPName string `json:"x-LSP-name"`
 }
 
-type trigger struct {
+type Trigger struct {
 	Handler string   `json:"handler"`
 	Sync    bool     `json:"sync"`
 	Default string   `json:"default"`
 	Streams []string `json:"streams"`
 }
 
-type mistConfig struct {
-	Account      map[string]account `json:"account"`
+type MistConfig struct {
+	Account      map[string]Account `json:"account"`
 	Autopushes   interface{}        `json:"autopushes"`
-	Bandwidth    bandwidth          `json:"bandwidth"`
-	Config       config             `json:"config"`
+	Bandwidth    *Bandwidth         `json:"bandwidth,omitempty"`
+	Config       Config             `json:"config"`
 	PushSettings struct {
 		Maxspeed interface{} `json:"maxspeed"`
 		Wait     interface{} `json:"wait"`
 	} `json:"push_settings"`
-	Streams    map[string]stream `json:"streams"`
-	UISettings interface{}       `json:"ui_settings"`
+	Streams    map[string]Stream `json:"streams"`
+	UISettings interface{}       `json:"ui_settings,omitempty"`
+	ExtWriters []any             `json:"extwriters"`
 }
 
-func defaultMistConfig(host, sourceOutput string) mistConfig {
-	return mistConfig{
-		Account: map[string]account{
+func defaultMistConfig(host, sourceOutput string) MistConfig {
+	return MistConfig{
+		Account: map[string]Account{
 			"test": {
 				Password: "098f6bcd4621d373cade4e832627b4f6",
 			},
 		},
-		Bandwidth: bandwidth{
+		Bandwidth: &Bandwidth{
 			Exceptions: []string{},
 		},
-		Config: config{
+		Config: Config{
 			Accesslog:  "LOG",
 			Prometheus: "koekjes",
-			Protocols: []protocol{
+			Protocols: []Protocol{
 				{Connector: "AAC"},
 				{Connector: "CMAF"},
 				{Connector: "DTSC"},
@@ -178,14 +226,14 @@ func defaultMistConfig(host, sourceOutput string) mistConfig {
 					Catabalancer:     "enabled",
 				},
 			},
-			SessionInputMode:       "14",
-			SessionOutputMode:      "14",
-			SessionStreamInfoMode:  "1",
-			SessionUnspecifiedMode: "0",
-			SessionViewerMode:      "14",
-			SidMode:                "0",
+			SessionInputMode:       14,
+			SessionOutputMode:      14,
+			SessionStreamInfoMode:  1,
+			SessionUnspecifiedMode: 0,
+			SessionViewerMode:      14,
+			SidMode:                0,
 			Trustedproxy:           []string{},
-			Triggers: map[string][]trigger{
+			Triggers: map[string][]Trigger{
 				"STREAM_SOURCE": {
 					{
 						Handler: "http://127.0.0.1:7878/STREAM_SOURCE",
@@ -208,7 +256,7 @@ func defaultMistConfig(host, sourceOutput string) mistConfig {
 				},
 			},
 		},
-		Streams: map[string]stream{
+		Streams: map[string]Stream{
 			"stream": {
 				Name:         "stream",
 				Realtime:     false,
@@ -219,30 +267,30 @@ func defaultMistConfig(host, sourceOutput string) mistConfig {
 	}
 }
 
-func defaultMistConfigWithLivepeerProcess(host, sourceOutput string) mistConfig {
-	mc := defaultMistConfig(host, sourceOutput)
-	s := mc.Streams["stream"]
-	s.Processes = []process{
-		{Debug: 5,
-			HardcodedBroadcasters: "[{\"address\":\"http://127.0.0.1:8935\"}]",
-			Leastlive:             "1",
-			Process:               "livepeer",
-			TargetProfiles: []targetProfile{
-				{Bitrate: 400000,
-					Fps:      30,
-					Height:   144,
-					Name:     "P144p30fps16x9",
-					Width:    256,
-					XLSPName: "",
-				},
-			},
-		},
-	}
-	mc.Streams["stream"] = s
-	return mc
-}
+// func defaultMistConfigWithLivepeerProcess(host, sourceOutput string) MistConfig {
+// 	mc := defaultMistConfig(host, sourceOutput)
+// 	s := mc.Streams["stream"]
+// 	s.Processes = []Process{
+// 		{Debug: 5,
+// 			HardcodedBroadcasters: "[{\"address\":\"http://127.0.0.1:8935\"}]",
+// 			Leastlive:             "1",
+// 			Process:               "livepeer",
+// 			TargetProfiles: []TargetProfile{
+// 				{Bitrate: 400000,
+// 					Fps:      30,
+// 					Height:   144,
+// 					Name:     "P144p30fps16x9",
+// 					Width:    256,
+// 					XLSPName: "",
+// 				},
+// 			},
+// 		},
+// 	}
+// 	mc.Streams["stream"] = s
+// 	return mc
+// }
 
-func (m *mistConfig) string() (string, error) {
+func (m *MistConfig) string() (string, error) {
 	s, err := json.Marshal(m)
 	if err != nil {
 		return "", err
@@ -250,7 +298,7 @@ func (m *mistConfig) string() (string, error) {
 	return string(s), nil
 }
 
-func (m *mistConfig) toFile(file *os.File) error {
+func (m *MistConfig) toFile(file *os.File) error {
 	str, err := m.string()
 	if err != nil {
 		return err
@@ -261,7 +309,7 @@ func (m *mistConfig) toFile(file *os.File) error {
 	return nil
 }
 
-func (m *mistConfig) toTmpFile(dir string) (string, error) {
+func (m *MistConfig) toTmpFile(dir string) (string, error) {
 	tmpFile, err := ioutil.TempFile(dir, "mist-config-*.json")
 	if err != nil {
 		return "", err

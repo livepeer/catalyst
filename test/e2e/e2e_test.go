@@ -119,7 +119,7 @@ func createNetwork(ctx context.Context, t *testing.T) *network {
 	return &network{Network: net, name: name}
 }
 
-func mistConfigConnectTo(host string, connectToHost string) mistConfig {
+func mistConfigConnectTo(host string, connectToHost string) MistConfig {
 	mc := defaultMistConfig(host, "")
 	for i, p := range mc.Config.Protocols {
 		if p.Connector == "livepeer-catalyst-api" {
@@ -138,11 +138,11 @@ func (lc *logConsumer) Accept(l testcontainers.Log) {
 	glog.Infof("[%s] %s", lc.name, string(l.Content))
 }
 
-func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig) *catalystContainer {
+func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, mc MistConfig) *catalystContainer {
 	return startCatalystWithEnv(ctx, t, hostname, network, mc, nil)
 }
 
-func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig, env map[string]string) *catalystContainer {
+func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network string, mc MistConfig, env map[string]string) *catalystContainer {
 	mcPath, err := mc.toTmpFile(t.TempDir())
 	require.NoError(t, err)
 	configAbsPath := filepath.Dir(mcPath)

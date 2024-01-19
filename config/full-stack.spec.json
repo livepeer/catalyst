@@ -6,6 +6,10 @@
   },
   "autopushes": [
     [
+      "videorec+",
+      "s3+http://admin:password@localhost:9000/os-recordings/$wildcard/$uuid/source/$segmentCounter.ts?m3u8=../output.m3u8&split=5&video=source&audio=AAC&append=1&waittrackcount=2&recstart=-1"
+    ],
+    [
       "video+",
       "s3+http://admin:password@localhost:9000/os-recordings/$wildcard/$uuid/source/$segmentCounter.ts?m3u8=../output.m3u8&split=5&video=source&audio=AAC&append=1&waittrackcount=2&recstart=-1"
     ]
@@ -35,8 +39,10 @@
       {
         "connector": "livepeer-api",
         "postgres-url": "postgresql://root@localhost:5432/defaultdb?sslmode=disable",
+        "cors-jwt-allowlist": "[\"http://localhost:8080\", \"http://localhost:3000\", \"http://localhost:8888\",\"http://127.0.0.1:8080\", \"http://127.0.0.1:3000\", \"http://127.0.0.1:8888\"]",
         "jwt-secret": "stupidlysecret",
         "jwt-audience": "my-node",
+        "ingest": "[{\"ingest\":\"rtmp://localhost/live\",\"ingests\":{\"rtmp\":\"rtmp://localhost/live\",\"srt\":\"srt://localhost:8889\"},\"playback\":\"http://localhost:8888/hls\",\"base\":\"http://localhost:8888\",\"origin\":\"http://localhost:8888\"}]",
         "broadcasters": "[{\"address\":\"http://127.0.0.1:8935\"}]",
         "base-stream-name": "video",
         "amqp-url": "amqp://localhost:5672/livepeer",
@@ -56,6 +62,8 @@
       {
         "connector": "livepeer-catalyst-api",
         "api-server": "http://127.0.0.1:3004",
+        "api-token": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
+        "tags": "node=media,http=http://localhost:8888/mist",
         "redirect-prefixes": "video,videorec",
         "node": "localhost",
         "http-internal-addr": "0.0.0.0:7979",
@@ -75,6 +83,7 @@
         "httpAddr": "127.0.0.1:8935",
         "orchAddr": "127.0.0.1:8936",
         "rtmpAddr": "127.0.0.1:1936",
+        "authWebhookUrl": "http://9c2936b5-143f-4b10-b302-6a21b5f29c3d:f61b3cdb-d173-4a7a-a0d3-547b871a56f9@127.0.0.1:3004/api/stream/hook",
         "metadataQueueUri": "amqp://localhost:5672/livepeer",
         "v": "2"
       },
@@ -103,6 +112,7 @@
       },
       {
         "connector": "livepeer-analyzer",
+        "livepeer-access-token": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
         "port": "3080",
         "rabbitmq-uri": "amqp://localhost:5672/livepeer",
         "disable-bigquery": true,
@@ -111,7 +121,9 @@
       {
         "connector": "livepeer-task-runner",
         "amqp-uri": "amqp://localhost:5672/livepeer",
+        "catalyst-secret": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
         "catalyst-url": "http://127.0.0.1:7979",
+        "livepeer-access-token": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
         "own-base-url": "http://127.0.0.1:3060/task-runner",
         "port": "3060"
       },
@@ -219,6 +231,53 @@
           "custom_url": "http://127.0.0.1:3004/api/stream/video",
           "debug": 5,
           "exit_unmask": false,
+          "leastlive": "1",
+          "process": "Livepeer",
+          "target_profiles": [
+            {
+              "x-LSP-name": "144p",
+              "bitrate": 400000,
+              "fps": 30,
+              "height": 144,
+              "name": "P144p30fps16x9",
+              "width": 256,
+              "profile": "H264ConstrainedHigh"
+            }
+          ]
+        },
+        {
+          "exec": "gst-launch-1.0 -q fdsrc fd=0 ! matroskademux ! faad ! audioresample ! opusenc inband-fec=true perfect-timestamp=true ! matroskamux ! fdsink fd=1",
+          "exit_unmask": false,
+          "process": "MKVExec",
+          "track_inhibit": "audio=opus&video=source,|bframes",
+          "track_select": "video=none&audio=aac,|source,|maxbps",
+          "x-LSP-name": "AAC to Opus",
+          "leastlive": 1
+        },
+        {
+          "exec": "gst-launch-1.0 -q fdsrc fd=0 ! matroskademux ! opusdec use-inband-fec=true ! audioresample ! voaacenc perfect-timestamp=true ! matroskamux ! fdsink fd=1",
+          "exit_unmask": false,
+          "process": "MKVExec",
+          "track_inhibit": "audio=aac",
+          "track_select": "video=none&audio=opus,|source,|maxbps",
+          "x-LSP-name": "Opus to AAC",
+          "leastlive": 1
+        }
+      ],
+      "segmentsize": 1,
+      "source": "push://",
+      "stop_sessions": false
+    },
+    "videorec": {
+      "DVR": 25000,
+      "maxkeepaway": 7500,
+      "name": "video",
+      "processes": [
+        {
+          "access_token": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
+          "custom_url": "http://127.0.0.1:3004/api/stream/video",
+          "debug": 5,
+          "exit_unmask": false,
           "leastlive": true,
           "process": "Livepeer",
           "target_profiles": [
@@ -256,5 +315,6 @@
       "source": "push://",
       "stop_sessions": false
     }
-  }
+  },
+  "variables": null
 }
