@@ -21,7 +21,10 @@ func TestSpecIsValid(t *testing.T) {
 }
 
 func TestItCanPassthroughEmptyConfig(t *testing.T) {
-	generated, err := Config()
+	generated, _, err := Config(&Cli{
+		Secret:    "44444444-4444-4444-4444-444444444444",
+		PublicURL: "https://example.com",
+	})
 	require.NoError(t, err)
 	require.Empty(t, jsonEQ(spec, generated))
 }
