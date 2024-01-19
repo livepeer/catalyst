@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"os/exec"
 	"syscall"
@@ -27,6 +26,7 @@ func main() {
 	fs.StringVar(&cli.PublicURL, "public-url", "http://localhost:8888", "Public-facing URL of your Catalyst node, including protocol and port")
 	fs.StringVar(&cli.Secret, "secret", "", "Secret UUID to secure your Catalyst node")
 	fs.StringVar(&cli.ConfOutput, "conf-output", "/tmp/catalyst-generated.json", "Secret UUID to secure your Catalyst node")
+	fs.StringVar(&cli.SQLOutput, "sql-output", "/tmp/catalyst-fixtures.sql", "Secret UUID to secure your Catalyst node")
 
 	ff.Parse(
 		fs, os.Args[1:],
@@ -36,12 +36,15 @@ func main() {
 		ff.WithEnvVarSplit(","),
 	)
 	flag.CommandLine.Parse(nil)
-	blob, err := config.Config(&cli)
+	conf, sql, err := config.Config(&cli)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%s\n", string(blob))
-	err = os.WriteFile(cli.ConfOutput, blob, 0600)
+	err = os.WriteFile(cli.ConfOutput, conf, 0600)
+	if err != nil {
+		panic(err)
+	}
+	err = os.WriteFile(cli.SQLOutput, sql, 0600)
 	if err != nil {
 		panic(err)
 	}
