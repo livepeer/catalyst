@@ -78,14 +78,14 @@ type Protocol struct {
 	Ingest                              string `json:"ingest,omitempty"`
 	CORSJWTAllowlist                    string `json:"cors-jwt-allowlist,omitempty"`
 	LivepeerAccessToken                 string `json:"livepeer-access-token,omitempty"`
+	AuthWebhookURL                      string `json:"authWebhookUrl,omitempty"`
 
 	ICEServers []ICEServer `json:"iceservers,omitempty"`
 	// And finally, four ways to spell the same thing:
 	AMQPURL          string `json:"amqp-url,omitempty"`
 	AMQPURI          string `json:"amqp-uri,omitempty"`
-	MetadataQueueUri string `json:"metadataQueueUri,omitempty"`
+	MetadataQueueURI string `json:"metadataQueueUri,omitempty"`
 	RabbitMQURI      string `json:"rabbitmq-uri,omitempty"`
-	AuthWebhookURL   string `json:"authWebhookUrl,omitempty"`
 }
 
 type Config struct {

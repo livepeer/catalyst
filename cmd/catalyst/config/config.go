@@ -16,11 +16,11 @@ var fullstack []byte
 //go:embed full-stack.sql
 var sqlTables string
 
-var adminId = "00000000-0000-4000-0000-000000000000"
-var recordingBucketId = "00000000-0000-4000-0000-000000000001"
-var vodBucketId = "00000000-0000-4000-0000-000000000002"
-var vodBucketCatalystId = "00000000-0000-4000-0000-000000000003"
-var privateBucketId = "00000000-0000-4000-0000-000000000004"
+var adminID = "00000000-0000-4000-0000-000000000000"
+var recordingBucketID = "00000000-0000-4000-0000-000000000001"
+var vodBucketID = "00000000-0000-4000-0000-000000000002"
+var vodBucketCatalystID = "00000000-0000-4000-0000-000000000003"
+var privateBucketID = "00000000-0000-4000-0000-000000000004"
 
 type Cli struct {
 	PublicURL  string
@@ -61,7 +61,7 @@ func GenerateConfig(cli *Cli) ([]byte, []byte, error) {
 	inserts := []DBObject{}
 
 	admin := DBObject{
-		"id":              adminId,
+		"id":              adminID,
 		"firstName":       "Root",
 		"lastName":        "User",
 		"admin":           true,
@@ -83,21 +83,21 @@ func GenerateConfig(cli *Cli) ([]byte, []byte, error) {
 	}
 	inserts = append(inserts, admin, apiToken)
 
-	recordingBucket := ObjectStore(adminId, cli.PublicURL, recordingBucketId, "os-recordings")
+	recordingBucket := ObjectStore(adminID, cli.PublicURL, recordingBucketID, "os-recordings")
 
-	vodBucket := ObjectStore(adminId, cli.PublicURL, vodBucketId, "os-vod")
+	vodBucket := ObjectStore(adminID, cli.PublicURL, vodBucketID, "os-vod")
 
-	vodBucketCatalyst := ObjectStore(adminId, cli.PublicURL, vodBucketCatalystId, "os-catalyst-vod")
+	vodBucketCatalyst := ObjectStore(adminID, cli.PublicURL, vodBucketCatalystID, "os-catalyst-vod")
 
-	privateBucket := ObjectStore(adminId, cli.PublicURL, privateBucketId, "os-vod")
+	privateBucket := ObjectStore(adminID, cli.PublicURL, privateBucketID, "os-vod")
 	inserts = append(inserts, recordingBucket, vodBucket, vodBucketCatalyst, privateBucket)
 
 	for _, protocol := range conf.Config.Protocols {
 		if protocol.Connector == "livepeer-api" && !protocol.StreamInfoService {
-			protocol.RecordCatalystObjectStoreId = recordingBucketId
-			protocol.VODCatalystObjectStoreId = vodBucketCatalystId
-			protocol.VODCatalystPrivateAssetsObjectStore = privateBucketId
-			protocol.VODObjectStoreId = vodBucketId
+			protocol.RecordCatalystObjectStoreId = recordingBucketID
+			protocol.VODCatalystObjectStoreId = vodBucketCatalystID
+			protocol.VODCatalystPrivateAssetsObjectStore = privateBucketID
+			protocol.VODObjectStoreId = vodBucketID
 			protocol.CORSJWTAllowlist = fmt.Sprintf(`["%s"]`, cli.PublicURL)
 			protocol.Ingest = fmt.Sprintf(
 				`[{"ingest":"rtmp://%s/live","ingests":{"rtmp":"rtmp://%s/live","srt":"srt://%s:8889"},"playback":"%s/mist/hls","base":"%s","origin":"%s"}]`,
@@ -116,8 +116,8 @@ func GenerateConfig(cli *Cli) ([]byte, []byte, error) {
 			protocol.LivepeerAccessToken = cli.Secret
 		} else if protocol.Connector == "livepeer-analyzer" {
 			protocol.LivepeerAccessToken = cli.Secret
-		} else if protocol.Connector == "livepeer" && protocol.Broadcaster && protocol.MetadataQueueUri != "" {
-			protocol.AuthWebhookURL = fmt.Sprintf("http://%s:%s@127.0.0.1:3004/api/stream/hook", adminId, cli.Secret)
+		} else if protocol.Connector == "livepeer" && protocol.Broadcaster && protocol.MetadataQueueURI != "" {
+			protocol.AuthWebhookURL = fmt.Sprintf("http://%s:%s@127.0.0.1:3004/api/stream/hook", adminID, cli.Secret)
 		}
 	}
 
@@ -155,13 +155,13 @@ func GenerateConfig(cli *Cli) ([]byte, []byte, error) {
 	return out, []byte(sql), nil
 }
 
-func ObjectStore(userId, publicUrl, id, bucket string) DBObject {
+func ObjectStore(userID, publicUrl, id, bucket string) DBObject {
 	return DBObject{
 		"createdAt": 0,
 		"id":        id,
 		"publicUrl": fmt.Sprintf("%s/%s", publicUrl, bucket),
 		"url":       fmt.Sprintf("s3+http://admin:password@127.0.0.1:9000/%s", bucket),
-		"userId":    userId,
+		"userId":    userID,
 		"kind":      "object-store",
 	}
 }
