@@ -18,10 +18,18 @@ var vodBucketId = "00000000-0000-4000-0000-000000000002"
 var vodBucketCatalystId = "00000000-0000-4000-0000-000000000003"
 var privateBucketId = "00000000-0000-4000-0000-000000000004"
 
-func Config() ([]byte, error) {
-	publicUrl := "https://example.com"
-	secret := "44444444-4444-4444-4444-444444444444"
-	u, err := url.Parse(publicUrl)
+type Cli struct {
+	PublicURL  string
+	Secret     string
+	Verbosity  string
+	ConfOutput string
+}
+
+func Config(cli *Cli) ([]byte, error) {
+	if cli.Secret == "" {
+		return []byte{}, fmt.Errorf("CATALYST_SECRET parameter is required")
+	}
+	u, err := url.Parse(cli.PublicURL)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -50,19 +58,19 @@ func Config() ([]byte, error) {
 	apiToken := map[string]any{
 		"name":      "ROOT KEY DON'T DELETE",
 		"createdAt": 0,
-		"id":        secret,
+		"id":        cli.Secret,
 		"kind":      "api-token",
 		"userId":    admin["id"],
 	}
 	ret = append(ret, admin, apiToken)
 
-	recordingBucket := ObjectStore(adminId, publicUrl, recordingBucketId, "os-recordings")
+	recordingBucket := ObjectStore(adminId, cli.PublicURL, recordingBucketId, "os-recordings")
 
-	vodBucket := ObjectStore(adminId, publicUrl, vodBucketId, "os-vod")
+	vodBucket := ObjectStore(adminId, cli.PublicURL, vodBucketId, "os-vod")
 
-	vodBucketCatalyst := ObjectStore(adminId, publicUrl, vodBucketCatalystId, "os-catalyst-vod")
+	vodBucketCatalyst := ObjectStore(adminId, cli.PublicURL, vodBucketCatalystId, "os-catalyst-vod")
 
-	privateBucket := ObjectStore(adminId, publicUrl, privateBucketId, "os-vod")
+	privateBucket := ObjectStore(adminId, cli.PublicURL, privateBucketId, "os-vod")
 	ret = append(ret, recordingBucket, vodBucket, vodBucketCatalyst, privateBucket)
 
 	for _, protocol := range conf.Config.Protocols {
@@ -71,33 +79,33 @@ func Config() ([]byte, error) {
 			protocol.VODCatalystObjectStoreId = vodBucketCatalystId
 			protocol.VODCatalystPrivateAssetsObjectStore = privateBucketId
 			protocol.VODObjectStoreId = vodBucketId
-			protocol.CORSJWTAllowlist = fmt.Sprintf(`["%s"]`, publicUrl)
+			protocol.CORSJWTAllowlist = fmt.Sprintf(`["%s"]`, cli.PublicURL)
 			protocol.Ingest = fmt.Sprintf(
 				`[{"ingest":"rtmp://%s/live","ingests":{"rtmp":"rtmp://%s/live","srt":"srt://%s:8889"},"playback":"%s/mist/hls","base":"%s","origin":"%s"}]`,
 				u.Hostname(),
 				u.Hostname(),
 				u.Hostname(),
-				publicUrl,
-				publicUrl,
-				publicUrl,
+				cli.PublicURL,
+				cli.PublicURL,
+				cli.PublicURL,
 			)
 		} else if protocol.Connector == "livepeer-catalyst-api" {
-			protocol.APIToken = secret
-			protocol.Tags = fmt.Sprintf("node=media,http=%s/mist,https=%s/mist", publicUrl, publicUrl)
+			protocol.APIToken = cli.Secret
+			protocol.Tags = fmt.Sprintf("node=media,http=%s/mist,https=%s/mist", cli.PublicURL, cli.PublicURL)
 		} else if protocol.Connector == "livepeer-task-runner" {
-			protocol.CatalystSecret = secret
-			protocol.LivepeerAccessToken = secret
+			protocol.CatalystSecret = cli.Secret
+			protocol.LivepeerAccessToken = cli.Secret
 		} else if protocol.Connector == "livepeer-analyzer" {
-			protocol.LivepeerAccessToken = secret
+			protocol.LivepeerAccessToken = cli.Secret
 		} else if protocol.Connector == "livepeer" && protocol.Broadcaster && protocol.MetadataQueueUri != "" {
-			protocol.AuthWebhookURL = fmt.Sprintf("http://%s:%s@127.0.0.1:3004/api/stream/hook", adminId, secret)
+			protocol.AuthWebhookURL = fmt.Sprintf("http://%s:%s@127.0.0.1:3004/api/stream/hook", adminId, cli.Secret)
 		}
 	}
 
 	video := conf.Streams["video"]
 	for _, process := range video.Processes {
 		if process.Process == "Livepeer" {
-			process.AccessToken = secret
+			process.AccessToken = cli.Secret
 		}
 	}
 
