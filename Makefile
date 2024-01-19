@@ -253,3 +253,12 @@ snapshot:
 	&& cd data \
 	&& rm -rf cockroach/auxiliary/EMERGENCY_BALLAST \
 	&& tar czvf ../livepeer-studio-bootstrap.tar.gz cockroach
+
+.PHONY: sql-schema-dump
+sql-schema-dump:
+	cockroach sql --format=raw \
+		--url 'postgresql://root@localhost:5432/defaultdb?sslmode=disable' \
+		--execute "show create all tables" \
+		| grep -v '#' \
+		| grep -v 'Time' \
+		> ./config/full-stack.sql

@@ -5,12 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 
+	"github.com/doug-martin/goqu/v9"
 	"github.com/livepeer/catalyst/test/e2e"
 )
 
 //go:embed full-stack.json
 var fullstack []byte
+
+//go:embed full-stack.sql
+var sqlTables string
 
 var adminId = "00000000-0000-4000-0000-000000000000"
 var recordingBucketId = "00000000-0000-4000-0000-000000000001"
@@ -23,25 +28,40 @@ type Cli struct {
 	Secret     string
 	Verbosity  string
 	ConfOutput string
+	SQLOutput  string
 }
 
-func Config(cli *Cli) ([]byte, error) {
+type DBObject map[string]any
+
+func (d DBObject) Table() string {
+	switch d["kind"] {
+	case "user":
+		return "users"
+	case "api-token":
+		return "api_token"
+	case "object-store":
+		return "object_store"
+	}
+	panic("table not found")
+}
+
+func Config(cli *Cli) ([]byte, []byte, error) {
 	if cli.Secret == "" {
-		return []byte{}, fmt.Errorf("CATALYST_SECRET parameter is required")
+		return []byte{}, []byte{}, fmt.Errorf("CATALYST_SECRET parameter is required")
 	}
 	u, err := url.Parse(cli.PublicURL)
 	if err != nil {
-		return []byte{}, err
+		return []byte{}, []byte{}, err
 	}
 	var conf e2e.MistConfig
 	err = json.Unmarshal(fullstack, &conf)
 	if err != nil {
-		return []byte{}, err
+		return []byte{}, []byte{}, err
 	}
 
-	ret := []map[string]any{}
+	inserts := []DBObject{}
 
-	admin := map[string]any{
+	admin := DBObject{
 		"id":              adminId,
 		"firstName":       "Root",
 		"lastName":        "User",
@@ -55,14 +75,14 @@ func Config(cli *Cli) ([]byte, error) {
 		"password":        "0000000000000000000000000000000000000000000000000000000000000000",
 		"salt":            "0000000000000000",
 	}
-	apiToken := map[string]any{
+	apiToken := DBObject{
 		"name":      "ROOT KEY DON'T DELETE",
 		"createdAt": 0,
 		"id":        cli.Secret,
 		"kind":      "api-token",
 		"userId":    admin["id"],
 	}
-	ret = append(ret, admin, apiToken)
+	inserts = append(inserts, admin, apiToken)
 
 	recordingBucket := ObjectStore(adminId, cli.PublicURL, recordingBucketId, "os-recordings")
 
@@ -71,7 +91,7 @@ func Config(cli *Cli) ([]byte, error) {
 	vodBucketCatalyst := ObjectStore(adminId, cli.PublicURL, vodBucketCatalystId, "os-catalyst-vod")
 
 	privateBucket := ObjectStore(adminId, cli.PublicURL, privateBucketId, "os-vod")
-	ret = append(ret, recordingBucket, vodBucket, vodBucketCatalyst, privateBucket)
+	inserts = append(inserts, recordingBucket, vodBucket, vodBucketCatalyst, privateBucket)
 
 	for _, protocol := range conf.Config.Protocols {
 		if protocol.Connector == "livepeer-api" && !protocol.StreamInfoService {
@@ -112,18 +132,37 @@ func Config(cli *Cli) ([]byte, error) {
 	var out []byte
 	out, err = json.MarshalIndent(conf, "", "  ")
 	if err != nil {
-		return []byte{}, err
+		return []byte{}, []byte{}, err
 	}
 
-	return out, nil
+	sql := strings.ReplaceAll(sqlTables, "CREATE TABLE", "CREATE TABLE IF NOT EXISTS")
+
+	for _, insert := range inserts {
+		obj, err := json.Marshal(insert)
+		if err != nil {
+			return []byte{}, []byte{}, err
+		}
+		ds := goqu.Insert(insert.Table()).Rows(
+			goqu.Record{"id": insert["id"], "data": obj},
+		).OnConflict(goqu.DoNothing())
+		insertSQL, _, err := ds.ToSQL()
+		if err != nil {
+			return []byte{}, []byte{}, err
+		}
+
+		sql = fmt.Sprintf("%s\n%s;", sql, insertSQL)
+	}
+
+	return out, []byte(sql), nil
 }
 
-func ObjectStore(id, publicUrl, userId, bucket string) map[string]any {
-	return map[string]any{
+func ObjectStore(userId, publicUrl, id, bucket string) DBObject {
+	return DBObject{
 		"createdAt": 0,
-		"id":        "00000000-0000-4000-0000-000000000000",
-		"publicUrl": "http://127.0.0.1:8888/os-private",
-		"url":       "s3+http://admin:password@127.0.0.1:9000/os-private",
-		"userId":    "9c2936b5-143f-4b10-b302-6a21b5f29c3d",
+		"id":        id,
+		"publicUrl": fmt.Sprintf("%s/%s", publicUrl, bucket),
+		"url":       fmt.Sprintf("s3+http://admin:password@127.0.0.1:9000/%s", bucket),
+		"userId":    userId,
+		"kind":      "object-store",
 	}
 }
