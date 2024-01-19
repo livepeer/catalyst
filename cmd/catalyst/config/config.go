@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/doug-martin/goqu/v9"
-	"github.com/livepeer/catalyst/test/e2e"
 )
 
 //go:embed full-stack.json
@@ -45,7 +44,7 @@ func (d DBObject) Table() string {
 	panic("table not found")
 }
 
-func Config(cli *Cli) ([]byte, []byte, error) {
+func GenerateConfig(cli *Cli) ([]byte, []byte, error) {
 	if cli.Secret == "" {
 		return []byte{}, []byte{}, fmt.Errorf("CATALYST_SECRET parameter is required")
 	}
@@ -53,7 +52,7 @@ func Config(cli *Cli) ([]byte, []byte, error) {
 	if err != nil {
 		return []byte{}, []byte{}, err
 	}
-	var conf e2e.MistConfig
+	var conf MistConfig
 	err = json.Unmarshal(fullstack, &conf)
 	if err != nil {
 		return []byte{}, []byte{}, err
