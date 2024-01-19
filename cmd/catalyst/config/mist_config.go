@@ -53,10 +53,10 @@ type Protocol struct {
 	JWTSecret                           string `json:"jwt-secret,omitempty"`
 	OwnRegion                           string `json:"own-region,omitempty"`
 	PostgresURL                         string `json:"postgres-url,omitempty"`
-	RecordCatalystObjectStoreId         string `json:"recordCatalystObjectStoreId,omitempty"`
-	VODCatalystObjectStoreId            string `json:"vodCatalystObjectStoreId,omitempty"`
+	RecordCatalystObjectStoreID         string `json:"recordCatalystObjectStoreId,omitempty"`
+	VODCatalystObjectStoreID            string `json:"vodCatalystObjectStoreId,omitempty"`
 	VODCatalystPrivateAssetsObjectStore string `json:"vodCatalystPrivateAssetsObjectStore,omitempty"`
-	VODObjectStoreId                    string `json:"vodObjectStoreId,omitempty"`
+	VODObjectStoreID                    string `json:"vodObjectStoreId,omitempty"`
 	Port                                string `json:"port,omitempty"`
 	StreamInfoService                   bool   `json:"stream-info-service,omitempty"`
 	V                                   string `json:"v,omitempty"`
