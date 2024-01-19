@@ -94,10 +94,10 @@ func GenerateConfig(cli *Cli) ([]byte, []byte, error) {
 
 	for _, protocol := range conf.Config.Protocols {
 		if protocol.Connector == "livepeer-api" && !protocol.StreamInfoService {
-			protocol.RecordCatalystObjectStoreId = recordingBucketID
-			protocol.VODCatalystObjectStoreId = vodBucketCatalystID
+			protocol.RecordCatalystObjectStoreID = recordingBucketID
+			protocol.VODCatalystObjectStoreID = vodBucketCatalystID
 			protocol.VODCatalystPrivateAssetsObjectStore = privateBucketID
-			protocol.VODObjectStoreId = vodBucketID
+			protocol.VODObjectStoreID = vodBucketID
 			protocol.CORSJWTAllowlist = fmt.Sprintf(`["%s"]`, cli.PublicURL)
 			protocol.Ingest = fmt.Sprintf(
 				`[{"ingest":"rtmp://%s/live","ingests":{"rtmp":"rtmp://%s/live","srt":"srt://%s:8889"},"playback":"%s/mist/hls","base":"%s","origin":"%s"}]`,
@@ -155,11 +155,11 @@ func GenerateConfig(cli *Cli) ([]byte, []byte, error) {
 	return out, []byte(sql), nil
 }
 
-func ObjectStore(userID, publicUrl, id, bucket string) DBObject {
+func ObjectStore(userID, publicURL, id, bucket string) DBObject {
 	return DBObject{
 		"createdAt": 0,
 		"id":        id,
-		"publicUrl": fmt.Sprintf("%s/%s", publicUrl, bucket),
+		"publicUrl": fmt.Sprintf("%s/%s", publicURL, bucket),
 		"url":       fmt.Sprintf("s3+http://admin:password@127.0.0.1:9000/%s", bucket),
 		"userId":    userID,
 		"kind":      "object-store",
