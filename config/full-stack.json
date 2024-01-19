@@ -40,10 +40,6 @@
         "broadcasters": "[{\"address\":\"http://127.0.0.1:8935\"}]",
         "base-stream-name": "video",
         "amqp-url": "amqp://localhost:5672/livepeer",
-        "vodObjectStoreId": "917a2f18-f7a8-4ae3-a849-6efd4aac8e59",
-        "vodCatalystObjectStoreId": "517873a4-487c-40ad-872f-027f4bc6bd98",
-        "vodCatalystPrivateAssetsObjectStore": "cab9266f-5583-4532-9630-7be10d92affe",
-        "recordCatalystObjectStoreId": "0926e4ba-b726-4386-92ee-5c4583f62f0a",
         "own-region": "box"
       },
       {
@@ -215,7 +211,6 @@
       "name": "video",
       "processes": [
         {
-          "access_token": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
           "custom_url": "http://127.0.0.1:3004/api/stream/video",
           "debug": 5,
           "exit_unmask": false,
