@@ -6,6 +6,7 @@ replace github.com/testcontainers/testcontainers-go v0.26.0 => github.com/lefina
 
 require (
 	github.com/ProtonMail/gopenpgp/v2 v2.4.10
+	github.com/doug-martin/goqu/v9 v9.19.0
 	github.com/golang/glog v1.1.2
 	github.com/google/go-cmp v0.6.0
 	github.com/livepeer/stream-tester v0.12.30-0.20230823234013-5cfb4bbcf27d
@@ -136,7 +137,6 @@ require (
 	github.com/ProtonMail/go-mime v0.0.0-20220302105931-303f85f7fe0f // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
-	github.com/doug-martin/goqu/v9 v9.19.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/livepeer/livepeer-data v0.7.3 // indirect
 	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
