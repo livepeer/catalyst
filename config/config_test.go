@@ -6,13 +6,24 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/livepeer/catalyst/test/e2e"
 	"github.com/stretchr/testify/require"
 )
+
+//go:embed full-stack.spec.json
+var spec []byte
+
+func TestSpecIsValid(t *testing.T) {
+	err := json.Unmarshal(fullstack, &e2e.MistConfig{})
+	require.NoError(t, err)
+	err = json.Unmarshal(spec, &e2e.MistConfig{})
+	require.NoError(t, err)
+}
 
 func TestItCanPassthroughEmptyConfig(t *testing.T) {
 	generated, err := Config()
 	require.NoError(t, err)
-	require.Empty(t, jsonEQ(fullstack, generated))
+	require.Empty(t, jsonEQ(spec, generated))
 }
 
 // returns empty if equal
