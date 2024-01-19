@@ -1,4 +1,4 @@
-package e2e
+package config
 
 import (
 	"encoding/json"
@@ -174,7 +174,7 @@ type MistConfig struct {
 	ExtWriters []any              `json:"extwriters"`
 }
 
-func defaultMistConfig(host, sourceOutput string) MistConfig {
+func DefaultMistConfig(host, sourceOutput string) MistConfig {
 	return MistConfig{
 		Account: map[string]Account{
 			"test": {
@@ -276,8 +276,8 @@ func defaultMistConfig(host, sourceOutput string) MistConfig {
 	}
 }
 
-func defaultMistConfigWithLivepeerProcess(host, sourceOutput string) MistConfig {
-	mc := defaultMistConfig(host, sourceOutput)
+func DefaultMistConfigWithLivepeerProcess(host, sourceOutput string) MistConfig {
+	mc := DefaultMistConfig(host, sourceOutput)
 	s := mc.Streams["stream"]
 	s.Processes = []*Process{
 		{
@@ -319,7 +319,7 @@ func (m *MistConfig) toFile(file *os.File) error {
 	return nil
 }
 
-func (m *MistConfig) toTmpFile(dir string) (string, error) {
+func (m *MistConfig) ToTmpFile(dir string) (string, error) {
 	tmpFile, err := ioutil.TempFile(dir, "mist-config-*.json")
 	if err != nil {
 		return "", err

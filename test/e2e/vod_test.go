@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/livepeer/catalyst/cmd/catalyst/config"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/stretchr/testify/require"
@@ -43,7 +44,7 @@ func TestVod(t *testing.T) {
 	createDestBucket(t, m)
 
 	h := randomString("catalyst-")
-	c := startCatalyst(ctx, t, h, network.name, defaultMistConfigWithLivepeerProcess(h, sourceOutput(m)))
+	c := startCatalyst(ctx, t, h, network.name, config.DefaultMistConfigWithLivepeerProcess(h, sourceOutput(m)))
 	defer c.Terminate(ctx)
 	waitForCatalystAPI(t, c)
 

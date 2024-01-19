@@ -7,8 +7,8 @@ import (
 	"syscall"
 
 	"github.com/golang/glog"
+	"github.com/livepeer/catalyst/cmd/catalyst/config"
 	"github.com/livepeer/catalyst/cmd/downloader/constants"
-	"github.com/livepeer/catalyst/config"
 	"github.com/peterbourgon/ff/v3"
 )
 
@@ -36,7 +36,7 @@ func main() {
 		ff.WithEnvVarSplit(","),
 	)
 	flag.CommandLine.Parse(nil)
-	conf, sql, err := config.Config(&cli)
+	conf, sql, err := config.GenerateConfig(&cli)
 	if err != nil {
 		panic(err)
 	}

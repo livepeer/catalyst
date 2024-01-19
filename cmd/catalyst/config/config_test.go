@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/livepeer/catalyst/test/e2e"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,14 +13,14 @@ import (
 var spec []byte
 
 func TestSpecIsValid(t *testing.T) {
-	err := json.Unmarshal(fullstack, &e2e.MistConfig{})
+	err := json.Unmarshal(fullstack, &MistConfig{})
 	require.NoError(t, err)
-	err = json.Unmarshal(spec, &e2e.MistConfig{})
+	err = json.Unmarshal(spec, &MistConfig{})
 	require.NoError(t, err)
 }
 
 func TestItCanPassthroughEmptyConfig(t *testing.T) {
-	generated, _, err := Config(&Cli{
+	generated, _, err := GenerateConfig(&Cli{
 		Secret:    "44444444-4444-4444-4444-444444444444",
 		PublicURL: "https://example.com",
 	})
