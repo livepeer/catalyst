@@ -125,7 +125,6 @@ RUN	curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-$TARGETA
 	&& mc --version
 
 COPY	./scripts /usr/local/bin
-COPY	./config/full-stack.json /etc/livepeer/full-stack.json
 
 ENV	CATALYST_DOWNLOADER_PATH=/usr/local/bin \
 	CATALYST_DOWNLOADER_MANIFEST=/etc/livepeer/manifest.yaml \
@@ -134,7 +133,7 @@ ENV	CATALYST_DOWNLOADER_PATH=/usr/local/bin \
 
 RUN	mkdir /data
 
-CMD	["/usr/local/bin/catalyst", "--", "/usr/local/bin/MistController", "-c", "/etc/livepeer/generated.json]
+CMD	["/usr/local/bin/catalyst"]
 
 FROM	${FROM_LOCAL_PARENT} AS box-local
 
