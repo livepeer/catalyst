@@ -185,11 +185,19 @@
         "bindhost": "127.0.0.1",
         "iceservers": [
           {
-            "urls": "stun:localhost"
+            "urls": "stun:example.com:3478"
           },
           {
             "credential": "livepeer",
-            "urls": "turn:localhost",
+            "urls": "turn:example.com:3478",
+            "username": "livepeer"
+          },
+          {
+            "urls": "stun:example.com:5349"
+          },
+          {
+            "credential": "livepeer",
+            "urls": "turn:example.com:5349",
             "username": "livepeer"
           }
         ],

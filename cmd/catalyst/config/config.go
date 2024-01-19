@@ -118,6 +118,25 @@ func GenerateConfig(cli *Cli) ([]byte, []byte, error) {
 			protocol.LivepeerAccessToken = cli.Secret
 		} else if protocol.Connector == "livepeer" && protocol.Broadcaster && protocol.MetadataQueueURI != "" {
 			protocol.AuthWebhookURL = fmt.Sprintf("http://%s:%s@127.0.0.1:3004/api/stream/hook", adminID, cli.Secret)
+		} else if protocol.Connector == "WebRTC" {
+			protocol.ICEServers = []ICEServer{
+				{
+					URLs: fmt.Sprintf("stun:%s:3478", u.Hostname()),
+				},
+				{
+					Credential: "livepeer",
+					URLs:       fmt.Sprintf("turn:%s:3478", u.Hostname()),
+					Username:   "livepeer",
+				},
+				{
+					URLs: fmt.Sprintf("stun:%s:5349", u.Hostname()),
+				},
+				{
+					Credential: "livepeer",
+					URLs:       fmt.Sprintf("turn:%s:5349", u.Hostname()),
+					Username:   "livepeer",
+				},
+			}
 		}
 	}
 
