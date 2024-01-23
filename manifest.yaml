@@ -74,9 +74,9 @@ box:
     strategy:
       download: github
       project: livepeer/playbacklog_uploader
-      commit: bd7eb09dafefc95ec7d9d33d33e12e7f86a8cc83
+      commit: b711e47007cdcdbb49efc85bb855aaae0357d40d
     binary: livepeer-mist-bigquery-uploader
-    release: v1.2.1
+    release: v1.3.0
   - name: task-runner
     strategy:
       download: bucket
