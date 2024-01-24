@@ -20,7 +20,7 @@ env:
 
 jobs:
   build:
-    name: Download binaries for ${{ matrix.platform.name }}-${{ matrix.architecture }}
+    name: "Download binaries for ${{ matrix.platform.name }}-${{ matrix.architecture }}"
     runs-on: ${{ matrix.platform.name }}-${{ matrix.architecture }}
     strategy:
       fail-fast: false
@@ -77,21 +77,10 @@ jobs:
 
           cp ./scripts/livepeer-vmagent ./bin/livepeer-vmagent
 
-      - name: Configure Rust Toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-
-      - name: Build c2patool
-        uses: baptiste0928/cargo-install@v2
-        with:
-          crate: c2patool
-          version: "0.6.2"
-          cache-key: "${{ matrix.platform.name }}-${{ matrix.architecture }}"
-
-      - name: Copy c2patool
+      - name: Download c2patool
         run: |
-          cp "${HOME}/.cargo/bin/c2patool" ./bin/c2patool
+          curl "https://build.livepeer.live/c2patool/0.6.2/c2patool-${{ matrix.platform.name }}-${{ matrix.architecture }}.tar.gz" -o c2patool.tar.gz
+          tar -xvzf c2patool.tar.gz -C ./bin/
 
       - name: Strip binaries of debug symbols
         if: matrix.platform.name == 'linux' && matrix.architecture == 'amd64'
@@ -106,7 +95,7 @@ jobs:
           tar -cvzf "../releases/livepeer-catalyst-${GOOS}-${GOARCH}.tar.gz" *
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v3
         with:
           name: release-artifacts
           path: releases/

@@ -5,7 +5,7 @@ box:
     strategy:
       download: bucket
       project: livepeer-data
-      commit: 590d298e854eb916c3fb6bc1b6fcdfd601841da1
+      commit: 4693e48f58cd3234395300ddfaf0b36c399286f4
     release: main
     srcFilenames:
       darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
@@ -18,13 +18,13 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: da2af5ebe7f6e3b5ec68f8107be3e633e3023c87
-    release: v0.15.7
+      commit: 70bdda2add1c9b4f8ce83eb4e7d9dcd1a2945f89
+    release: v0.16.0
   - name: catalyst-api
     strategy:
       download: bucket
       project: catalyst-api
-      commit: 289817b1a83b41ff8a917d3646ea7518ace3df2a
+      commit: 301f3c9d5c514a50a964cf807e7e11cfcb024301
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -35,7 +35,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-uploader
-      commit: 97405e1be2857116773449728dbb9e7c01c196f8
+      commit: 58cf59f125915b129710c86b74dfa57e796eb132
     binary: livepeer-catalyst-uploader
     release: main
     srcFilenames:
@@ -47,7 +47,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: 37447eadfb2b0ef84805a8aed1019ad230f5d121
+      commit: 73e1808dfdaf5b7f7f35aeceec9d5047814d865a
     binary: livepeer
     release: master
     archivePath: livepeer
@@ -62,7 +62,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: c111e8bf474a12434548c6b2d94d99dd00e67bdf
+      commit: d57e439e9ce7d90863da5b41deae28872fe5c2c1
     release: catalyst
     skipGpg: true
     srcFilenames:
@@ -74,14 +74,14 @@ box:
     strategy:
       download: github
       project: livepeer/playbacklog_uploader
-      commit: bd7eb09dafefc95ec7d9d33d33e12e7f86a8cc83
+      commit: 13526f461ab51257c820364678b0259a0bd9e5a7
     binary: livepeer-mist-bigquery-uploader
-    release: v1.2.1
+    release: v1.3.2
   - name: task-runner
     strategy:
       download: bucket
       project: task-runner
-      commit: 17622181d13bb1e2ea1efbf88ea76e96e590a326
+      commit: ccdf86efacebe4fbd041e1107426385a4c56ef4b
     binary: livepeer-task-runner
     release: main
     srcFilenames:
