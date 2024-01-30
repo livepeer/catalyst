@@ -78,7 +78,8 @@
         "amqp-url": "amqp://localhost:5672/livepeer",
         "own-region": "box",
         "v": "8",
-        "broadcaster-url": "http://127.0.0.1:8937"
+        "broadcaster-url": "http://127.0.0.1:8937",
+        "mist-prometheus": "koekjes"
       },
       {
         "connector": "livepeer",
