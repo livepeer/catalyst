@@ -297,7 +297,7 @@ func requireStreamRedirection(t *testing.T, c1 *catalystContainer, c2 *catalystC
 	require := require.New(t)
 	redirect := func(collectT *assert.CollectT) {
 		client := &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
 		}
