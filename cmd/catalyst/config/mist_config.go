@@ -79,6 +79,7 @@ type Protocol struct {
 	CORSJWTAllowlist                    string `json:"cors-jwt-allowlist,omitempty"`
 	LivepeerAccessToken                 string `json:"livepeer-access-token,omitempty"`
 	AuthWebhookURL                      string `json:"authWebhookUrl,omitempty"`
+	Nvidia                              string `json:"nvidia,omitempty"`
 
 	ICEServers []ICEServer `json:"iceservers,omitempty"`
 	// And finally, four ways to spell the same thing:

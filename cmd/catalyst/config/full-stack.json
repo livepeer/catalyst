@@ -68,7 +68,7 @@
         "metricsPerStream": true,
         "monitor": true,
         "cliAddr": "127.0.0.1:7935",
-        "httpAddr": "127.0.0.1:8935",
+        "httpAddr": "0.0.0.0:8935",
         "orchAddr": "127.0.0.1:8936",
         "rtmpAddr": "127.0.0.1:1936",
         "metadataQueueUri": "amqp://localhost:5672/livepeer",
@@ -95,7 +95,8 @@
         "metricsPerStream": true,
         "monitor": true,
         "serviceAddr": "127.0.0.1:8936",
-        "v": "2"
+        "v": "7",
+        "nvidia": "0"
       },
       {
         "connector": "livepeer-analyzer",

@@ -42,6 +42,9 @@ http {
 
     server {
         listen       8888;
+        listen       4443 ssl;
+        ssl_certificate     /tls/tls.crt;
+        ssl_certificate_key /tls/tls.key;
         server_name  _;
         absolute_redirect off;
         

@@ -2,7 +2,7 @@ ARG	GIT_VERSION=unknown
 ARG	BUILD_TARGET
 ARG	FROM_LOCAL_PARENT
 
-FROM	golang:1-bullseye	as	gobuild
+FROM	docker.io/library/golang:1-bullseye	as	gobuild
 
 ARG TARGETARCH
 
@@ -30,13 +30,13 @@ ENV	GIT_VERSION="${GIT_VERSION}"
 
 RUN	make catalyst
 
-FROM	ubuntu:22.04	as	catalyst-full-build
+FROM	docker.io/library/ubuntu:22.04	as	catalyst-full-build
 
 WORKDIR	/opt/bin
 
 COPY --from=gobuild	/src/bin/	/opt/bin/
 
-FROM	ubuntu:22.04	as	catalyst-stripped-build
+FROM	docker.io/library/ubuntu:22.04	as	catalyst-stripped-build
 
 ENV	DEBIAN_FRONTEND=noninteractive
 
@@ -51,7 +51,7 @@ RUN	find /opt/bin -type f ! -name "*.sh" ! -name "livepeer-mist-bigquery-uploade
 FROM	catalyst-${BUILD_TARGET}-build	as	catalyst-build
 
 # Install livepeer-w3 required to use web3.storage
-FROM	node:18.14.0 as node-build
+FROM	docker.io/library/node:18.14.0 as node-build
 ARG	LIVEPEER_W3_VERSION=v0.2.2
 WORKDIR /app
 
@@ -60,7 +60,7 @@ RUN	git clone --depth 1 --branch ${LIVEPEER_W3_VERSION} https://github.com/livep
 	&& npm install --prefix /app/go-tools/w3 \
 	&& chown -R root:root /app/go-tools/w3
 
-FROM	ubuntu:22.04	AS	catalyst
+FROM	docker.io/nvidia/cuda:11.7.1-cudnn8-runtime-ubuntu22.04	AS	catalyst
 
 ENV	DEBIAN_FRONTEND=noninteractive
 

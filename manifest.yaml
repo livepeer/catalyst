@@ -54,7 +54,7 @@ box:
     srcFilenames:
       darwin-amd64: livepeer-darwin-amd64.tar.gz
       darwin-arm64: livepeer-darwin-arm64.tar.gz
-      linux-amd64: livepeer-linux-amd64.tar.gz
+      linux-amd64: livepeer-linux-gpu-amd64.tar.gz
       linux-arm64: livepeer-linux-arm64.tar.gz
       windows-amd64: livepeer-windows-amd64.zip
       windows-arm64: livepeer-windows-arm64.zip
