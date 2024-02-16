@@ -7,7 +7,7 @@ replace github.com/testcontainers/testcontainers-go v0.26.0 => github.com/lefina
 require (
 	github.com/ProtonMail/gopenpgp/v2 v2.4.10
 	github.com/golang/glog v1.1.2
-	github.com/livepeer/stream-tester v0.12.30-0.20230823234013-5cfb4bbcf27d
+	github.com/livepeer/stream-tester v0.13.0-beta.2
 	github.com/magicsong/color-glog v0.0.1
 	github.com/minio/minio-go/v7 v7.0.46
 	github.com/peterbourgon/ff/v3 v3.3.1
@@ -75,7 +75,6 @@ require (
 	github.com/klauspost/compress v1.17.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/livepeer/catalyst-api v0.1.1 // indirect
 	github.com/livepeer/go-api-client v0.4.7 // indirect
 	github.com/livepeer/joy4 v0.1.2-0.20220210094601-95e4d28f5f07 // indirect
 	github.com/livepeer/m3u8 v0.11.1 // indirect
@@ -136,6 +135,7 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
+	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/livepeer/livepeer-data v0.7.3 // indirect
 	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
 	github.com/pkg/errors v0.9.1 // indirect
