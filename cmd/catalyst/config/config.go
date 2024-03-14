@@ -28,6 +28,9 @@ type Cli struct {
 	Verbosity  string
 	ConfOutput string
 	SQLOutput  string
+	Network    string
+	EthURL     string
+	Keystore   string
 }
 
 type DBObject map[string]any
@@ -92,53 +95,14 @@ func GenerateConfig(cli *Cli) ([]byte, []byte, error) {
 	privateBucket := ObjectStore(adminID, cli.PublicURL, privateBucketID, "os-vod")
 	inserts = append(inserts, recordingBucket, vodBucket, vodBucketCatalyst, privateBucket)
 
+	newProtocols := []*Protocol{}
 	for _, protocol := range conf.Config.Protocols {
-		if protocol.Connector == "livepeer-api" && !protocol.StreamInfoService {
-			protocol.RecordCatalystObjectStoreID = recordingBucketID
-			protocol.VODCatalystObjectStoreID = vodBucketCatalystID
-			protocol.VODCatalystPrivateAssetsObjectStore = privateBucketID
-			protocol.VODObjectStoreID = vodBucketID
-			protocol.CORSJWTAllowlist = fmt.Sprintf(`["%s"]`, cli.PublicURL)
-			protocol.Ingest = fmt.Sprintf(
-				`[{"ingest":"rtmp://%s/live","ingests":{"rtmp":"rtmp://%s/live","srt":"srt://%s:8889"},"playback":"%s/mist/hls","base":"%s","origin":"%s"}]`,
-				u.Hostname(),
-				u.Hostname(),
-				u.Hostname(),
-				cli.PublicURL,
-				cli.PublicURL,
-				cli.PublicURL,
-			)
-		} else if protocol.Connector == "livepeer-catalyst-api" {
-			protocol.APIToken = cli.Secret
-			protocol.Tags = fmt.Sprintf("node=media,http=%s/mist,https=%s/mist", cli.PublicURL, cli.PublicURL)
-		} else if protocol.Connector == "livepeer-task-runner" {
-			protocol.CatalystSecret = cli.Secret
-			protocol.LivepeerAccessToken = cli.Secret
-		} else if protocol.Connector == "livepeer-analyzer" {
-			protocol.LivepeerAccessToken = cli.Secret
-		} else if protocol.Connector == "livepeer" && protocol.Broadcaster && protocol.MetadataQueueURI != "" {
-			protocol.AuthWebhookURL = fmt.Sprintf("http://%s:%s@127.0.0.1:3004/api/stream/hook", adminID, cli.Secret)
-		} else if protocol.Connector == "WebRTC" {
-			protocol.ICEServers = []ICEServer{
-				{
-					URLs: fmt.Sprintf("stun:%s:3478", u.Hostname()),
-				},
-				{
-					Credential: "livepeer",
-					URLs:       fmt.Sprintf("turn:%s:3478", u.Hostname()),
-					Username:   "livepeer",
-				},
-				{
-					URLs: fmt.Sprintf("stun:%s:5349", u.Hostname()),
-				},
-				{
-					Credential: "livepeer",
-					URLs:       fmt.Sprintf("turn:%s:5349", u.Hostname()),
-					Username:   "livepeer",
-				},
-			}
+		ok := tweakProtocol(protocol, cli, u)
+		if ok {
+			newProtocols = append(newProtocols, protocol)
 		}
 	}
+	conf.Config.Protocols = newProtocols
 
 	video := conf.Streams["video"]
 	for _, process := range video.Processes {
@@ -172,6 +136,56 @@ func GenerateConfig(cli *Cli) ([]byte, []byte, error) {
 	}
 
 	return out, []byte(sql), nil
+}
+
+// returns true if this protocol should be included
+func tweakProtocol(protocol *Protocol, cli *Cli, u *url.URL) bool {
+	if protocol.Connector == "livepeer-api" && !protocol.StreamInfoService {
+		protocol.RecordCatalystObjectStoreID = recordingBucketID
+		protocol.VODCatalystObjectStoreID = vodBucketCatalystID
+		protocol.VODCatalystPrivateAssetsObjectStore = privateBucketID
+		protocol.VODObjectStoreID = vodBucketID
+		protocol.CORSJWTAllowlist = fmt.Sprintf(`["%s"]`, cli.PublicURL)
+		protocol.Ingest = fmt.Sprintf(
+			`[{"ingest":"rtmp://%s/live","ingests":{"rtmp":"rtmp://%s/live","srt":"srt://%s:8889"},"playback":"%s/mist/hls","base":"%s","origin":"%s"}]`,
+			u.Hostname(),
+			u.Hostname(),
+			u.Hostname(),
+			cli.PublicURL,
+			cli.PublicURL,
+			cli.PublicURL,
+		)
+	} else if protocol.Connector == "livepeer-catalyst-api" {
+		protocol.APIToken = cli.Secret
+		protocol.Tags = fmt.Sprintf("node=media,http=%s/mist,https=%s/mist", cli.PublicURL, cli.PublicURL)
+	} else if protocol.Connector == "livepeer-task-runner" {
+		protocol.CatalystSecret = cli.Secret
+		protocol.LivepeerAccessToken = cli.Secret
+	} else if protocol.Connector == "livepeer-analyzer" {
+		protocol.LivepeerAccessToken = cli.Secret
+	} else if protocol.Connector == "livepeer" && protocol.Broadcaster && protocol.MetadataQueueURI != "" {
+		protocol.AuthWebhookURL = fmt.Sprintf("http://%s:%s@127.0.0.1:3004/api/stream/hook", adminID, cli.Secret)
+	} else if protocol.Connector == "WebRTC" {
+		protocol.ICEServers = []ICEServer{
+			{
+				URLs: fmt.Sprintf("stun:%s:3478", u.Hostname()),
+			},
+			{
+				Credential: "livepeer",
+				URLs:       fmt.Sprintf("turn:%s:3478", u.Hostname()),
+				Username:   "livepeer",
+			},
+			{
+				URLs: fmt.Sprintf("stun:%s:5349", u.Hostname()),
+			},
+			{
+				Credential: "livepeer",
+				URLs:       fmt.Sprintf("turn:%s:5349", u.Hostname()),
+				Username:   "livepeer",
+			},
+		}
+	}
+	return true
 }
 
 func ObjectStore(userID, publicURL, id, bucket string) DBObject {
