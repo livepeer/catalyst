@@ -25,8 +25,8 @@ func main() {
 	// fs.StringVar(&cli.Verbosity, "v", "3", "Log verbosity. Integer value from 0 to 9")
 	fs.StringVar(&cli.PublicURL, "public-url", "http://localhost:8888", "Public-facing URL of your Catalyst node, including protocol and port")
 	fs.StringVar(&cli.Secret, "secret", "", "Secret UUID to secure your Catalyst node")
-	fs.StringVar(&cli.ConfOutput, "conf-output", "/tmp/catalyst-generated.json", "Secret UUID to secure your Catalyst node")
-	fs.StringVar(&cli.SQLOutput, "sql-output", "/tmp/catalyst-fixtures.sql", "Secret UUID to secure your Catalyst node")
+	fs.StringVar(&cli.ConfOutput, "conf-output", "/tmp/catalyst-generated.json", "Path where we will place generated MistServer configuration")
+	fs.StringVar(&cli.SQLOutput, "sql-output", "/tmp/catalyst-fixtures.sql", "Path where we will generate SQL fixtures")
 
 	ff.Parse(
 		fs, os.Args[1:],
