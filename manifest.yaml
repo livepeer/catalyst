@@ -18,8 +18,8 @@ box:
     strategy:
       download: bucket
       project: studio
-      commit: 4d50d0d725c2cecb673808fc4b6198a5e9539ca0
-    release: eli-bucket-uploads
+      commit: 085d87dec71bee6a30c15356b24ece9e6c8cdbf9
+    release: master
     srcFilenames:
       darwin-amd64: livepeer-api-darwin-amd64.tar.gz
       darwin-arm64: livepeer-api-darwin-arm64.tar.gz
