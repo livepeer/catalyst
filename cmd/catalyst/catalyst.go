@@ -27,6 +27,10 @@ func main() {
 	fs.StringVar(&cli.Secret, "secret", "", "Secret UUID to secure your Catalyst node")
 	fs.StringVar(&cli.ConfOutput, "conf-output", "/tmp/catalyst-generated.json", "Path where we will place generated MistServer configuration")
 	fs.StringVar(&cli.SQLOutput, "sql-output", "/tmp/catalyst-fixtures.sql", "Path where we will generate SQL fixtures")
+	fs.StringVar(&cli.Network, "network", "offchain", "Network to use for transcoding. Allowed values: offchain, arbitrum-one-mainnet")
+	fs.StringVar(&cli.EthURL, "eth-url", "", "HTTPS URL of an Ethereum RPC provider for your selected network")
+	fs.StringVar(&cli.EthKeystorePath, "eth-keystore-path", "/keystore", "Path to an Ethereum keystore")
+	fs.StringVar(&cli.EthPassword, "eth-password", "", "Ethereum password or path to password file")
 
 	ff.Parse(
 		fs, os.Args[1:],

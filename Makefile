@@ -206,7 +206,7 @@ scripts:
 	cp -Rv ./scripts/* ./bin
 
 .PHONY: box-dev
-box-dev: scripts
+box-dev: scripts catalyst
 	ulimit -c unlimited \
 	&& exec docker run \
 	-v $$(realpath bin):/usr/local/bin \
@@ -214,13 +214,8 @@ box-dev: scripts
 	-v $$(realpath config):/etc/livepeer:ro \
 	-v $$(realpath ./coredumps):$$(realpath ./coredumps) \
 	-e CORE_DUMP_DIR=$$(realpath ./coredumps) \
-	-e LP_API_CORS_JWT_ALLOWLIST="[\"http://localhost:8080\", \"http://localhost:3000\", \"http://localhost:8888\",\"http://127.0.0.1:8080\", \"http://127.0.0.1:3000\", \"http://127.0.0.1:8888\"]" \
-	-e LP_API_INGEST="[{\"ingest\":\"rtmp://localhost/live\",\"ingests\":{\"rtmp\":\"rtmp://localhost/live\",\"srt\":\"srt://localhost:8889\"},\"playback\":\"http://localhost:8888/hls\",\"base\":\"http://localhost:8888\",\"origin\":\"http://localhost:8888\"}]" \
-	-e LP_CATALYST_API_TAGS="node=media,http=http://localhost:8888/mist" \
-	-e LP_CATALYST_API_TOKEN=f61b3cdb-d173-4a7a-a0d3-547b871a56f9 \
-	-e LP_CATALYST_SECRET=f61b3cdb-d173-4a7a-a0d3-547b871a56f9 \
-	-e LP_LIVEPEER_ACCESS_TOKEN=f61b3cdb-d173-4a7a-a0d3-547b871a56f9 \
-	-e LPAUTHWEBHOOKURL=http://9c2936b5-143f-4b10-b302-6a21b5f29c3d:f61b3cdb-d173-4a7a-a0d3-547b871a56f9@127.0.0.1:3004/api/stream/hook \
+	-v /home/iameli/.ethereum/keystore:/keystore \
+	-e CATALYST_SECRET=f61b3cdb-d173-4a7a-a0d3-547b871a56f9 \
 	$(shell for line in $$(cat .env 2>/dev/null || echo ''); do printf -- "-e $$line "; done) \
 	--rm \
 	-it \

@@ -23,14 +23,15 @@ var vodBucketCatalystID = "00000000-0000-4000-0000-000000000003"
 var privateBucketID = "00000000-0000-4000-0000-000000000004"
 
 type Cli struct {
-	PublicURL  string
-	Secret     string
-	Verbosity  string
-	ConfOutput string
-	SQLOutput  string
-	Network    string
-	EthURL     string
-	Keystore   string
+	PublicURL       string
+	Secret          string
+	Verbosity       string
+	ConfOutput      string
+	SQLOutput       string
+	Network         string
+	EthURL          string
+	EthKeystorePath string
+	EthPassword     string
 }
 
 type DBObject map[string]any
@@ -163,8 +164,22 @@ func tweakProtocol(protocol *Protocol, cli *Cli, u *url.URL) bool {
 		protocol.LivepeerAccessToken = cli.Secret
 	} else if protocol.Connector == "livepeer-analyzer" {
 		protocol.LivepeerAccessToken = cli.Secret
+	} else if protocol.Connector == "livepeer" && protocol.Broadcaster {
+		// both broadcasters
+		if cli.Network != "offchain" {
+			protocol.Network = cli.Network
+			protocol.EthKeystorePath = cli.EthKeystorePath
+			protocol.EthPassword = cli.EthPassword
+			protocol.EthURL = cli.EthURL
+		}
 	} else if protocol.Connector == "livepeer" && protocol.Broadcaster && protocol.MetadataQueueURI != "" {
+		// live broadcaster
 		protocol.AuthWebhookURL = fmt.Sprintf("http://%s:%s@127.0.0.1:3004/api/stream/hook", adminID, cli.Secret)
+	} else if protocol.Connector == "livepeer" && protocol.Orchestrator {
+		// if we're not offchain we shouldn't run a local O
+		if cli.Network != "offchain" {
+			return false
+		}
 	} else if protocol.Connector == "WebRTC" {
 		protocol.ICEServers = []ICEServer{
 			{
