@@ -17,15 +17,20 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/livepeer/catalyst/cmd/catalyst/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 )
 
 const (
-	webConsolePort = "4242"
-	httpPort       = "8080"
-	rtmpPort       = "1935"
+	webConsolePort          = "4242"
+	httpPort                = "8080"
+	rtmpPort                = "1935"
+	advertisePort           = "9935"
+	catalystAPIPort         = "7979"
+	catalystAPIInternalPort = "7878"
+	boxPort                 = "8888"
 )
 
 type cliParams struct {
@@ -94,7 +99,7 @@ func TestMultiNodeCatalyst(t *testing.T) {
 	h2 := randomString("catalyst-")
 
 	// when
-	c1 := startCatalyst(ctx, t, h1, network.name, defaultMistConfig(h1, ""))
+	c1 := startCatalyst(ctx, t, h1, network.name, config.DefaultMistConfig(h1, ""))
 	defer c1.Terminate(ctx)
 	c2 := startCatalyst(ctx, t, h2, network.name, mistConfigConnectTo(h2, h1))
 	defer c2.Terminate(ctx)
@@ -119,8 +124,8 @@ func createNetwork(ctx context.Context, t *testing.T) *network {
 	return &network{Network: net, name: name}
 }
 
-func mistConfigConnectTo(host string, connectToHost string) mistConfig {
-	mc := defaultMistConfig(host, "")
+func mistConfigConnectTo(host string, connectToHost string) config.MistConfig {
+	mc := config.DefaultMistConfig(host, "")
 	for i, p := range mc.Config.Protocols {
 		if p.Connector == "livepeer-catalyst-api" {
 			p.RetryJoin = fmt.Sprintf("%s:%s", connectToHost, advertisePort)
@@ -138,12 +143,12 @@ func (lc *logConsumer) Accept(l testcontainers.Log) {
 	glog.Infof("[%s] %s", lc.name, string(l.Content))
 }
 
-func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig) *catalystContainer {
+func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, mc config.MistConfig) *catalystContainer {
 	return startCatalystWithEnv(ctx, t, hostname, network, mc, nil)
 }
 
-func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig, env map[string]string) *catalystContainer {
-	mcPath, err := mc.toTmpFile(t.TempDir())
+func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network string, mc config.MistConfig, env map[string]string) *catalystContainer {
+	mcPath, err := mc.ToTmpFile(t.TempDir())
 	require.NoError(t, err)
 	configAbsPath := filepath.Dir(mcPath)
 	mcFile := filepath.Base(mcPath)

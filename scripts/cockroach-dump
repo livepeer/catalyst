@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -euo pipefail
+
+workdir="$(mktemp -d)"
+cockroach sql \
+    --url 'postgresql://root@localhost:5432/defaultdb?sslmode=disable' \
+    --execute "select format('copy %I to stdout with csv',tablename) from pg_tables where schemaname='public';" \
+    --format=raw \
+    | grep copy \
+    > "$workdir/commands"
+
+while IFS="" read -r line || [ -n "$line" ]; do
+    cockroach sql \
+        --url 'postgresql://root@localhost:5432/defaultdb?sslmode=disable' \
+        --execute "$line"
+done < "$workdir/commands"
