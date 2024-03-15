@@ -69,7 +69,6 @@
         "monitor": true,
         "cliAddr": "127.0.0.1:7935",
         "httpAddr": "127.0.0.1:8935",
-        "orchAddr": "127.0.0.1:8936",
         "rtmpAddr": "127.0.0.1:1936",
         "metadataQueueUri": "amqp://localhost:5672/livepeer",
         "v": "2"
@@ -82,7 +81,6 @@
         "monitor": true,
         "httpAddr": "127.0.0.1:8937",
         "cliAddr": "127.0.0.1:7937",
-        "orchAddr": "127.0.0.1:8936",
         "rtmpAddr": "127.0.0.1:1937",
         "v": "2"
       },

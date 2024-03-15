@@ -32,6 +32,9 @@ type Cli struct {
 	EthURL          string
 	EthKeystorePath string
 	EthPassword     string
+	MaxTicketEV     string
+	MaxTotalEV      string
+	MaxPricePerUnit string
 }
 
 type DBObject map[string]any
@@ -171,6 +174,11 @@ func tweakProtocol(protocol *Protocol, cli *Cli, u *url.URL) bool {
 			protocol.EthKeystorePath = cli.EthKeystorePath
 			protocol.EthPassword = cli.EthPassword
 			protocol.EthURL = cli.EthURL
+			protocol.MaxPricePerUnit = cli.MaxPricePerUnit
+			protocol.MaxTicketEV = cli.MaxTicketEV
+			protocol.MaxTotalEV = cli.MaxTotalEV
+		} else {
+			protocol.OrchAddr = "http://127.0.0.1:8936"
 		}
 	} else if protocol.Connector == "livepeer" && protocol.Broadcaster && protocol.MetadataQueueURI != "" {
 		// live broadcaster

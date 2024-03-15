@@ -83,6 +83,9 @@ type Protocol struct {
 	EthURL                              string `json:"ethUrl,omitempty"`
 	EthKeystorePath                     string `json:"ethKeystorePath,omitempty"`
 	EthPassword                         string `json:"ethPassword,omitempty"`
+	MaxTicketEV                         string `json:"maxTicketEV,omitempty"`
+	MaxTotalEV                          string `json:"maxTotalEV,omitempty"`
+	MaxPricePerUnit                     string `json:"maxPricePerUnit,omitempty"`
 
 	ICEServers []ICEServer `json:"iceservers,omitempty"`
 	// And finally, four ways to spell the same thing:

@@ -31,6 +31,9 @@ func main() {
 	fs.StringVar(&cli.EthURL, "eth-url", "", "HTTPS URL of an Ethereum RPC provider for your selected network")
 	fs.StringVar(&cli.EthKeystorePath, "eth-keystore-path", "/keystore", "Path to an Ethereum keystore")
 	fs.StringVar(&cli.EthPassword, "eth-password", "", "Ethereum password or path to password file")
+	fs.StringVar(&cli.MaxTicketEV, "max-ticket-ev", "50000000001", "The maximum acceptable expected value for one PM ticket")
+	fs.StringVar(&cli.MaxTotalEV, "max-total-ev", "20000000000000", "The maximum acceptable expected value for one PM payment")
+	fs.StringVar(&cli.MaxPricePerUnit, "max-price-per-unit", "700", "The maximum transcoding price (in wei) per 'pixelsPerUnit' a broadcaster is willing to accept. If not set explicitly, broadcaster is willing to accept ANY price")
 
 	ff.Parse(
 		fs, os.Args[1:],
