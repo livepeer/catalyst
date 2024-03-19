@@ -11,14 +11,10 @@ if [[ $* == *-j* ]]; then
     exit 0
 fi
 
-if [[ ! -d /data/cockroach ]]; then
-  (
-    echo "no database detected, pulling snapshot"
-    cd /data
-    curl -L $COCKROACH_DB_SNAPSHOT -o snapshot.tar.gz
-    tar --no-same-owner -xzf snapshot.tar.gz
-    rm snapshot.tar.gz
-  )
-fi
+bash <<EOF &
+  until cockroach sql --url 'postgresql://root@localhost:5432/defaultdb?sslmode=disable' < /tmp/catalyst-fixtures.sql; do
+    sleep 1;
+  done
+EOF
 
 exec cockroach start-single-node --insecure --listen-addr=localhost:36257 --sql-addr=0.0.0.0:5432 --http-addr=127.0.0.1:18080 -s /data/cockroach
