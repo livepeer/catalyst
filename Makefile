@@ -206,7 +206,7 @@ scripts:
 	cp -Rv ./scripts/* ./bin
 
 .PHONY: box-dev
-box-dev: scripts
+box-dev: scripts catalyst
 	ulimit -c unlimited \
 	&& exec docker run \
 	-v $$(realpath bin):/usr/local/bin \
@@ -214,6 +214,8 @@ box-dev: scripts
 	-v $$(realpath config):/etc/livepeer:ro \
 	-v $$(realpath ./coredumps):$$(realpath ./coredumps) \
 	-e CORE_DUMP_DIR=$$(realpath ./coredumps) \
+	-v /home/iameli/.ethereum/keystore:/keystore \
+	-e CATALYST_SECRET=f61b3cdb-d173-4a7a-a0d3-547b871a56f9 \
 	$(shell for line in $$(cat .env 2>/dev/null || echo ''); do printf -- "-e $$line "; done) \
 	--rm \
 	-it \
@@ -246,3 +248,12 @@ snapshot:
 	&& cd data \
 	&& rm -rf cockroach/auxiliary/EMERGENCY_BALLAST \
 	&& tar czvf ../livepeer-studio-bootstrap.tar.gz cockroach
+
+.PHONY: sql-schema-dump
+sql-schema-dump:
+	cockroach sql --format=raw \
+		--url 'postgresql://root@localhost:5432/defaultdb?sslmode=disable' \
+		--execute "show create all tables" \
+		| grep -v '#' \
+		| grep -v 'Time' \
+		> ./config/full-stack.sql

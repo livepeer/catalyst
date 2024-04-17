@@ -16,10 +16,15 @@ box:
       windows-arm64: livepeer-analyzer-windows-arm64.zip
   - name: api
     strategy:
-      download: github
-      project: livepeer/studio
-      commit: f51f0e62cf50a9d54b01c265da4106d45d78df4b
-    release: v0.16.2
+      download: bucket
+      project: studio
+      commit: 085d87dec71bee6a30c15356b24ece9e6c8cdbf9
+    release: master
+    srcFilenames:
+      darwin-amd64: livepeer-api-darwin-amd64.tar.gz
+      darwin-arm64: livepeer-api-darwin-arm64.tar.gz
+      linux-amd64: livepeer-api-linux-amd64.tar.gz
+      linux-arm64: livepeer-api-linux-arm64.tar.gz
   - name: catalyst-api
     strategy:
       download: bucket

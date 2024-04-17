@@ -45,6 +45,7 @@ func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network string
 		WaitingFor:   wait.NewLogStrategy("API server listening"),
 		Env: map[string]string{
 			"LP_API_FRONTEND": "false",
+			"CATALYST_SECRET": "f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
 		},
 	}
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
