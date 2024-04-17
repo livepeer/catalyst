@@ -23,8 +23,8 @@ box:
   - name: catalyst-api
     strategy:
       download: bucket
-      project: catalyst-api
       commit: 16daf7e0da4bdf065ccd640f76d20d5fd805e2ee
+      project: catalyst-api
     release: hjp/geolocation-debug
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
