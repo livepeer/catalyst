@@ -18,13 +18,13 @@ box:
     strategy:
       download: bucket
       project: studio
-      commit: 085d87dec71bee6a30c15356b24ece9e6c8cdbf9
-    release: master
+      commit: 62da75d572ef3e5df1aeb1a60fe6896efb1b6b7c
+    release: next
     srcFilenames:
-      darwin-amd64: livepeer-api-darwin-amd64.tar.gz
-      darwin-arm64: livepeer-api-darwin-arm64.tar.gz
-      linux-amd64: livepeer-api-linux-amd64.tar.gz
-      linux-arm64: livepeer-api-linux-arm64.tar.gz
+      darwin-amd64: livepeer-api.tar.gz
+      darwin-arm64: livepeer-api.tar.gz
+      linux-amd64: livepeer-api.tar.gz
+      linux-arm64: livepeer-api.tar.gz
   - name: catalyst-api
     strategy:
       download: bucket
