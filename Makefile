@@ -11,6 +11,7 @@ FROM_LOCAL_PARENT ?= scratch # for `make docker-local` and `make box-local`
 DOCKER_TARGET ?= catalyst
 BUILD_TARGET ?= full
 export KILL ?= true
+export FRONTEND ?= false
 export GOOS ?= linux
 
 ifeq ($(shell uname), Darwin)
@@ -95,19 +96,16 @@ livepeer-api:
 	cd ../studio/packages/api \
 	&& yarn run esbuild \
 	&& cd - \
-	&& mv ../studio/packages/api/dist-esbuild/api.js ./bin/livepeer-api \
+	&& mv ../studio/packages/api/dist-esbuild/livepeer-api ./bin/livepeer-api \
 	&& $(MAKE) box-kill BIN=livepeer-api
 
-# same as livepeer-api but uses pkg instead of esbuild
-# pros: bundles the frontend too
-# cons: takes four minutes to build
-.PHONY: livepeer-api-pkg
-livepeer-api-pkg:
-	cd ../studio \
-	&& yarn run pkg:local \
+# builds a new frontend prior to booting the API server
+.PHONY: livepeer-api
+livepeer-www:
+	cd ../studio/packages/www \
+	&& yarn run static \
 	&& cd - \
-	&& mv ../studio/packages/api/bin/api ./bin/livepeer-api \
-	&& $(MAKE) box-kill BIN=livepeer-api
+	&& $(MAKE) livepeer-api
 
 .PHONY: box-kill
 box-kill:
