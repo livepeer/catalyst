@@ -49,7 +49,7 @@
         "cors-jwt-allowlist": "[\"http://localhost:8080\", \"http://localhost:3000\", \"http://localhost:8888\",\"http://127.0.0.1:8080\", \"http://127.0.0.1:3000\", \"http://127.0.0.1:8888\"]",
         "jwt-secret": "stupidlysecret",
         "jwt-audience": "my-node",
-        "ingest": "[{\"ingest\":\"rtmp://localhost/live\",\"ingests\":{\"rtmp\":\"rtmp://localhost/live\",\"srt\":\"srt://localhost:8889\"},\"playback\":\"http://localhost:8888/hls\",\"base\":\"http://localhost:8888\",\"origin\":\"http://localhost:8888\"}]",
+        "ingest": "[{\"ingest\":\"rtmp://localhost/live\",\"ingests\":{\"rtmp\":\"rtmp://localhost/live\",\"srt\":\"srt://localhost:8889\"},\"playback\":\"http://localhost:8888/hls\",\"playbackDirect\":\"http://localhost:8888/hls\",\"base\":\"http://localhost:8888\",\"baseDirect\":\"http://localhost:8888\",\"origin\":\"http://localhost:8888\"}]",
         "broadcasters": "[{\"address\":\"http://127.0.0.1:8935\"}]",
         "base-stream-name": "video",
         "amqp-url": "amqp://localhost:5672/livepeer",
