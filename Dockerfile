@@ -77,8 +77,10 @@ RUN	apt update && apt install -yqq \
 	ca-certificates \
 	musl \
 	python3 \
+	procps \
+	vnstat \
 	ffmpeg \
-    	nodejs \
+	nodejs \
 	gstreamer1.0-tools gstreamer1.0-plugins-good gstreamer1.0-plugins-base gstreamer1.0-plugins-bad \
 	"$(if [ "$BUILD_TARGET" != "stripped" ]; then echo "gdb"; fi)" \
 	&& rm -rf /var/lib/apt/lists/*
