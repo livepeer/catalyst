@@ -195,6 +195,8 @@ func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 
 		"1080p0/index.m3u8",
 		"1080p0/0.ts",
+
+		"metadata.json",
 	}
 
 	for timeoutAt.After(time.Now()) {
