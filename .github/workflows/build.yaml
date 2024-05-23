@@ -26,11 +26,9 @@ jobs:
       fail-fast: false
       matrix:
         architecture:
-          - arm64
           - amd64
         platform:
           - name: linux
-          - name: darwin
 
     steps:
       - name: Check out code
@@ -129,7 +127,8 @@ jobs:
         uses: livepeer/branch-manifest-action@latest
         with:
           project-name: ${{ github.event.repository.name }}
-          platform: linux, darwin
+          platform: linux
+          architecture: amd64
 
       - name: Authenticate to Google Cloud
         id: auth
