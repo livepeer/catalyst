@@ -10,6 +10,7 @@ DOCKER_TAG ?= livepeer/catalyst
 FROM_LOCAL_PARENT ?= scratch # for `make docker-local` and `make box-local`
 DOCKER_TARGET ?= catalyst
 BUILD_TARGET ?= full
+STUDIO_DIR=$(if $(wildcard ../studio/packages/www/static-build/.),"../studio/packages/api","../studio")
 export KILL ?= true
 export GOOS ?= linux
 
@@ -92,10 +93,10 @@ livepeer-analyzer:
 
 .PHONY: livepeer-api
 livepeer-api:
-	cd ../studio/packages/api \
+	cd $(STUDIO_DIR) \
 	&& yarn run esbuild \
 	&& cd - \
-	&& mv ../studio/packages/api/dist-esbuild/api.js ./bin/livepeer-api \
+	&& mv ../studio/packages/api/dist-esbuild/livepeer-api ./bin/livepeer-api \
 	&& $(MAKE) box-kill BIN=livepeer-api
 
 # same as livepeer-api but uses pkg instead of esbuild
@@ -220,6 +221,7 @@ box-dev: scripts
 	--name catalyst \
 	--shm-size=4gb \
 	-p 8888:8888 \
+	-p 8989:8989 \
 	-p 5432:5432 \
 	-p 1935:1935 \
 	-p 4242:4242 \
@@ -227,6 +229,7 @@ box-dev: scripts
 	-p 3478:3478 \
 	-p 3478:3478/udp \
 	-p 5349:5349 \
+	-p 9090:9090 \
 	-p 40000-40100:40000-40100/udp \
 	livepeer/in-a-box
 
