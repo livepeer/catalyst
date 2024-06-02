@@ -131,10 +131,18 @@ func mistConfigConnectTo(host string, connectToHost string) mistConfig {
 }
 
 type logConsumer struct {
-	name string
+	name     string
+	failLogs []string
+	t        *testing.T
 }
 
 func (lc *logConsumer) Accept(l testcontainers.Log) {
+	content := string(l.Content)
+	for _, failLog := range lc.failLogs {
+		if strings.Contains(content, failLog) {
+			require.Fail(lc.t, fmt.Sprintf(`Found the phrase "%s" in this log line, indicating failure: %s`, failLog, content))
+		}
+	}
 	glog.Infof("[%s] %s", lc.name, string(l.Content))
 }
 
