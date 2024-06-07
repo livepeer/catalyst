@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -30,8 +31,19 @@ func TestBoxRecording(t *testing.T) {
 	box := startBoxWithEnv(ctx, t, boxName, network.name)
 	defer box.Terminate(ctx)
 
-	err := startRecordTester(ctx)
-	require.NoError(t, err)
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		err := startRecordTester(ctx, false)
+		require.NoError(t, err)
+	}()
+	go func() {
+		defer wg.Done()
+		err := startRecordTester(ctx, true)
+		require.NoError(t, err)
+	}()
+	wg.Wait()
 }
 
 func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network string) *catalystContainer {
@@ -87,21 +99,23 @@ func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network string
 	return catalyst
 }
 
-func startRecordTester(ctx context.Context) error {
-	fmt.Println("starting record tester")
-	err := run(
-		ctx,
-		"go",
+func startRecordTester(ctx context.Context, recordingCopyOnly bool) error {
+	fmt.Printf("starting record tester copyOnly=%v\n", recordingCopyOnly)
+	args := []string{
 		"run",
 		"github.com/livepeer/stream-tester/cmd/recordtester",
 		"-api-server=http://127.0.0.1:8888",
 		"-api-token=f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
 		"-test-dur=1m",
 		"-file=https://github.com/livepeer/catalyst-api/assets/136638730/1f71068a-0396-43c2-b870-95a6ad644ffb",
-	)
+	}
+	if recordingCopyOnly {
+		args = append(args, `-recording-spec={"profiles":[]}`)
+	}
+	err := run(ctx, "go", args...)
 	fmt.Println("record tester finished")
 	if err != nil {
-		return fmt.Errorf("error running recordtester: %w", err)
+		return fmt.Errorf("error running recordtester (copyOnly=%v): %w", recordingCopyOnly, err)
 	}
 
 	return nil
