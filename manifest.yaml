@@ -82,7 +82,7 @@ box:
     strategy:
       download: bucket
       project: task-runner
-      commit: f0fbece2040f13c8915aea8963cd30612bae6cb2
+      commit: ab118fd171b80cd2e8a472912184100c5d67b6c5
     binary: livepeer-task-runner
     release: main
     srcFilenames:
