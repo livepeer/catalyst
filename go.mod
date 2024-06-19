@@ -6,8 +6,8 @@ replace github.com/testcontainers/testcontainers-go v0.26.0 => github.com/lefina
 
 require (
 	github.com/ProtonMail/gopenpgp/v2 v2.4.10
-	github.com/golang/glog v1.1.2
-	github.com/livepeer/stream-tester v0.12.30-0.20230823234013-5cfb4bbcf27d
+	github.com/golang/glog v1.2.1
+	github.com/livepeer/stream-tester v0.12.30-0.20240619182724-f98674f33674
 	github.com/magicsong/color-glog v0.0.1
 	github.com/minio/minio-go/v7 v7.0.46
 	github.com/peterbourgon/ff/v3 v3.3.1
@@ -76,7 +76,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/livepeer/catalyst-api v0.1.1 // indirect
-	github.com/livepeer/go-api-client v0.4.7 // indirect
+	github.com/livepeer/go-api-client v0.4.24-0.20240607131835-949d242a631b // indirect
 	github.com/livepeer/joy4 v0.1.2-0.20220210094601-95e4d28f5f07 // indirect
 	github.com/livepeer/m3u8 v0.11.1 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
@@ -114,11 +114,11 @@ require (
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.18.0 // indirect
 	golang.org/x/oauth2 v0.13.0 // indirect
-	golang.org/x/sync v0.5.0 // indirect
+	golang.org/x/sync v0.5.0
 	golang.org/x/tools v0.15.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/api v0.149.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231030173426-d783a09b4405 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
@@ -136,7 +136,7 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/livepeer/livepeer-data v0.7.3 // indirect
+	github.com/livepeer/livepeer-data v0.7.5-0.20231004073737-06f1f383fb18 // indirect
 	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
