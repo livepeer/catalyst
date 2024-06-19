@@ -52,7 +52,7 @@ func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network string
 		Networks:     []string{network},
 		ExposedPorts: []string{"1935:1935/tcp", "8888:8888/tcp"},
 		ShmSize:      1000000000,
-		WaitingFor:   wait.NewLogStrategy("API server listening"),
+		WaitingFor:   wait.NewLogStrategy("API server listening").WithStartupTimeout(3 * time.Minute),
 		Env: map[string]string{
 			"LP_API_FRONTEND": "false",
 		},
