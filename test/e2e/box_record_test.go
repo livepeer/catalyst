@@ -108,6 +108,7 @@ func startRecordTester(ctx context.Context, recordingCopyOnly bool) error {
 		"-api-token=f61b3cdb-d173-4a7a-a0d3-547b871a56f9",
 		"-test-dur=1m",
 		"-file=https://github.com/livepeer/catalyst-api/assets/136638730/1f71068a-0396-43c2-b870-95a6ad644ffb",
+		"-skip-source-playback",
 	}
 	if recordingCopyOnly {
 		args = append(args, `-recording-spec={"profiles":[]}`)
