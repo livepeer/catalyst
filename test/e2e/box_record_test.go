@@ -1,16 +1,19 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"golang.org/x/sync/errgroup"
 )
 
 func TestBoxRecording(t *testing.T) {
@@ -31,19 +34,14 @@ func TestBoxRecording(t *testing.T) {
 	box := startBoxWithEnv(ctx, t, boxName, network.name)
 	defer box.Terminate(ctx)
 
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		err := startRecordTester(ctx, false)
-		require.NoError(t, err)
-	}()
-	go func() {
-		defer wg.Done()
-		err := startRecordTester(ctx, true)
-		require.NoError(t, err)
-	}()
-	wg.Wait()
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		return startRecordTester(ctx, false)
+	})
+	eg.Go(func() error {
+		return startRecordTester(ctx, true)
+	})
+	require.NoError(t, eg.Wait())
 }
 
 func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network string) *catalystContainer {
@@ -100,6 +98,7 @@ func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network string
 }
 
 func startRecordTester(ctx context.Context, recordingCopyOnly bool) error {
+	startTime := time.Now()
 	fmt.Printf("starting record tester copyOnly=%v\n", recordingCopyOnly)
 	args := []string{
 		"run",
@@ -113,28 +112,40 @@ func startRecordTester(ctx context.Context, recordingCopyOnly bool) error {
 	if recordingCopyOnly {
 		args = append(args, `-recording-spec={"profiles":[]}`)
 	}
-	err := run(ctx, "go", args...)
-	fmt.Println("record tester finished")
+
+	output, err := run(ctx, "go", args...)
+	fmt.Printf("finished record tester copyOnly=%v duration=%s error=%v output:\n%s\n", recordingCopyOnly, time.Since(startTime), err, output)
 	if err != nil {
 		return fmt.Errorf("error running recordtester (copyOnly=%v): %w", recordingCopyOnly, err)
 	}
-
 	return nil
 }
 
-func run(ctx context.Context, prog string, args ...string) error {
+type lockedBuffer struct {
+	mu sync.Mutex
+	bytes.Buffer
+}
+
+func (lw *lockedBuffer) Write(p []byte) (n int, err error) {
+	lw.mu.Lock()
+	defer lw.mu.Unlock()
+	return lw.Buffer.Write(p)
+}
+
+func run(ctx context.Context, prog string, args ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, prog, args...)
 	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	output := &lockedBuffer{}
+	cmd.Stdout = output
+	cmd.Stderr = output
 	err := cmd.Start()
 	if err != nil {
-		return fmt.Errorf("error invoking %s: %w", prog, err)
+		return output.Bytes(), fmt.Errorf("error invoking %s: %w", prog, err)
 	}
 
 	err = cmd.Wait()
 	if err != nil {
-		return fmt.Errorf("error running %s: %w", prog, err)
+		return output.Bytes(), fmt.Errorf("error running %s: %w", prog, err)
 	}
-	return nil
+	return output.Bytes(), nil
 }
