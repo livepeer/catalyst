@@ -70,7 +70,7 @@ ARG	BUILD_TARGET
 
 RUN	apt update && apt install -yqq wget software-properties-common \
 	&& wget -O - https://deb.nodesource.com/setup_18.x | bash \
-	&& add-apt-repository -y ppa:ubuntuhandbook1/ffmpeg6
+	&& add-apt-repository -y ppa:ubuntuhandbook1/ffmpeg7
 
 RUN	apt update && apt install -yqq \
 	curl \
