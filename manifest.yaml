@@ -5,7 +5,7 @@ box:
     strategy:
       download: bucket
       project: livepeer-data
-      commit: 69beb91ee8828d6a60710d01a56a981a790136f8
+      commit: b4b7663a14ddc80ecb066b1eb32bba107281323e
     release: main
     srcFilenames:
       darwin-amd64: livepeer-analyzer-darwin-amd64.tar.gz
@@ -18,7 +18,7 @@ box:
     strategy:
       download: github
       project: livepeer/studio
-      commit: 957742a723796b3e47ddd4d0ced6600771fb885e
+      commit: 8e2203e36c1b60d85698647ae7d5e3e069b0023a
     release: v0.19.0
     srcFilenames:
       linux-amd64: livepeer-api.tar.gz
@@ -49,7 +49,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: e9cbadbee54abe1e29393065a9c048b11ba9a215
+      commit: 3dcdf3d57d49951276a4132466506256d9a24e23
     binary: livepeer
     release: master
     archivePath: livepeer
@@ -84,7 +84,7 @@ box:
     strategy:
       download: bucket
       project: task-runner
-      commit: ab118fd171b80cd2e8a472912184100c5d67b6c5
+      commit: 69c3cc56923c724a9c5cb60b946a2611b832b574
     binary: livepeer-task-runner
     release: main
     srcFilenames:
