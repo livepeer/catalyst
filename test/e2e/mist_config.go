@@ -98,10 +98,10 @@ type targetProfile struct {
 }
 
 type trigger struct {
-	Handler string   `json:"handler"`
-	Sync    bool     `json:"sync"`
-	Default string   `json:"default"`
-	Streams []string `json:"streams"`
+	Handler string   `json:"handler,omitempty"`
+	Sync    bool     `json:"sync,omitempty"`
+	Default string   `json:"default,omitempty"`
+	Streams []string `json:"streams,omitempty"`
 }
 
 type mistConfig struct {
@@ -186,12 +186,10 @@ func defaultMistConfig(host, sourceOutput string) mistConfig {
 			SidMode:                "0",
 			Trustedproxy:           []string{},
 			Triggers: map[string][]trigger{
-				"STREAM_SOURCE": {
+				"LIVE_TRACK_LIST": {
 					{
-						Handler: "http://127.0.0.1:7878/STREAM_SOURCE",
-						Sync:    true,
-						Default: "push://",
-						Streams: []string{},
+						Handler: "http://127.0.0.1:7878/api/mist/trigger",
+						Sync:    false,
 					},
 				},
 				"PUSH_END": {
@@ -200,10 +198,40 @@ func defaultMistConfig(host, sourceOutput string) mistConfig {
 						Sync:    false,
 					},
 				},
-				"RECORDING_END": {
+				"PUSH_OUT_START": {
+					{
+						Handler: "http://127.0.0.1:7878/api/mist/trigger",
+						Sync:    true,
+					},
+				},
+				"PUSH_REWRITE": {
+					{
+						Handler: "http://127.0.0.1:7878/api/mist/trigger",
+						Sync:    true,
+					},
+				},
+				"STREAM_BUFFER": {
 					{
 						Handler: "http://127.0.0.1:7878/api/mist/trigger",
 						Sync:    false,
+					},
+				},
+				"STREAM_SOURCE": {
+					{
+						Handler: "http://127.0.0.1:7878/api/mist/trigger",
+						Sync:    true,
+					},
+				},
+				"USER_END": {
+					{
+						Handler: "http://127.0.0.1:7878/api/mist/trigger",
+						Sync:    false,
+					},
+				},
+				"USER_NEW": {
+					{
+						Handler: "http://127.0.0.1:7878/api/mist/trigger",
+						Sync:    true,
 					},
 				},
 			},
