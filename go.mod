@@ -2,8 +2,6 @@ module github.com/livepeer/catalyst
 
 go 1.21
 
-toolchain go1.22.4
-
 replace github.com/testcontainers/testcontainers-go v0.26.0 => github.com/lefinal/testcontainers-go v0.0.0-20231107224233-ca049655293f
 
 require (
