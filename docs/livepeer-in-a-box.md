@@ -141,8 +141,8 @@ echo "CATALYST_API_CDN_REDIRECT_PREFIX=https://externalcdn.livepeer.com/mist/" >
 echo "CATALYST_API_CDN_REDIRECT_PLAYBACK_IDS=222222222222" >> .env
 ```
 
-Note that this mechanism is limited to adding new configuration; existing
-configuration cannot be modified this way. If you need to modify existing
+Note that this mechanism is limited to adding new configuration values; the existing
+configuration cannot be modified this way. If you need to modify the existing
 configuration you can manually change the file in `config/full-stack.json`. A
 more robust configuration management system is under development.
 
@@ -165,7 +165,7 @@ The general Livepeer in a Box development cycle works like this:
 
 Thankfully, this entire process has been automated. All you need to do is have
 the project you're working on cloned in a directory adjacent to `catalyst`. For
-example, if you're hacking on `task-runner`, you might have
+example, if you're hacking on `task-runner`, you might have:
 
 ```
 /home/user/code/catalyst
