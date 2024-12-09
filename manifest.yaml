@@ -72,7 +72,6 @@ box:
       darwin-arm64: livepeer-mistserver-darwin-arm64.tar.gz
       linux-amd64: livepeer-mistserver-linux-amd64.tar.gz
       linux-arm64: livepeer-mistserver-linux-arm64.tar.gz
-    skipManifestUpdate: true
   - name: mist-bigquery-uploader
     strategy:
       download: github
