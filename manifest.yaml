@@ -26,7 +26,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-api
-      commit: fdad3c74a7bb39cc293523f505444994b7dfd976
+      commit: d2d4f40fd334710dd397432f0b21a5ca93144162
     release: main
     srcFilenames:
       darwin-amd64: livepeer-catalyst-api-darwin-amd64.tar.gz
@@ -37,7 +37,7 @@ box:
     strategy:
       download: bucket
       project: catalyst-uploader
-      commit: 3517b44f352c9832c010a71821199fce312c5b03
+      commit: bb3749e9898ea588eaf4f707bb590f6aa62784bf
     binary: livepeer-catalyst-uploader
     release: main
     srcFilenames:
@@ -49,7 +49,7 @@ box:
     strategy:
       download: bucket
       project: go-livepeer
-      commit: 2e55134d846a5a42bb60c45ef96418c8f7316972
+      commit: 5bad21627ca5f0273583557461ef1c31bfb9462c
     binary: livepeer
     release: master
     archivePath: livepeer
@@ -64,7 +64,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: 5f3ba7e3c29e11ec8fcb48a58ac900ad6019d8a0
+      commit: f8c8800b0532451b701a5962c8e0b60c21f14e89
     release: catalyst
     skipGpg: true
     srcFilenames:
@@ -72,7 +72,6 @@ box:
       darwin-arm64: livepeer-mistserver-darwin-arm64.tar.gz
       linux-amd64: livepeer-mistserver-linux-amd64.tar.gz
       linux-arm64: livepeer-mistserver-linux-arm64.tar.gz
-    skipManifestUpdate: true
   - name: mist-bigquery-uploader
     strategy:
       download: github

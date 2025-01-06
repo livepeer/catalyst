@@ -20,7 +20,7 @@ env:
 
 jobs:
   build:
-    name: "Download binaries for ${{ matrix.platform.name }}-${{ matrix.architecture }}"
+    name: "Download binaries for ${{ matrix.platform }}-${{ matrix.architecture }}"
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -28,7 +28,7 @@ jobs:
         architecture:
           - amd64
         platform:
-          - name: linux
+          - linux
 
     steps:
       - name: Check out code
@@ -55,7 +55,7 @@ jobs:
         run: |
           mkdir -p "${CI_CATALYST_BIN_DIR}/" "releases/"
           go run cmd/downloader/downloader.go \
-            --platform "${{ matrix.platform.name }}" \
+            --platform "${{ matrix.platform }}" \
             --architecture "${{ matrix.architecture }}" \
             --path "./${CI_CATALYST_BIN_DIR}/" \
             --manifest "manifest.yaml" \
@@ -64,7 +64,7 @@ jobs:
       - name: Set build environment
         run: |
           echo "GOARCH=${{ matrix.architecture }}" >> $GITHUB_ENV
-          echo "GOOS=${{ matrix.platform.name }}" >> $GITHUB_ENV
+          echo "GOOS=${{ matrix.platform }}" >> $GITHUB_ENV
 
       - name: Build binaries
         run: |
@@ -77,17 +77,11 @@ jobs:
 
       - name: Download c2patool
         run: |
-          curl "https://build.livepeer.live/c2patool/0.6.2/c2patool-${{ matrix.platform.name }}-${{ matrix.architecture }}.tar.gz" -o c2patool.tar.gz
+          curl "https://build.livepeer.live/c2patool/0.6.2/c2patool-${{ matrix.platform }}-${{ matrix.architecture }}.tar.gz" -o c2patool.tar.gz
           tar -xvzf c2patool.tar.gz -C ./bin/
 
-      - name: Strip binaries of debug symbols
-        if: matrix.platform.name == 'linux' && matrix.architecture == 'amd64'
-        run: |
-          cd "${CI_CATALYST_BIN_DIR}/"
-          find . -type f ! -name "*.sh" ! -name "livepeer-mist-bigquery-uploader" ! -name "livepeer-api" -exec strip -s {} \;
-
       - name: Archive binaries for linux/macos
-        if: matrix.platform.name != 'windows'
+        if: matrix.platform != 'windows'
         run: |
           cd "${CI_CATALYST_BIN_DIR}/"
           tar -cvzf "../releases/livepeer-catalyst-${GOOS}-${GOARCH}.tar.gz" *
