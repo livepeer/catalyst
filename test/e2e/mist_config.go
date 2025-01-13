@@ -175,7 +175,7 @@ func defaultMistConfig(host, sourceOutput string) mistConfig {
 					HTTPAddrInternal: fmt.Sprintf("0.0.0.0:%s", catalystAPIInternalPort),
 					RedirectPrefixes: "stream",
 					Debug:            "6",
-					Catabalancer:     "enabled",
+					Catabalancer:     "disabled",
 				},
 			},
 			SessionInputMode:       "14",
