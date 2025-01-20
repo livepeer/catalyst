@@ -64,7 +64,7 @@ box:
     strategy:
       download: bucket
       project: mistserver
-      commit: f8c8800b0532451b701a5962c8e0b60c21f14e89
+      commit: 930e5869784ffc4cd3246306c1cbbe095eb724aa
     release: catalyst
     skipGpg: true
     srcFilenames:
