@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -135,7 +136,7 @@ type logConsumer struct {
 }
 
 func (lc *logConsumer) Accept(l testcontainers.Log) {
-	glog.Infof("[%s] %s", lc.name, string(l.Content))
+	log.Printf("[%s] %s", lc.name, string(l.Content))
 }
 
 func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig) *catalystContainer {
