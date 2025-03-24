@@ -57,17 +57,15 @@ func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network string
 			"LP_API_FRONTEND": "false",
 		},
 	}
-	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+	genericContainerRequest := testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
 		Started:          false,
-	})
-	require.NoError(t, err)
-
-	// Redirect container logs to the standard logger
+	}
 	lc := logConsumer{name: hostname}
-	err = container.StartLogProducer(ctx)
+	err := testcontainers.WithLogConsumers(&lc)(&genericContainerRequest)
 	require.NoError(t, err)
-	container.FollowOutput(&lc)
+	container, err := testcontainers.GenericContainer(ctx, genericContainerRequest)
+	require.NoError(t, err)
 
 	err = container.Start(ctx)
 	require.NoError(t, err)
