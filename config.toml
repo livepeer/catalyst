@@ -8,7 +8,7 @@ warningCode = 0
     Disabled = true
 
 [rule.package-comments]
-  Disabled = true
+    Disabled = true
 
 [rule.blank-imports]
 [rule.context-as-argument]
