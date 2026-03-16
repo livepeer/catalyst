@@ -82,6 +82,9 @@ RUN	apt update && apt install -yqq \
 	ffmpeg \
 	nodejs \
 	gstreamer1.0-tools gstreamer1.0-plugins-good gstreamer1.0-plugins-base gstreamer1.0-plugins-bad \
+	procps \
+	vnstat \
+	linux-tools-common linux-tools-generic \
 	"$(if [ "$BUILD_TARGET" != "stripped" ]; then echo "gdb"; fi)" \
 	&& rm -rf /var/lib/apt/lists/*
 
