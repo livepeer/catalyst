@@ -207,22 +207,37 @@ func processVod(t *testing.T, storageURL, callbackURL string, c *catalystContain
 		}`, sourceVideoURL, callbackURL, destURL)
 
 	url := fmt.Sprintf("http://127.0.0.1:%s/api/vod", c.catalystAPIInternal)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(jsonData)))
-	require.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer IAmAuthorized")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-	require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected response: %s", strings.TrimSpace(string(body)))
-	var result struct {
-		RequestID string `json:"request_id"`
+	deadline := time.Now().Add(time.Minute)
+	for {
+		req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(jsonData)))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer IAmAuthorized")
+
+		resp, err := (&http.Client{}).Do(req)
+		require.NoError(t, err)
+		body, err := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		resp.Body.Close()
+		require.NoError(t, err)
+		if resp.StatusCode == http.StatusOK {
+			var result struct {
+				RequestID string `json:"request_id"`
+			}
+			require.NoError(t, json.Unmarshal(body, &result))
+			require.NotEmpty(t, result.RequestID)
+			return result.RequestID
+		}
+
+		// The API becomes healthy before the embedded orchestrator is ready to
+		// accept a VOD job. Its initial 500 response is transient; retrying here
+		// avoids treating that startup race as an E2E failure.
+		if resp.StatusCode != http.StatusInternalServerError || time.Now().After(deadline) {
+			dumpContainerLogs(context.Background(), t, c.Container)
+			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected response: %s", strings.TrimSpace(string(body)))
+			return ""
+		}
+		time.Sleep(time.Second)
 	}
-	require.NoError(t, json.Unmarshal(body, &result))
-	require.NotEmpty(t, result.RequestID)
-	return result.RequestID
 }
 
 func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
