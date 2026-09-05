@@ -42,11 +42,15 @@ func (b *synchronizedBuffer) String() string {
 // startQuickTunnel exposes origin through a temporary trycloudflare.com URL.
 // The cloudflared process is stopped automatically when the test completes.
 func startQuickTunnel(t *testing.T, origin string) string {
+	return startQuickTunnelWithArgs(t, origin)
+}
+
+func startQuickTunnelWithArgs(t *testing.T, origin string, args ...string) string {
 	t.Helper()
 
 	originURL, err := url.Parse(origin)
 	require.NoError(t, err)
-	require.Equal(t, "http", originURL.Scheme)
+	require.Contains(t, []string{"http", "https"}, originURL.Scheme)
 	require.NotEmpty(t, originURL.Host)
 
 	cloudflared, err := exec.LookPath("cloudflared")
@@ -54,14 +58,9 @@ func startQuickTunnel(t *testing.T, origin string) string {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	output := &synchronizedBuffer{}
-	cmd := exec.CommandContext(
-		ctx,
-		cloudflared,
-		"tunnel",
-		"--no-autoupdate",
-		"--protocol", "http2",
-		"--url", origin,
-	)
+	commandArgs := []string{"tunnel", "--no-autoupdate", "--protocol", "http2", "--url", origin}
+	commandArgs = append(commandArgs, args...)
+	cmd := exec.CommandContext(ctx, cloudflared, commandArgs...)
 	cmd.Stdout = output
 	cmd.Stderr = output
 	require.NoError(t, cmd.Start())
@@ -105,8 +104,9 @@ func startQuickTunnel(t *testing.T, origin string) string {
 }
 
 // startOrchestratorTunnel reserves a host port for a containerized
-// orchestrator, then exposes it through a temporary public URL. The port is
-// released before Docker binds it, so cloudflared can start before the
+// orchestrator, then exposes it through a temporary public URL. The origin
+// remains HTTPS/HTTP2 because Go-livepeer's control plane uses gRPC. The port
+// is released before Docker binds it, so cloudflared can start before the
 // container is configured with the URL it must advertise.
 func startOrchestratorTunnel(t *testing.T) (publicURL, hostPort string) {
 	t.Helper()
@@ -117,7 +117,7 @@ func startOrchestratorTunnel(t *testing.T) (publicURL, hostPort string) {
 	require.NoError(t, err)
 	require.NoError(t, listener.Close())
 
-	return startQuickTunnel(t, "http://127.0.0.1:"+hostPort), hostPort
+	return startQuickTunnelWithArgs(t, "https://127.0.0.1:"+hostPort, "--no-tls-verify", "--http2-origin"), hostPort
 }
 
 type callbackStatus struct {

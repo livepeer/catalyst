@@ -81,7 +81,7 @@ func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network, publi
   -e "s|\"api-server\": \"http://127.0.0.1:3004\"|\"api-server\": \"${E2E_PUBLIC_URL}\"|" \
   -e "s|\"own-base-url\": \"http://127.0.0.1:3060/task-runner\"|\"own-base-url\": \"${E2E_PUBLIC_URL}/task-runner\"|" \
   -e "s|\"orchAddr\": \"127.0.0.1:8936\"|\"orchAddr\": \"${E2E_ORCHESTRATOR_URL}\"|g" \
-  -e "s|\"serviceAddr\": \"127.0.0.1:8936\"|\"httpAddr\": \"http://0.0.0.0:8936\", \"serviceAddr\": \"${E2E_ORCHESTRATOR_URL}\"|" \
+  -e "s|\"serviceAddr\": \"127.0.0.1:8936\"|\"httpAddr\": \"https://0.0.0.0:8936\", \"serviceAddr\": \"${E2E_ORCHESTRATOR_URL}\"|" \
   /etc/livepeer/full-stack.json
 grep -Fq "\"api-server\": \"${E2E_PUBLIC_URL}\"" /etc/livepeer/full-stack.json
 grep -Fq "\"own-base-url\": \"${E2E_PUBLIC_URL}/task-runner\"" /etc/livepeer/full-stack.json

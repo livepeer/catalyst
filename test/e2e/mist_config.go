@@ -63,7 +63,7 @@ func (m *mistConfig) setPublicOrchestrator(orchestratorURL string) {
 			p.OrchAddr = orchestratorURL
 		}
 		if p.Orchestrator {
-			p.HTTPRPCAddr = "http://0.0.0.0:8936"
+			p.HTTPRPCAddr = "https://0.0.0.0:8936"
 			p.ServiceAddr = orchestratorURL
 		}
 	}
