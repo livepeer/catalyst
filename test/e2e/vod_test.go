@@ -48,11 +48,13 @@ func TestVod(t *testing.T) {
 	storageURL := startQuickTunnel(t, fmt.Sprintf("http://127.0.0.1:%s", m.port))
 	waitForTunneledMinio(ctx, t, storageURL)
 	callbacks := startCallbackTunnel(t)
+	orchestratorURL, orchestratorHostPort := startOrchestratorTunnel(t)
 
 	h := randomString("catalyst-")
 	mistConfig := defaultMistConfigWithLivepeerProcess(h, tunneledObjectStoreURL(t, storageURL, username, password, inBucket, ""))
 	mistConfig.setAPIServer(callbacks.apiServerURL)
-	c := startCatalyst(ctx, t, h, network.name, mistConfig)
+	mistConfig.setPublicOrchestrator(orchestratorURL)
+	c := startCatalystWithPublicOrchestrator(ctx, t, h, network.name, mistConfig, orchestratorHostPort)
 	defer c.Terminate(ctx)
 	waitForCatalystAPI(t, c)
 

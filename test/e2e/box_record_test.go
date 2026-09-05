@@ -36,9 +36,10 @@ func TestBoxRecording(t *testing.T) {
 
 	boxName := randomString("box-")
 	publicURL := startQuickTunnel(t, "http://127.0.0.1:8888")
+	orchestratorURL, orchestratorHostPort := startOrchestratorTunnel(t)
 
 	// when
-	box := startBoxWithEnv(ctx, t, boxName, network.name, publicURL)
+	box := startBoxWithEnv(ctx, t, boxName, network.name, publicURL, orchestratorURL, orchestratorHostPort)
 	defer box.Terminate(ctx)
 	waitForBoxMinio(t, publicURL)
 	configureBoxObjectStores(t, publicURL)
@@ -59,18 +60,19 @@ func TestBoxRecording(t *testing.T) {
 	}
 }
 
-func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network, publicURL string) *catalystContainer {
+func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network, publicURL, orchestratorURL, orchestratorHostPort string) *catalystContainer {
 	req := testcontainers.ContainerRequest{
 		Image:        "livepeer/in-a-box",
 		Hostname:     hostname,
 		Name:         hostname,
 		Networks:     []string{network},
-		ExposedPorts: []string{"1935:1935/tcp", "8888:8888/tcp"},
+		ExposedPorts: []string{"1935:1935/tcp", "8888:8888/tcp", fmt.Sprintf("%s:8936/tcp", orchestratorHostPort)},
 		ShmSize:      1000000000,
 		WaitingFor:   wait.NewLogStrategy("API server listening").WithStartupTimeout(3 * time.Minute),
 		Env: map[string]string{
-			"LP_API_FRONTEND": "false",
-			"E2E_PUBLIC_URL":  publicURL,
+			"LP_API_FRONTEND":      "false",
+			"E2E_PUBLIC_URL":       publicURL,
+			"E2E_ORCHESTRATOR_URL": orchestratorURL,
 		},
 		Cmd: []string{
 			"bash",
@@ -78,9 +80,12 @@ func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network, publi
 			`sed -i \
   -e "s|\"api-server\": \"http://127.0.0.1:3004\"|\"api-server\": \"${E2E_PUBLIC_URL}\"|" \
   -e "s|\"own-base-url\": \"http://127.0.0.1:3060/task-runner\"|\"own-base-url\": \"${E2E_PUBLIC_URL}/task-runner\"|" \
+  -e "s|\"orchAddr\": \"127.0.0.1:8936\"|\"orchAddr\": \"${E2E_ORCHESTRATOR_URL}\"|g" \
+  -e "s|\"serviceAddr\": \"127.0.0.1:8936\"|\"httpAddr\": \"http://0.0.0.0:8936\", \"serviceAddr\": \"${E2E_ORCHESTRATOR_URL}\"|" \
   /etc/livepeer/full-stack.json
 grep -Fq "\"api-server\": \"${E2E_PUBLIC_URL}\"" /etc/livepeer/full-stack.json
 grep -Fq "\"own-base-url\": \"${E2E_PUBLIC_URL}/task-runner\"" /etc/livepeer/full-stack.json
+grep -Fq "\"serviceAddr\": \"${E2E_ORCHESTRATOR_URL}\"" /etc/livepeer/full-stack.json
 exec /usr/local/bin/catalyst -- /usr/local/bin/MistController -c /etc/livepeer/full-stack.json`,
 		},
 	}

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -101,6 +102,22 @@ func startQuickTunnel(t *testing.T, origin string) string {
 			t.Fatalf("timed out creating a quick tunnel for %s\n%s", origin, output.String())
 		}
 	}
+}
+
+// startOrchestratorTunnel reserves a host port for a containerized
+// orchestrator, then exposes it through a temporary public URL. The port is
+// released before Docker binds it, so cloudflared can start before the
+// container is configured with the URL it must advertise.
+func startOrchestratorTunnel(t *testing.T) (publicURL, hostPort string) {
+	t.Helper()
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	_, hostPort, err = net.SplitHostPort(listener.Addr().String())
+	require.NoError(t, err)
+	require.NoError(t, listener.Close())
+
+	return startQuickTunnel(t, "http://127.0.0.1:"+hostPort), hostPort
 }
 
 type callbackStatus struct {

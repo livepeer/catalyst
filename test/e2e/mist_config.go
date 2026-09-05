@@ -53,6 +53,22 @@ func (m *mistConfig) setAPIServer(apiServer string) {
 	}
 }
 
+func (m *mistConfig) setPublicOrchestrator(orchestratorURL string) {
+	for i := range m.Config.Protocols {
+		p := &m.Config.Protocols[i]
+		if p.Connector != "livepeer" {
+			continue
+		}
+		if p.Broadcaster {
+			p.OrchAddr = orchestratorURL
+		}
+		if p.Orchestrator {
+			p.HTTPRPCAddr = "http://0.0.0.0:8936"
+			p.ServiceAddr = orchestratorURL
+		}
+	}
+}
+
 type config struct {
 	Accesslog  string `json:"accesslog"`
 	Controller struct {
