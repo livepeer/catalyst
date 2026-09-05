@@ -3,8 +3,12 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -41,14 +45,24 @@ func TestVod(t *testing.T) {
 	createSourceBucket(t, m)
 	uploadSourceVideo(ctx, t, m)
 	createDestBucket(t, m)
+	storageURL := startQuickTunnel(t, fmt.Sprintf("http://127.0.0.1:%s", m.port))
+	waitForTunneledMinio(ctx, t, storageURL)
+	callbacks := startCallbackTunnel(t)
 
 	h := randomString("catalyst-")
-	c := startCatalyst(ctx, t, h, network.name, defaultMistConfigWithLivepeerProcess(h, sourceOutput(m)))
+	mistConfig := defaultMistConfigWithLivepeerProcess(h, tunneledObjectStoreURL(t, storageURL, username, password, inBucket, ""))
+	mistConfig.setAPIServer(callbacks.apiServerURL)
+	mistConfig.setNonLoopbackOrchestrator(h)
+	c := startCatalyst(ctx, t, h, network.name, mistConfig)
 	defer c.Terminate(ctx)
 	waitForCatalystAPI(t, c)
 
 	// when
-	processVod(t, m, c)
+	requestID := processVod(t, storageURL, callbacks.callbackURL, c)
+	if err := callbacks.waitForCompletion(requestID, 10*time.Minute); err != nil {
+		dumpContainerLogs(ctx, t, c.Container)
+		require.NoError(t, err)
+	}
 
 	// then
 	requireOutputFiles(ctx, t, m)
@@ -115,12 +129,36 @@ func createSourceBucket(t *testing.T, m *minioContainer) {
 	createBucket(t, m, inBucket)
 }
 
-func sourceOutput(m *minioContainer) string {
-	return fmt.Sprintf("s3+http://%s:%s@%s:9000/%s", username, password, m.hostname, inBucket)
-}
-
 func createDestBucket(t *testing.T, m *minioContainer) {
 	createBucket(t, m, outBucket)
+}
+
+func waitForTunneledMinio(ctx context.Context, t *testing.T, storageURL string) {
+	t.Helper()
+
+	u, err := url.Parse(storageURL)
+	require.NoError(t, err)
+	cli, err := minio.New(u.Host, &minio.Options{
+		Creds:        credentials.NewStaticV4(username, password, ""),
+		Secure:       true,
+		Region:       region,
+		BucketLookup: minio.BucketLookupPath,
+	})
+	require.NoError(t, err)
+
+	deadline := time.Now().Add(time.Minute)
+	for {
+		requestCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		_, err = cli.StatObject(requestCtx, inBucket, source, minio.StatObjectOptions{})
+		cancel()
+		if err == nil {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("MinIO tunnel did not become ready: %v", err)
+		}
+		time.Sleep(time.Second)
+	}
 }
 
 func createBucket(t *testing.T, m *minioContainer, bucket string) {
@@ -151,12 +189,12 @@ func waitForCatalystAPI(t *testing.T, c *catalystContainer) {
 	require.Eventually(t, catalystAPIStarted, 5*time.Minute, time.Second)
 }
 
-func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
-	sourceVideoURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/%s", username, password, m.hostname, inBucket, source)
-	destURL := fmt.Sprintf("s3+http://%s:%s@%s:9000/%s/", username, password, m.hostname, outBucket)
+func processVod(t *testing.T, storageURL, callbackURL string, c *catalystContainer) string {
+	sourceVideoURL := tunneledObjectStoreURL(t, storageURL, username, password, inBucket, source)
+	destURL := tunneledObjectStoreURL(t, storageURL, username, password, outBucket, "")
 	var jsonData = fmt.Sprintf(`{
-		"url": "%s",
-		"callback_url": "https://todo-callback.com",
+			"url": "%s",
+			"callback_url": "%s",
 		"output_locations": [
 			{
 									"type": "object_store",
@@ -166,23 +204,49 @@ func processVod(t *testing.T, m *minioContainer, c *catalystContainer) {
 									}
 							}
 		]
-	}`, sourceVideoURL, destURL)
+		}`, sourceVideoURL, callbackURL, destURL)
 
 	url := fmt.Sprintf("http://127.0.0.1:%s/api/vod", c.catalystAPIInternal)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(jsonData)))
-	require.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer IAmAuthorized")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-	defer resp.Body.Close()
+	deadline := time.Now().Add(time.Minute)
+	for {
+		req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(jsonData)))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer IAmAuthorized")
+
+		resp, err := (&http.Client{}).Do(req)
+		require.NoError(t, err)
+		body, err := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		resp.Body.Close()
+		require.NoError(t, err)
+		if resp.StatusCode == http.StatusOK {
+			var result struct {
+				RequestID string `json:"request_id"`
+			}
+			require.NoError(t, json.Unmarshal(body, &result))
+			require.NotEmpty(t, result.RequestID)
+			return result.RequestID
+		}
+
+		// The API becomes healthy before the embedded orchestrator is ready to
+		// accept a VOD job. Its initial 500 response is transient; retrying here
+		// avoids treating that startup race as an E2E failure.
+		if resp.StatusCode != http.StatusInternalServerError || time.Now().After(deadline) {
+			dumpContainerLogs(context.Background(), t, c.Container)
+			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected response: %s", strings.TrimSpace(string(body)))
+			return ""
+		}
+		time.Sleep(time.Second)
+	}
 }
 
 func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 	cli := minioClient(t, m)
 	var files []string
-	timeoutAt := time.Now().Add(5 * time.Minute)
+	// The VOD completion callback is sent after the manifests have been written,
+	// but segment uploads can still be in flight through the object-store tunnel.
+	// Keep the test container alive until those uploads are observable in MinIO.
+	timeoutAt := time.Now().Add(2 * time.Minute)
 
 	expectedFiles := []string{
 		"index.m3u8",
@@ -202,6 +266,7 @@ func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 	for timeoutAt.After(time.Now()) {
 		files = []string{}
 		for o := range cli.ListObjects(ctx, outBucket, minio.ListObjectsOptions{Recursive: true}) {
+			require.NoError(t, o.Err)
 			files = append(files, o.Key)
 		}
 		if len(files) < len(expectedFiles) {

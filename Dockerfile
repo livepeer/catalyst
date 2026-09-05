@@ -120,8 +120,8 @@ RUN	curl -L -O https://binaries.cockroachdb.com/cockroach-v23.1.5.linux-$TARGETA
 	&& rm -rf cockroach-v23.1.5.linux-$TARGETARCH.tgz cockroach-v23.1.5.linux-$TARGETARCH \
 	&& cockroach --version
 
-RUN	curl -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-$TARGETARCH/minio \
-	&& curl -o /usr/bin/mc https://dl.min.io/client/mc/release/linux-$TARGETARCH/mc \
+RUN	curl -fL -o /usr/bin/minio https://dl.min.io/server/minio/release/linux-$TARGETARCH/minio \
+	&& curl -fL -o /usr/bin/mc https://dl.min.io/client/mc/release/linux-$TARGETARCH/mc \
 	&& chmod +x /usr/bin/minio /usr/bin/mc \
 	&& minio --version \
 	&& mc --version

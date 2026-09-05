@@ -25,6 +25,7 @@ type bandwidth struct {
 
 type protocol struct {
 	Connector        string `json:"connector"`
+	APIServer        string `json:"api-server,omitempty"`
 	RetryJoin        string `json:"retry-join,omitempty"`
 	Advertise        string `json:"advertise,omitempty"`
 	RPCAddr          string `json:"rpc-addr,omitempty"`
@@ -42,6 +43,31 @@ type protocol struct {
 	RtmpAddr         string `json:"rtmpAddr,omitempty"`
 	SourceOutput     string `json:"source-output,omitempty"`
 	Catabalancer     string `json:"catabalancer,omitempty"`
+}
+
+func (m *mistConfig) setAPIServer(apiServer string) {
+	for i := range m.Config.Protocols {
+		if m.Config.Protocols[i].Connector == "livepeer-catalyst-api" {
+			m.Config.Protocols[i].APIServer = apiServer
+		}
+	}
+}
+
+func (m *mistConfig) setNonLoopbackOrchestrator(hostname string) {
+	orchestratorURL := "https://" + hostname + ":8936"
+	for i := range m.Config.Protocols {
+		p := &m.Config.Protocols[i]
+		if p.Connector != "livepeer" {
+			continue
+		}
+		if p.Broadcaster {
+			p.OrchAddr = orchestratorURL
+		}
+		if p.Orchestrator {
+			p.HTTPRPCAddr = "https://0.0.0.0:8936"
+			p.ServiceAddr = orchestratorURL
+		}
+	}
 }
 
 type config struct {
