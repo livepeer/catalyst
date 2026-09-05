@@ -39,7 +39,7 @@ type protocol struct {
 	HTTPRPCAddr              string `json:"httpAddr,omitempty"`
 	OrchAddr                 string `json:"orchAddr,omitempty"`
 	ServiceAddr              string `json:"serviceAddr,omitempty"`
-	StartupAvailabilityCheck *bool  `json:"startupAvailabilityCheck,omitempty"`
+	StartupAvailabilityCheck string `json:"startupAvailabilityCheck,omitempty"`
 	CliAddr                  string `json:"cliAddr,omitempty"`
 	RtmpAddr                 string `json:"rtmpAddr,omitempty"`
 	SourceOutput             string `json:"source-output,omitempty"`
@@ -64,10 +64,9 @@ func (m *mistConfig) setPublicOrchestrator(orchestratorURL string) {
 			p.OrchAddr = orchestratorURL
 		}
 		if p.Orchestrator {
-			startupAvailabilityCheck := false
 			p.HTTPRPCAddr = "https://0.0.0.0:8936"
 			p.ServiceAddr = orchestratorURL
-			p.StartupAvailabilityCheck = &startupAvailabilityCheck
+			p.StartupAvailabilityCheck = "false"
 		}
 	}
 }
