@@ -3,6 +3,7 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -46,17 +47,21 @@ func TestVod(t *testing.T) {
 	createDestBucket(t, m)
 	storageURL := startQuickTunnel(t, fmt.Sprintf("http://127.0.0.1:%s", m.port))
 	waitForTunneledMinio(ctx, t, storageURL)
-	apiServerURL, callbackURL := startCallbackTunnel(t)
+	callbacks := startCallbackTunnel(t)
 
 	h := randomString("catalyst-")
 	mistConfig := defaultMistConfigWithLivepeerProcess(h, tunneledObjectStoreURL(t, storageURL, username, password, inBucket, ""))
-	mistConfig.setAPIServer(apiServerURL)
+	mistConfig.setAPIServer(callbacks.apiServerURL)
 	c := startCatalyst(ctx, t, h, network.name, mistConfig)
 	defer c.Terminate(ctx)
 	waitForCatalystAPI(t, c)
 
 	// when
-	processVod(t, storageURL, callbackURL, c)
+	requestID := processVod(t, storageURL, callbacks.callbackURL, c)
+	if err := callbacks.waitForCompletion(requestID, 10*time.Minute); err != nil {
+		dumpContainerLogs(ctx, t, c.Container)
+		require.NoError(t, err)
+	}
 
 	// then
 	requireOutputFiles(ctx, t, m)
@@ -183,7 +188,7 @@ func waitForCatalystAPI(t *testing.T, c *catalystContainer) {
 	require.Eventually(t, catalystAPIStarted, 5*time.Minute, time.Second)
 }
 
-func processVod(t *testing.T, storageURL, callbackURL string, c *catalystContainer) {
+func processVod(t *testing.T, storageURL, callbackURL string, c *catalystContainer) string {
 	sourceVideoURL := tunneledObjectStoreURL(t, storageURL, username, password, inBucket, source)
 	destURL := tunneledObjectStoreURL(t, storageURL, username, password, outBucket, "")
 	var jsonData = fmt.Sprintf(`{
@@ -211,12 +216,18 @@ func processVod(t *testing.T, storageURL, callbackURL string, c *catalystContain
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 	require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected response: %s", strings.TrimSpace(string(body)))
+	var result struct {
+		RequestID string `json:"request_id"`
+	}
+	require.NoError(t, json.Unmarshal(body, &result))
+	require.NotEmpty(t, result.RequestID)
+	return result.RequestID
 }
 
 func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 	cli := minioClient(t, m)
 	var files []string
-	timeoutAt := time.Now().Add(5 * time.Minute)
+	timeoutAt := time.Now().Add(30 * time.Second)
 
 	expectedFiles := []string{
 		"index.m3u8",

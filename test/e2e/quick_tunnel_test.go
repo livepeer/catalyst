@@ -3,7 +3,9 @@ package e2e
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -101,21 +103,81 @@ func startQuickTunnel(t *testing.T, origin string) string {
 	}
 }
 
-func startCallbackTunnel(t *testing.T) (apiServerURL, callbackURL string) {
+type callbackStatus struct {
+	RequestID string `json:"request_id"`
+	Status    string `json:"status"`
+	Error     string `json:"error,omitempty"`
+}
+
+type callbackTunnel struct {
+	apiServerURL string
+	callbackURL  string
+	terminal     chan callbackStatus
+	mu           sync.Mutex
+	last         callbackStatus
+}
+
+func startCallbackTunnel(t *testing.T) *callbackTunnel {
 	t.Helper()
 
+	callbacks := &callbackTunnel{terminal: make(chan callbackStatus, 1)}
 	callbackServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.URL.Path, "/task-runner") {
 			http.NotFound(w, r)
 			return
 		}
+		if r.Method == http.MethodPost {
+			body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			var status callbackStatus
+			if err := json.Unmarshal(body, &status); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			callbacks.mu.Lock()
+			callbacks.last = status
+			callbacks.mu.Unlock()
+			if status.Status == "success" || status.Status == "error" {
+				select {
+				case callbacks.terminal <- status:
+				default:
+				}
+			}
+		}
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	t.Cleanup(callbackServer.Close)
 
-	apiServerURL = startQuickTunnel(t, callbackServer.URL)
-	waitForPublicHTTP(t, apiServerURL+"/task-runner/ready")
-	return apiServerURL, apiServerURL + "/task-runner/vod-test"
+	callbacks.apiServerURL = startQuickTunnel(t, callbackServer.URL)
+	callbacks.callbackURL = callbacks.apiServerURL + "/task-runner/vod-test"
+	waitForPublicHTTP(t, callbacks.apiServerURL+"/task-runner/ready")
+	return callbacks
+}
+
+func (c *callbackTunnel) waitForCompletion(requestID string, timeout time.Duration) error {
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	for {
+		select {
+		case status := <-c.terminal:
+			if status.RequestID != requestID {
+				continue
+			}
+			if status.Status == "error" {
+				return fmt.Errorf("VOD job %s failed: %s", requestID, status.Error)
+			}
+			return nil
+		case <-timer.C:
+			c.mu.Lock()
+			last := c.last
+			c.mu.Unlock()
+			return fmt.Errorf("timed out waiting for VOD job %s; last callback: %+v", requestID, last)
+		}
+	}
 }
 
 func waitForPublicHTTP(t *testing.T, endpoint string) {
@@ -164,4 +226,18 @@ func TestTunneledObjectStoreURL(t *testing.T) {
 		"s3+https://access:secret@example.trycloudflare.com/bucket",
 		tunneledObjectStoreURL(t, "https://example.trycloudflare.com", "access", "secret", "bucket", ""),
 	)
+}
+
+func TestWaitForCompletion(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		callbacks := &callbackTunnel{terminal: make(chan callbackStatus, 1)}
+		callbacks.terminal <- callbackStatus{RequestID: "request-1", Status: "success"}
+		require.NoError(t, callbacks.waitForCompletion("request-1", time.Second))
+	})
+
+	t.Run("error", func(t *testing.T) {
+		callbacks := &callbackTunnel{terminal: make(chan callbackStatus, 1)}
+		callbacks.terminal <- callbackStatus{RequestID: "request-1", Status: "error", Error: "transcode failed"}
+		require.EqualError(t, callbacks.waitForCompletion("request-1", time.Second), "VOD job request-1 failed: transcode failed")
+	})
 }

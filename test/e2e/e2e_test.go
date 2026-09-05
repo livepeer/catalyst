@@ -138,6 +138,24 @@ func (lc *logConsumer) Accept(l testcontainers.Log) {
 	glog.Infof("[%s] %s", lc.name, string(l.Content))
 }
 
+func dumpContainerLogs(ctx context.Context, t *testing.T, container testcontainers.Container) {
+	t.Helper()
+
+	logs, err := container.Logs(ctx)
+	if err != nil {
+		t.Logf("could not retrieve container logs: %v", err)
+		return
+	}
+	defer logs.Close()
+
+	output, err := io.ReadAll(io.LimitReader(logs, 4<<20))
+	if err != nil {
+		t.Logf("could not read container logs: %v", err)
+		return
+	}
+	t.Logf("container logs:\n%s", output)
+}
+
 func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig) *catalystContainer {
 	return startCatalystWithEnv(ctx, t, hostname, network, mc, nil)
 }

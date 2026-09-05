@@ -20,7 +20,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"golang.org/x/sync/errgroup"
 )
 
 func TestBoxRecording(t *testing.T) {
@@ -44,14 +43,20 @@ func TestBoxRecording(t *testing.T) {
 	waitForBoxMinio(t, publicURL)
 	configureBoxObjectStores(t, publicURL)
 
-	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(func() error {
-		return startRecordTester(ctx, false)
-	})
-	eg.Go(func() error {
-		return startRecordTester(ctx, true)
-	})
-	require.NoError(t, eg.Wait())
+	for _, mode := range []struct {
+		name     string
+		copyOnly bool
+	}{
+		{name: "copy-only", copyOnly: true},
+		{name: "transcoded", copyOnly: false},
+	} {
+		t.Run(mode.name, func(t *testing.T) {
+			if err := startRecordTester(ctx, mode.copyOnly); err != nil {
+				dumpContainerLogs(ctx, t, box.Container)
+				require.NoError(t, err)
+			}
+		})
+	}
 }
 
 func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network, publicURL string) *catalystContainer {

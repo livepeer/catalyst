@@ -106,7 +106,7 @@ jobs:
 
       - name: Run E2E tests
         run:
-          go test $(go list ./... | grep 'test/e2e') --timeout 15m --image
+          go test $(go list ./... | grep 'test/e2e') --timeout 30m -v --image
           catalyst-e2e-test
 
       - name: Upload coverage reports
