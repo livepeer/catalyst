@@ -228,7 +228,10 @@ func processVod(t *testing.T, storageURL, callbackURL string, c *catalystContain
 func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 	cli := minioClient(t, m)
 	var files []string
-	timeoutAt := time.Now().Add(30 * time.Second)
+	// The VOD completion callback is sent after the manifests have been written,
+	// but segment uploads can still be in flight through the object-store tunnel.
+	// Keep the test container alive until those uploads are observable in MinIO.
+	timeoutAt := time.Now().Add(2 * time.Minute)
 
 	expectedFiles := []string{
 		"index.m3u8",
@@ -248,6 +251,7 @@ func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 	for timeoutAt.After(time.Now()) {
 		files = []string{}
 		for o := range cli.ListObjects(ctx, outBucket, minio.ListObjectsOptions{Recursive: true}) {
+			require.NoError(t, o.Err)
 			files = append(files, o.Key)
 		}
 		if len(files) < len(expectedFiles) {
