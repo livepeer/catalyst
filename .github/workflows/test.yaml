@@ -63,6 +63,18 @@ jobs:
       - name: Build Docker Box image
         run: make box
 
+      - name: Install cloudflared
+        env:
+          CLOUDFLARED_VERSION: 2026.7.3
+          CLOUDFLARED_SHA256: 9d71c677db00134c1bd4144b7783486b654ad281b1ea62b4972098d19f770f17
+        run: |
+          curl -fL --retry 3 \
+            "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}/cloudflared-linux-amd64" \
+            -o "${RUNNER_TEMP}/cloudflared"
+          echo "${CLOUDFLARED_SHA256}  ${RUNNER_TEMP}/cloudflared" | sha256sum --check
+          chmod +x "${RUNNER_TEMP}/cloudflared"
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
       - name: Run E2E tests
         run:
           go test $(go list ./... | grep 'test/e2e') --timeout 15m --image
