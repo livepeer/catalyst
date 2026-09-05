@@ -36,10 +36,9 @@ func TestBoxRecording(t *testing.T) {
 
 	boxName := randomString("box-")
 	publicURL := startQuickTunnel(t, "http://127.0.0.1:8888")
-	orchestratorURL, orchestratorHostPort := startOrchestratorTunnel(t)
 
 	// when
-	box := startBoxWithEnv(ctx, t, boxName, network.name, publicURL, orchestratorURL, orchestratorHostPort)
+	box := startBoxWithEnv(ctx, t, boxName, network.name, publicURL)
 	defer box.Terminate(ctx)
 	waitForBoxMinio(t, publicURL)
 	configureBoxObjectStores(t, publicURL)
@@ -60,19 +59,19 @@ func TestBoxRecording(t *testing.T) {
 	}
 }
 
-func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network, publicURL, orchestratorURL, orchestratorHostPort string) *catalystContainer {
+func startBoxWithEnv(ctx context.Context, t *testing.T, hostname, network, publicURL string) *catalystContainer {
 	req := testcontainers.ContainerRequest{
 		Image:        "livepeer/in-a-box",
 		Hostname:     hostname,
 		Name:         hostname,
 		Networks:     []string{network},
-		ExposedPorts: []string{"1935:1935/tcp", "8888:8888/tcp", fmt.Sprintf("%s:8936/tcp", orchestratorHostPort)},
+		ExposedPorts: []string{"1935:1935/tcp", "8888:8888/tcp"},
 		ShmSize:      1000000000,
 		WaitingFor:   wait.NewLogStrategy("API server listening").WithStartupTimeout(3 * time.Minute),
 		Env: map[string]string{
 			"LP_API_FRONTEND":      "false",
 			"E2E_PUBLIC_URL":       publicURL,
-			"E2E_ORCHESTRATOR_URL": orchestratorURL,
+			"E2E_ORCHESTRATOR_URL": fmt.Sprintf("https://%s:8936", hostname),
 		},
 		Cmd: []string{
 			"bash",

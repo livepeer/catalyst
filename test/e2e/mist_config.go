@@ -24,26 +24,25 @@ type bandwidth struct {
 }
 
 type protocol struct {
-	Connector                string `json:"connector"`
-	APIServer                string `json:"api-server,omitempty"`
-	RetryJoin                string `json:"retry-join,omitempty"`
-	Advertise                string `json:"advertise,omitempty"`
-	RPCAddr                  string `json:"rpc-addr,omitempty"`
-	RedirectPrefixes         string `json:"redirect-prefixes,omitempty"`
-	Debug                    string `json:"debug,omitempty"`
-	HTTPAddr                 string `json:"http-addr,omitempty"`
-	HTTPAddrInternal         string `json:"http-internal-addr,omitempty"`
-	Broadcaster              bool   `json:"broadcaster,omitempty"`
-	Orchestrator             bool   `json:"orchestrator,omitempty"`
-	Transcoder               bool   `json:"transcoder,omitempty"`
-	HTTPRPCAddr              string `json:"httpAddr,omitempty"`
-	OrchAddr                 string `json:"orchAddr,omitempty"`
-	ServiceAddr              string `json:"serviceAddr,omitempty"`
-	StartupAvailabilityCheck string `json:"startupAvailabilityCheck,omitempty"`
-	CliAddr                  string `json:"cliAddr,omitempty"`
-	RtmpAddr                 string `json:"rtmpAddr,omitempty"`
-	SourceOutput             string `json:"source-output,omitempty"`
-	Catabalancer             string `json:"catabalancer,omitempty"`
+	Connector        string `json:"connector"`
+	APIServer        string `json:"api-server,omitempty"`
+	RetryJoin        string `json:"retry-join,omitempty"`
+	Advertise        string `json:"advertise,omitempty"`
+	RPCAddr          string `json:"rpc-addr,omitempty"`
+	RedirectPrefixes string `json:"redirect-prefixes,omitempty"`
+	Debug            string `json:"debug,omitempty"`
+	HTTPAddr         string `json:"http-addr,omitempty"`
+	HTTPAddrInternal string `json:"http-internal-addr,omitempty"`
+	Broadcaster      bool   `json:"broadcaster,omitempty"`
+	Orchestrator     bool   `json:"orchestrator,omitempty"`
+	Transcoder       bool   `json:"transcoder,omitempty"`
+	HTTPRPCAddr      string `json:"httpAddr,omitempty"`
+	OrchAddr         string `json:"orchAddr,omitempty"`
+	ServiceAddr      string `json:"serviceAddr,omitempty"`
+	CliAddr          string `json:"cliAddr,omitempty"`
+	RtmpAddr         string `json:"rtmpAddr,omitempty"`
+	SourceOutput     string `json:"source-output,omitempty"`
+	Catabalancer     string `json:"catabalancer,omitempty"`
 }
 
 func (m *mistConfig) setAPIServer(apiServer string) {
@@ -54,7 +53,8 @@ func (m *mistConfig) setAPIServer(apiServer string) {
 	}
 }
 
-func (m *mistConfig) setPublicOrchestrator(orchestratorURL string) {
+func (m *mistConfig) setNonLoopbackOrchestrator(hostname string) {
+	orchestratorURL := "https://" + hostname + ":8936"
 	for i := range m.Config.Protocols {
 		p := &m.Config.Protocols[i]
 		if p.Connector != "livepeer" {
@@ -66,7 +66,6 @@ func (m *mistConfig) setPublicOrchestrator(orchestratorURL string) {
 		if p.Orchestrator {
 			p.HTTPRPCAddr = "https://0.0.0.0:8936"
 			p.ServiceAddr = orchestratorURL
-			p.StartupAvailabilityCheck = "false"
 		}
 	}
 }

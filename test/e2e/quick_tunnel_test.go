@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -42,15 +41,11 @@ func (b *synchronizedBuffer) String() string {
 // startQuickTunnel exposes origin through a temporary trycloudflare.com URL.
 // The cloudflared process is stopped automatically when the test completes.
 func startQuickTunnel(t *testing.T, origin string) string {
-	return startQuickTunnelWithArgs(t, origin)
-}
-
-func startQuickTunnelWithArgs(t *testing.T, origin string, args ...string) string {
 	t.Helper()
 
 	originURL, err := url.Parse(origin)
 	require.NoError(t, err)
-	require.Contains(t, []string{"http", "https"}, originURL.Scheme)
+	require.Equal(t, "http", originURL.Scheme)
 	require.NotEmpty(t, originURL.Host)
 
 	cloudflared, err := exec.LookPath("cloudflared")
@@ -58,9 +53,14 @@ func startQuickTunnelWithArgs(t *testing.T, origin string, args ...string) strin
 
 	ctx, cancel := context.WithCancel(context.Background())
 	output := &synchronizedBuffer{}
-	commandArgs := []string{"tunnel", "--no-autoupdate", "--protocol", "http2", "--url", origin}
-	commandArgs = append(commandArgs, args...)
-	cmd := exec.CommandContext(ctx, cloudflared, commandArgs...)
+	cmd := exec.CommandContext(
+		ctx,
+		cloudflared,
+		"tunnel",
+		"--no-autoupdate",
+		"--protocol", "http2",
+		"--url", origin,
+	)
 	cmd.Stdout = output
 	cmd.Stderr = output
 	require.NoError(t, cmd.Start())
@@ -101,23 +101,6 @@ func startQuickTunnelWithArgs(t *testing.T, origin string, args ...string) strin
 			t.Fatalf("timed out creating a quick tunnel for %s\n%s", origin, output.String())
 		}
 	}
-}
-
-// startOrchestratorTunnel reserves a host port for a containerized
-// orchestrator, then exposes it through a temporary public URL. The origin
-// remains HTTPS/HTTP2 because Go-livepeer's control plane uses gRPC. The port
-// is released before Docker binds it, so cloudflared can start before the
-// container is configured with the URL it must advertise.
-func startOrchestratorTunnel(t *testing.T) (publicURL, hostPort string) {
-	t.Helper()
-
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-	_, hostPort, err = net.SplitHostPort(listener.Addr().String())
-	require.NoError(t, err)
-	require.NoError(t, listener.Close())
-
-	return startQuickTunnelWithArgs(t, "https://127.0.0.1:"+hostPort, "--no-tls-verify", "--http2-origin"), hostPort
 }
 
 type callbackStatus struct {

@@ -160,10 +160,6 @@ func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, 
 	return startCatalystWithEnv(ctx, t, hostname, network, mc, nil, nil)
 }
 
-func startCatalystWithPublicOrchestrator(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig, hostPort string) *catalystContainer {
-	return startCatalystWithEnv(ctx, t, hostname, network, mc, nil, []string{fmt.Sprintf("%s:8936/tcp", hostPort)})
-}
-
 func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig, env map[string]string, extraPorts []string) *catalystContainer {
 	mcPath, err := mc.toTmpFile(t.TempDir())
 	require.NoError(t, err)
