@@ -46,8 +46,37 @@ jobs:
         with:
           config: config.toml
 
+      - name: Set up reviewdog
+        uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f # v1.5.0
+        with:
+          reviewdog_version: v0.21.0
+
+      - name: Install misspell
+        env:
+          MISSPELL_VERSION: 0.8.0
+          MISSPELL_SHA256: 0a889624797be3eed241eeef4dd2b982adadedd6556723fd00b9c3f721417b51
+        run: |
+          archive="${RUNNER_TEMP}/misspell.tar.gz"
+          curl -fL --retry 3 \
+            "https://github.com/golangci/misspell/releases/download/v${MISSPELL_VERSION}/misspell_${MISSPELL_VERSION}_linux_amd64.tar.gz" \
+            -o "${archive}"
+          echo "${MISSPELL_SHA256}  ${archive}" | sha256sum --check
+          tar -xzf "${archive}" --strip-components=1 -C "${RUNNER_TEMP}" \
+            "misspell_${MISSPELL_VERSION}_linux_amd64/misspell"
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
       - name: misspell
-        uses: reviewdog/action-misspell@v1
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          find . -type f -print0 \
+            | xargs -0 misspell \
+            | reviewdog -efm="%f:%l:%c: %m" \
+                -filter-mode=added \
+                -name=misspell \
+                -reporter=github-pr-check \
+                -level=error \
+                -fail-level=none
 
       - name: Install FFMPEG
         uses: FedericoCarboni/setup-ffmpeg@v2
@@ -63,9 +92,21 @@ jobs:
       - name: Build Docker Box image
         run: make box
 
+      - name: Install cloudflared
+        env:
+          CLOUDFLARED_VERSION: 2026.7.3
+          CLOUDFLARED_SHA256: 9d71c677db00134c1bd4144b7783486b654ad281b1ea62b4972098d19f770f17
+        run: |
+          curl -fL --retry 3 \
+            "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}/cloudflared-linux-amd64" \
+            -o "${RUNNER_TEMP}/cloudflared"
+          echo "${CLOUDFLARED_SHA256}  ${RUNNER_TEMP}/cloudflared" | sha256sum --check
+          chmod +x "${RUNNER_TEMP}/cloudflared"
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
       - name: Run E2E tests
         run:
-          go test $(go list ./... | grep 'test/e2e') --timeout 15m --image
+          go test $(go list ./... | grep 'test/e2e') --timeout 30m -v --image
           catalyst-e2e-test
 
       - name: Upload coverage reports

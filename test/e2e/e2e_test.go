@@ -138,11 +138,29 @@ func (lc *logConsumer) Accept(l testcontainers.Log) {
 	glog.Infof("[%s] %s", lc.name, string(l.Content))
 }
 
-func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig) *catalystContainer {
-	return startCatalystWithEnv(ctx, t, hostname, network, mc, nil)
+func dumpContainerLogs(ctx context.Context, t *testing.T, container testcontainers.Container) {
+	t.Helper()
+
+	logs, err := container.Logs(ctx)
+	if err != nil {
+		t.Logf("could not retrieve container logs: %v", err)
+		return
+	}
+	defer logs.Close()
+
+	output, err := io.ReadAll(io.LimitReader(logs, 4<<20))
+	if err != nil {
+		t.Logf("could not read container logs: %v", err)
+		return
+	}
+	t.Logf("container logs:\n%s", output)
 }
 
-func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig, env map[string]string) *catalystContainer {
+func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig) *catalystContainer {
+	return startCatalystWithEnv(ctx, t, hostname, network, mc, nil, nil)
+}
+
+func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig, env map[string]string, extraPorts []string) *catalystContainer {
 	mcPath, err := mc.toTmpFile(t.TempDir())
 	require.NoError(t, err)
 	configAbsPath := filepath.Dir(mcPath)
@@ -152,19 +170,21 @@ func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network s
 	for k, v := range env {
 		envVars[k] = v
 	}
+	exposedPorts := []string{
+		tcp(webConsolePort),
+		tcp(httpPort),
+		tcp(catalystAPIPort),
+		tcp(catalystAPIInternalPort),
+		tcp(rtmpPort),
+	}
+	exposedPorts = append(exposedPorts, extraPorts...)
 	req := testcontainers.ContainerRequest{
-		Image: params.ImageName,
-		ExposedPorts: []string{
-			tcp(webConsolePort),
-			tcp(httpPort),
-			tcp(catalystAPIPort),
-			tcp(catalystAPIInternalPort),
-			tcp(rtmpPort),
-		},
-		Hostname: hostname,
-		Name:     hostname,
-		Networks: []string{network},
-		Env:      envVars,
+		Image:        params.ImageName,
+		ExposedPorts: exposedPorts,
+		Hostname:     hostname,
+		Name:         hostname,
+		Networks:     []string{network},
+		Env:          envVars,
 		Mounts: []testcontainers.ContainerMount{{
 			Source: testcontainers.GenericBindMountSource{
 				HostPath: configAbsPath,

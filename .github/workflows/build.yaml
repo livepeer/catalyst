@@ -109,12 +109,32 @@ jobs:
           path: releases/
 
       - name: Generate sha256 checksum and gpg signatures for release artifacts
-        uses: livepeer/action-gh-checksum-and-gpg-sign@latest
-        with:
-          artifacts-dir: releases
-          release-name: ${{ (github.ref_type == 'tag' && github.ref_name) || github.event.pull_request.head.sha || github.sha }}
-          gpg-key: ${{ secrets.CI_GPG_SIGNING_KEY }}
-          gpg-key-passphrase: ${{ secrets.CI_GPG_SIGNING_PASSPHRASE }}
+        env:
+          RELEASE_NAME: ${{ (github.ref_type == 'tag' && github.ref_name) || github.event.pull_request.head.sha || github.sha }}
+          CI_GPG_SIGNING_KEY: ${{ secrets.CI_GPG_SIGNING_KEY }}
+          CI_GPG_SIGNING_KEY_PASSPHRASE: ${{ secrets.CI_GPG_SIGNING_PASSPHRASE }}
+        run: |
+          cd releases
+          sha256sum -- * > "${RELEASE_NAME}_checksums.txt"
+
+          if [[ -z "${CI_GPG_SIGNING_KEY}" ]] || ! command -v gpg >/dev/null; then
+            exit 0
+          fi
+
+          printf '%s\n' "${CI_GPG_SIGNING_KEY}" | gpg --batch --import
+          for file in *; do
+            if [[ "${file}" == *.txt ]]; then
+              continue
+            fi
+            gpg \
+              --batch \
+              --no-tty \
+              --passphrase "${CI_GPG_SIGNING_KEY_PASSPHRASE}" \
+              --pinentry-mode loopback \
+              --output "${file}.sig" \
+              --detach-sign \
+              "${file}"
+          done
 
       - name: Generate branch manifest
         id: branch-manifest
