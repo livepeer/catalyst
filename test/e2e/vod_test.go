@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 )
@@ -50,18 +48,20 @@ func TestVod(t *testing.T) {
 	callbacks := startCallbackTunnel(t)
 
 	h := randomString("catalyst-")
-	mistConfig := defaultMistConfigWithLivepeerProcess(h, tunneledObjectStoreURL(t, storageURL, username, password, inBucket, ""))
+	sourceOutputURL, err := objectStoreURL(storageURL, username, password, inBucket, "")
+	require.NoError(t, err)
+	mistConfig := defaultMistConfigWithLivepeerProcess(h, sourceOutputURL)
 	mistConfig.setAPIServer(callbacks.apiServerURL)
 	mistConfig.setNonLoopbackOrchestrator(h)
 	c := startCatalyst(ctx, t, h, network.name, mistConfig)
 	defer c.Terminate(ctx)
-	waitForCatalystAPI(t, c)
+	waitForCatalystReady(ctx, t, c)
 
 	// when
 	requestID := processVod(t, storageURL, callbacks.callbackURL, c)
 	if err := callbacks.waitForCompletion(requestID, 10*time.Minute); err != nil {
 		dumpContainerLogs(ctx, t, c.Container)
-		require.NoError(t, err)
+		t.Fatalf("VOD callback failed: %s", redactQuickTunnelURLs(err.Error()))
 	}
 
 	// then
@@ -135,30 +135,10 @@ func createDestBucket(t *testing.T, m *minioContainer) {
 
 func waitForTunneledMinio(ctx context.Context, t *testing.T, storageURL string) {
 	t.Helper()
-
-	u, err := url.Parse(storageURL)
-	require.NoError(t, err)
-	cli, err := minio.New(u.Host, &minio.Options{
-		Creds:        credentials.NewStaticV4(username, password, ""),
-		Secure:       true,
-		Region:       region,
-		BucketLookup: minio.BucketLookupPath,
+	waitForMinio(ctx, t, storageURL, username, password, "MinIO tunnel", func(ctx context.Context, client *minio.Client) error {
+		_, err := client.StatObject(ctx, inBucket, source, minio.StatObjectOptions{})
+		return err
 	})
-	require.NoError(t, err)
-
-	deadline := time.Now().Add(time.Minute)
-	for {
-		requestCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		_, err = cli.StatObject(requestCtx, inBucket, source, minio.StatObjectOptions{})
-		cancel()
-		if err == nil {
-			return
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("MinIO tunnel did not become ready: %v", err)
-		}
-		time.Sleep(time.Second)
-	}
 }
 
 func createBucket(t *testing.T, m *minioContainer, bucket string) {
@@ -172,26 +152,62 @@ func uploadSourceVideo(ctx context.Context, t *testing.T, m *minioContainer) {
 }
 
 func minioClient(t *testing.T, m *minioContainer) *minio.Client {
-	cli, err := minio.New(fmt.Sprintf("127.0.0.1:%s", m.port), &minio.Options{
-		Creds: credentials.NewStaticV4(username, password, ""),
-	})
+	cli, err := minioClientForURL(fmt.Sprintf("http://127.0.0.1:%s", m.port), username, password)
 	require.NoError(t, err)
 	return cli
 }
 
-func waitForCatalystAPI(t *testing.T, c *catalystContainer) {
-	catalystAPIStarted := func() bool {
-		url := fmt.Sprintf("http://127.0.0.1:%s/ok", c.catalystAPIInternal)
-		resp, err := http.Get(url)
-		return err == nil && resp.StatusCode == http.StatusOK
-	}
+func waitForCatalystReady(ctx context.Context, t *testing.T, c *catalystContainer) {
+	t.Helper()
 
-	require.Eventually(t, catalystAPIStarted, 5*time.Minute, time.Second)
+	client := &http.Client{Timeout: 5 * time.Second}
+	deadline := time.Now().Add(5 * time.Minute)
+	var lastErr error
+	for {
+		apiURL := fmt.Sprintf("http://127.0.0.1:%s/ok", c.catalystAPIInternal)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
+		require.NoError(t, err)
+		resp, err := client.Do(req)
+		if err == nil {
+			resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				err = fmt.Errorf("Catalyst API readiness returned %s", resp.Status)
+			}
+		}
+		if err == nil {
+			probeCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			exitCode, output, execErr := c.Container.Exec(probeCtx, []string{
+				// The non-live-runner orchestrator returns 404 from /discovery by
+				// design. A completed HTTPS exchange still proves the embedded
+				// orchestrator is accepting requests.
+				"curl", "--silent", "--show-error", "--insecure", "--max-time", "5", "--output", "/dev/null",
+				"https://127.0.0.1:8936/discovery",
+			})
+			var probeOutput []byte
+			if output != nil {
+				probeOutput, _ = io.ReadAll(io.LimitReader(output, 4096))
+			}
+			cancel()
+			if execErr == nil && exitCode == 0 {
+				return
+			}
+			lastErr = fmt.Errorf("orchestrator readiness probe failed with exit code %d: %v: %s", exitCode, execErr, redactQuickTunnelURLs(string(probeOutput)))
+		} else {
+			lastErr = err
+		}
+		if time.Now().After(deadline) {
+			dumpContainerLogs(context.Background(), t, c.Container)
+			t.Fatalf("Catalyst did not become ready: %v", lastErr)
+		}
+		time.Sleep(time.Second)
+	}
 }
 
 func processVod(t *testing.T, storageURL, callbackURL string, c *catalystContainer) string {
-	sourceVideoURL := tunneledObjectStoreURL(t, storageURL, username, password, inBucket, source)
-	destURL := tunneledObjectStoreURL(t, storageURL, username, password, outBucket, "")
+	sourceVideoURL, err := objectStoreURL(storageURL, username, password, inBucket, source)
+	require.NoError(t, err)
+	destURL, err := objectStoreURL(storageURL, username, password, outBucket, "")
+	require.NoError(t, err)
 	var jsonData = fmt.Sprintf(`{
 			"url": "%s",
 			"callback_url": "%s",
@@ -207,37 +223,26 @@ func processVod(t *testing.T, storageURL, callbackURL string, c *catalystContain
 		}`, sourceVideoURL, callbackURL, destURL)
 
 	url := fmt.Sprintf("http://127.0.0.1:%s/api/vod", c.catalystAPIInternal)
-	deadline := time.Now().Add(time.Minute)
-	for {
-		req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(jsonData)))
-		require.NoError(t, err)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer IAmAuthorized")
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer([]byte(jsonData)))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer IAmAuthorized")
 
-		resp, err := (&http.Client{}).Do(req)
-		require.NoError(t, err)
-		body, err := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		resp.Body.Close()
-		require.NoError(t, err)
-		if resp.StatusCode == http.StatusOK {
-			var result struct {
-				RequestID string `json:"request_id"`
-			}
-			require.NoError(t, json.Unmarshal(body, &result))
-			require.NotEmpty(t, result.RequestID)
-			return result.RequestID
-		}
-
-		// The API becomes healthy before the embedded orchestrator is ready to
-		// accept a VOD job. Its initial 500 response is transient; retrying here
-		// avoids treating that startup race as an E2E failure.
-		if resp.StatusCode != http.StatusInternalServerError || time.Now().After(deadline) {
-			dumpContainerLogs(context.Background(), t, c.Container)
-			require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected response: %s", strings.TrimSpace(string(body)))
-			return ""
-		}
-		time.Sleep(time.Second)
+	resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	require.NoError(t, err)
+	if resp.StatusCode != http.StatusOK {
+		dumpContainerLogs(context.Background(), t, c.Container)
 	}
+	require.Equal(t, http.StatusOK, resp.StatusCode, "unexpected response: %s", redactQuickTunnelURLs(strings.TrimSpace(string(body))))
+	var result struct {
+		RequestID string `json:"request_id"`
+	}
+	require.NoError(t, json.Unmarshal(body, &result))
+	require.NotEmpty(t, result.RequestID)
+	return result.RequestID
 }
 
 func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
@@ -246,7 +251,7 @@ func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 	// The VOD completion callback is sent after the manifests have been written,
 	// but segment uploads can still be in flight through the object-store tunnel.
 	// Keep the test container alive until those uploads are observable in MinIO.
-	timeoutAt := time.Now().Add(2 * time.Minute)
+	timeoutAt := time.Now().Add(5 * time.Minute)
 
 	expectedFiles := []string{
 		"index.m3u8",
