@@ -48,8 +48,7 @@ func TestVod(t *testing.T) {
 	callbacks := startCallbackTunnel(t)
 
 	h := randomString("catalyst-")
-	minioInternalURL := fmt.Sprintf("http://%s:%s", m.hostname, minioPort)
-	sourceOutputURL, err := objectStoreURL(minioInternalURL, username, password, inBucket, "")
+	sourceOutputURL, err := objectStoreURL(storageURL, username, password, inBucket, "")
 	require.NoError(t, err)
 	mistConfig := defaultMistConfigWithLivepeerProcess(h, sourceOutputURL)
 	mistConfig.setAPIServer(callbacks.apiServerURL)
