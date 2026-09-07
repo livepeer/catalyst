@@ -7,19 +7,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"golang.org/x/sync/errgroup"
 )
 
 func TestBoxRecording(t *testing.T) {
@@ -43,19 +41,16 @@ func TestBoxRecording(t *testing.T) {
 	waitForBoxMinio(t, publicURL)
 	configureBoxObjectStores(t, publicURL)
 
-	for _, mode := range []struct {
-		name     string
-		copyOnly bool
-	}{
-		{name: "copy-only", copyOnly: true},
-		{name: "transcoded", copyOnly: false},
-	} {
-		t.Run(mode.name, func(t *testing.T) {
-			if err := startRecordTester(ctx, mode.copyOnly); err != nil {
-				dumpContainerLogs(ctx, t, box.Container)
-				require.NoError(t, err)
-			}
-		})
+	eg, testCtx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		return startRecordTester(testCtx, false)
+	})
+	eg.Go(func() error {
+		return startRecordTester(testCtx, true)
+	})
+	if err := eg.Wait(); err != nil {
+		dumpContainerLogs(ctx, t, box.Container)
+		require.NoError(t, err)
 	}
 }
 
@@ -139,33 +134,13 @@ var boxObjectStores = map[string]string{
 
 func waitForBoxMinio(t *testing.T, publicURL string) {
 	t.Helper()
-
-	u, err := url.Parse(publicURL)
-	require.NoError(t, err)
-	cli, err := minio.New(u.Host, &minio.Options{
-		Creds:        credentials.NewStaticV4("admin", "password", ""),
-		Secure:       true,
-		Region:       region,
-		BucketLookup: minio.BucketLookupPath,
+	waitForMinio(context.Background(), t, publicURL, "admin", "password", "in-a-box MinIO tunnel", func(ctx context.Context, client *minio.Client) error {
+		exists, err := client.BucketExists(ctx, "os-recordings")
+		if err == nil && !exists {
+			return fmt.Errorf("recordings bucket does not exist")
+		}
+		return err
 	})
-	require.NoError(t, err)
-
-	deadline := time.Now().Add(time.Minute)
-	for {
-		requestCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		exists, err := cli.BucketExists(requestCtx, "os-recordings")
-		cancel()
-		if err == nil && exists {
-			return
-		}
-		if err == nil {
-			err = fmt.Errorf("recordings bucket does not exist")
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("in-a-box MinIO tunnel did not become ready: %v", err)
-		}
-		time.Sleep(time.Second)
-	}
 }
 
 func configureBoxObjectStores(t *testing.T, publicURL string) {
@@ -173,25 +148,23 @@ func configureBoxObjectStores(t *testing.T, publicURL string) {
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	for id, bucket := range boxObjectStores {
+		storeURL, err := objectStoreURL(publicURL, "admin", "password", bucket, "")
+		require.NoError(t, err)
 		deadline := time.Now().Add(time.Minute)
 		for {
-			err := patchBoxObjectStore(client, publicURL, id, bucket)
+			err := patchBoxObjectStore(client, publicURL, id, bucket, storeURL)
 			if err == nil {
 				break
 			}
 			if time.Now().After(deadline) {
-				t.Fatalf("could not configure object store %s: %v", bucket, err)
+				t.Fatalf("could not configure object store %s: %s", bucket, redactQuickTunnelURLs(err.Error()))
 			}
 			time.Sleep(time.Second)
 		}
 	}
 }
 
-func patchBoxObjectStore(client *http.Client, publicURL, id, bucket string) error {
-	storeURL, err := boxObjectStoreURL(publicURL, bucket)
-	if err != nil {
-		return err
-	}
+func patchBoxObjectStore(client *http.Client, publicURL, id, bucket, storeURL string) error {
 	payload, err := json.Marshal(map[string]string{
 		"url":       storeURL,
 		"publicUrl": strings.TrimRight(publicURL, "/") + "/" + bucket,
@@ -214,29 +187,9 @@ func patchBoxObjectStore(client *http.Client, publicURL, id, bucket string) erro
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		return fmt.Errorf("unexpected status %s: %s", resp.Status, strings.TrimSpace(string(body)))
+		return fmt.Errorf("unexpected status %s: %s", resp.Status, redactQuickTunnelURLs(strings.TrimSpace(string(body))))
 	}
 	return nil
-}
-
-func boxObjectStoreURL(publicURL, bucket string) (string, error) {
-	u, err := url.Parse(publicURL)
-	if err != nil {
-		return "", err
-	}
-	if u.Scheme != "https" || u.Hostname() == "" {
-		return "", fmt.Errorf("invalid tunnel URL %q", publicURL)
-	}
-	u.Scheme = "s3+https"
-	u.User = url.UserPassword("admin", "password")
-	u.Path = "/" + bucket
-	return u.String(), nil
-}
-
-func TestBoxObjectStoreURL(t *testing.T) {
-	got, err := boxObjectStoreURL("https://example.trycloudflare.com", "os-recordings")
-	require.NoError(t, err)
-	require.Equal(t, "s3+https://admin:password@example.trycloudflare.com/os-recordings", got)
 }
 
 func startRecordTester(ctx context.Context, recordingCopyOnly bool) error {
@@ -256,22 +209,11 @@ func startRecordTester(ctx context.Context, recordingCopyOnly bool) error {
 	}
 
 	output, err := run(ctx, "go", args...)
-	fmt.Printf("finished record tester copyOnly=%v duration=%s error=%v output:\n%s\n", recordingCopyOnly, time.Since(startTime), err, output)
+	fmt.Printf("finished record tester copyOnly=%v duration=%s error=%v output:\n%s\n", recordingCopyOnly, time.Since(startTime), err, redactQuickTunnelURLs(string(output)))
 	if err != nil {
 		return fmt.Errorf("error running recordtester (copyOnly=%v): %w", recordingCopyOnly, err)
 	}
 	return nil
-}
-
-type lockedBuffer struct {
-	mu sync.Mutex
-	bytes.Buffer
-}
-
-func (lw *lockedBuffer) Write(p []byte) (n int, err error) {
-	lw.mu.Lock()
-	defer lw.mu.Unlock()
-	return lw.Buffer.Write(p)
 }
 
 func run(ctx context.Context, prog string, args ...string) ([]byte, error) {

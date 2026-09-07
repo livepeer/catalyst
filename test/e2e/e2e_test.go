@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -13,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -135,7 +137,7 @@ type logConsumer struct {
 }
 
 func (lc *logConsumer) Accept(l testcontainers.Log) {
-	glog.Infof("[%s] %s", lc.name, string(l.Content))
+	glog.Infof("[%s] %s", lc.name, redactQuickTunnelURLs(string(l.Content)))
 }
 
 func dumpContainerLogs(ctx context.Context, t *testing.T, container testcontainers.Container) {
@@ -153,23 +155,16 @@ func dumpContainerLogs(ctx context.Context, t *testing.T, container testcontaine
 		t.Logf("could not read container logs: %v", err)
 		return
 	}
-	t.Logf("container logs:\n%s", output)
+	t.Logf("container logs:\n%s", redactQuickTunnelURLs(string(output)))
 }
 
 func startCatalyst(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig) *catalystContainer {
-	return startCatalystWithEnv(ctx, t, hostname, network, mc, nil, nil)
-}
-
-func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network string, mc mistConfig, env map[string]string, extraPorts []string) *catalystContainer {
 	mcPath, err := mc.toTmpFile(t.TempDir())
 	require.NoError(t, err)
 	configAbsPath := filepath.Dir(mcPath)
 	mcFile := filepath.Base(mcPath)
 
 	envVars := map[string]string{"CATALYST_NODE_HTTP_ADDR": "0.0.0.0:8090"}
-	for k, v := range env {
-		envVars[k] = v
-	}
 	exposedPorts := []string{
 		tcp(webConsolePort),
 		tcp(httpPort),
@@ -177,7 +172,6 @@ func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network s
 		tcp(catalystAPIInternalPort),
 		tcp(rtmpPort),
 	}
-	exposedPorts = append(exposedPorts, extraPorts...)
 	req := testcontainers.ContainerRequest{
 		Image:        params.ImageName,
 		ExposedPorts: exposedPorts,
@@ -243,6 +237,29 @@ func startCatalystWithEnv(ctx context.Context, t *testing.T, hostname, network s
 	catalyst.ip = inspect.NetworkSettings.Networks[network].IPAddress
 
 	return catalyst
+}
+
+type lockedBuffer struct {
+	mu sync.Mutex
+	bytes.Buffer
+}
+
+func (b *lockedBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.Buffer.Write(p)
+}
+
+func (b *lockedBuffer) Bytes() []byte {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return append([]byte(nil), b.Buffer.Bytes()...)
+}
+
+func (b *lockedBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.Buffer.String()
 }
 
 func tcp(p string) string {
