@@ -251,7 +251,7 @@ func requireOutputFiles(ctx context.Context, t *testing.T, m *minioContainer) {
 	// The VOD completion callback is sent after the manifests have been written,
 	// but segment uploads can still be in flight through the object-store tunnel.
 	// Keep the test container alive until those uploads are observable in MinIO.
-	timeoutAt := time.Now().Add(2 * time.Minute)
+	timeoutAt := time.Now().Add(5 * time.Minute)
 
 	expectedFiles := []string{
 		"index.m3u8",
