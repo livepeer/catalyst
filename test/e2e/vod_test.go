@@ -177,7 +177,10 @@ func waitForCatalystReady(ctx context.Context, t *testing.T, c *catalystContaine
 		if err == nil {
 			probeCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			exitCode, output, execErr := c.Container.Exec(probeCtx, []string{
-				"curl", "--fail", "--silent", "--show-error", "--insecure", "--max-time", "5",
+				// The non-live-runner orchestrator returns 404 from /discovery by
+				// design. A completed HTTPS exchange still proves the embedded
+				// orchestrator is accepting requests.
+				"curl", "--silent", "--show-error", "--insecure", "--max-time", "5", "--output", "/dev/null",
 				"https://127.0.0.1:8936/discovery",
 			})
 			var probeOutput []byte
