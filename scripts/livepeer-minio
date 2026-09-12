@@ -18,10 +18,13 @@ bash <<EOF &
   && mc mb minio-server/os-catalyst-vod --ignore-existing \
   && mc mb minio-server/os-private --ignore-existing \
   && mc mb minio-server/os-recordings --ignore-existing \
+  && mc mb minio-server/os-recordings-backup --ignore-existing \
   && mc anonymous set download minio-server/os-vod \
   && mc anonymous set download minio-server/os-catalyst-vod \
   && mc anonymous set download minio-server/os-private \
-  && mc anonymous set download minio-server/os-recordings; do \
+  && mc anonymous set download minio-server/os-recordings \
+  && mc anonymous set download minio-server/os-recordings-backup \
+  ; do \
     sleep 1;
   done
 EOF
